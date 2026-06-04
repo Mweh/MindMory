@@ -1,24 +1,7 @@
-//
-//  ContentView.swift
-//  MindMory
-//
-//  Created by Muhammad Fahmi on 04/06/26.
-//
-
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
+    var body: some View { AppRootView() }
 }
 
-#Preview {
-    ContentView()
-}
+#Preview { ContentView() }

@@ -1,0 +1,14 @@
+import SwiftUI
+import Combine
+
+enum OnboardingViewState: Equatable { case showingPage(Int), permissionEducation, completed }
+
+final class OnboardingViewModel: ObservableObject {
+    @Published private(set) var state: OnboardingViewState = .showingPage(0)
+    let pages: [OnboardingPage]
+    var currentIndex: Int { if case let .showingPage(index)=state { return index }; return pages.count-1 }
+    init(pages: [OnboardingPage]) { self.pages = pages }
+    func continueTapped() { currentIndex >= pages.count - 1 ? (state = .permissionEducation) : (state = .showingPage(currentIndex + 1)) }
+    func maybeLaterTapped() { state = .completed }
+    func permissionsEnabled() { state = .completed }
+}
