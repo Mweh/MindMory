@@ -10,7 +10,7 @@ struct OnboardingView: View {
             switch viewModel.state {
             case .showingPage:
                 VStack(spacing: MindMorySpacing.xl) {
-                    TabView(selection: Binding(get: { viewModel.currentIndex }, set: { _ in })) {
+                    TabView(selection: Binding(get: { viewModel.currentIndex }, set: { viewModel.pageChanged(to: $0) })) {
                         ForEach(Array(viewModel.pages.enumerated()), id: \.element.id) { index, page in
                             OnboardingPageView(page: page, index: index).tag(index)
                         }
