@@ -1,0 +1,84 @@
+# Xcode user settings
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xcbkptlist
+
+# Node modules
+node_modules/
+**/node_modules/
+
+# macOS system files
+.DS_Store
+
+# Android build artifacts
+**/build/
+**/dist/
+**/.build/
+**/.gradle/
+**/.idea/
+**/local.properties
+**/.cxx/
+**/.externalNativeBuild/
+**/captures/
+**/outputs/
+**/intermediates/
+**/generated/
+
+# iOS build artifacts
+**/Pods/
+**/DerivedData/
+**/xcuserdata/
+**/*.xcworkspace
+**/*.xcodeproj/project.xcworkspace/
+**/*.xcodeproj/xcuserdata/
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Misc
+.env
+.env.*
+*.keystore
+*.jks
+*.iml
+*.apk
+*.ap_
+*.hprof
+*.orig
+*.rej
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# Test coverage
+coverage/
+**/coverage/
+
+# React Native
+.expo/
+.expo-shared/
+web-build/ 
+
+# Bundle artifact
+*.jsbundle
+
+# Ruby / CocoaPods
+**/Pods/
+/vendor/*
+.ruby_version
+.nvmrc
+.gitmodules
+
+# Submodules
+ios/
+**/ios/
+android/
+**/android/
+
+package-lock.json
+yarn.lock
