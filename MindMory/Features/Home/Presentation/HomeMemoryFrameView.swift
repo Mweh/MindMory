@@ -37,7 +37,9 @@ struct HomeMemoryFrameView: View {
     }
 
     private var thumbnailView: some View {
-        MemoryImagePlaceholderView(imageName: memory.imageName)
+        Image("onboard1")
+            .resizable()
+            .scaledToFill()
             .frame(
                 width: compact ? 72 : 104,
                 height: compact ? 72 : 104

@@ -90,13 +90,10 @@ struct HomeStateView: View {
             Spacer()
 
             Label("Favorite", systemImage: "star")
-
-            Spacer()
-
-            Label("View in Album", systemImage: "photo.on.rectangle")
         }
         .font(MindMoryTypography.bodySmall)
         .foregroundStyle(MindMoryColors.primaryGreen)
+        .padding(.horizontal, 16)
     }
 
     private var permissionStateView: some View {
