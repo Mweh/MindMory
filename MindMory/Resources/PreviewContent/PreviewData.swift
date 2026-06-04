@@ -48,9 +48,26 @@ enum PreviewData {
     )
 
     static let onboardingPages = [
-        OnboardingPage(id: UUID(uuidString: "00000000-0000-0000-0000-000000000020")!, imageName: "onboarding-moment", title: "When you’re enjoying the moment, taking a photo is easy to forget.", buttonTitle: "Continue"),
-        OnboardingPage(id: UUID(uuidString: "00000000-0000-0000-0000-000000000021")!, imageName: "onboarding-reminder", title: "MindMory gently reminds you at the right time, with words that feel personal and smart.", buttonTitle: "Continue"),
-        OnboardingPage(id: UUID(uuidString: "00000000-0000-0000-0000-000000000022")!, imageName: "onboarding-memory", title: "Jot down your thoughts, see your memories, and share them with the people who matter.", buttonTitle: "Continue")
+        OnboardingPage(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000020")!,
+            imageName: "onboarding-moment",
+            title: "When you’re enjoying the moment, taking a photo is easy to forget.",
+            buttonTitle: "Continue"
+        ),
+        OnboardingPage(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000021")!,
+            imageName: "onboarding-reminder",
+            title: "MindMory gently reminds you at the right time, "
+                + "with words that feel personal and smart.",
+            buttonTitle: "Continue"
+        ),
+        OnboardingPage(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000022")!,
+            imageName: "onboarding-memory",
+            title: "Jot down your thoughts, see your memories, "
+                + "and share them with the people who matter.",
+            buttonTitle: "Continue"
+        )
     ]
 
     static let triggerSettings = ContextTriggerSettings(

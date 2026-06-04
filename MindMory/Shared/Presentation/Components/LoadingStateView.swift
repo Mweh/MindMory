@@ -1,5 +1,9 @@
 import SwiftUI
 
 struct LoadingStateView: View {
-    var body: some View { ProgressView().tint(MindMoryColors.primaryGreen) }
+
+    var body: some View {
+        ProgressView()
+            .tint(MindMoryColors.primaryGreen)
+    }
 }

@@ -6,7 +6,13 @@ struct ShareableMemory: Equatable {
 }
 
 struct GenerateShareableMemoryUseCase {
+
     func execute(memory: Memory) -> ShareableMemory {
-        ShareableMemory(title: memory.title, dateText: memory.dateText, message: memory.subtitle, locationName: memory.locationName)
+        ShareableMemory(
+            title: memory.title,
+            dateText: memory.dateText,
+            message: memory.subtitle,
+            locationName: memory.locationName
+        )
     }
 }

@@ -16,6 +16,12 @@ extension Color {
         default:
             (alpha, red, green, blue) = (255, 0, 0, 0)
         }
-        self.init(.sRGB, red: Double(red) / 255, green: Double(green) / 255, blue: Double(blue) / 255, opacity: Double(alpha) / 255)
+        self.init(
+            .sRGB,
+            red: Double(red) / 255,
+            green: Double(green) / 255,
+            blue: Double(blue) / 255,
+            opacity: Double(alpha) / 255
+        )
     }
 }
