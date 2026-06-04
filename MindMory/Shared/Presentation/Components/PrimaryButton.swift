@@ -6,22 +6,25 @@ struct PrimaryButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(MindMoryTypography.button)
-                .foregroundStyle(MindMoryColors.deepGreen)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, MindMorySpacing.md)
-                .background(MindMoryColors.background)
-                .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-                .overlay(alignment: .bottom) {
-                    RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                        .stroke(MindMoryColors.primaryGreen, lineWidth: 1.4)
-                    Rectangle()
-                        .fill(MindMoryColors.primaryGreen)
-                        .frame(height: 4)
-                        .clipShape(RoundedRectangle(cornerRadius: 2, style: .continuous))
-                        .padding(.horizontal, 2)
-                }
+            ZStack(alignment: .bottom) {
+                RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                    .fill(MindMoryColors.deepGreen)
+                    .frame(height: 58)
+                    .offset(y: 5)
+
+                Text(title)
+                    .font(MindMoryTypography.button)
+                    .foregroundStyle(MindMoryColors.deepGreen)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 58)
+                    .background(MindMoryColors.background)
+                    .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                            .stroke(MindMoryColors.primaryGreen, lineWidth: 1.4)
+                    }
+            }
+            .padding(.bottom, 5)
         }
         .buttonStyle(.plain)
     }
