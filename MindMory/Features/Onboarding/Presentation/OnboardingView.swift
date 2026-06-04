@@ -11,8 +11,32 @@ struct OnboardingView: View {
             MindMoryColors.background
                 .ignoresSafeArea()
 
+            onboardingLeafBackground
+
             contentView
         }
+    }
+
+    @ViewBuilder
+    private var onboardingLeafBackground: some View {
+//        if viewModel.currentIndex == 0 {
+            VStack {
+                Spacer()
+
+                HStack {
+                    Spacer()
+
+                    Image("element-leaf")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 100)
+                        .padding(.trailing, 0)
+                }
+                .padding(.bottom, 140)
+            }
+            .ignoresSafeArea()
+            .accessibilityHidden(true)
+//        }
     }
 
     @ViewBuilder

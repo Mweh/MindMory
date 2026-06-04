@@ -39,33 +39,42 @@ struct MainTabView: View {
     @State private var selectedTab: MainTab = .home
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            selectedContentView
-                .padding(.bottom, 82)
-
-            MainTabBarView(selectedTab: $selectedTab)
-        }
-        .background(MindMoryColors.background.ignoresSafeArea())
-    }
-
-    @ViewBuilder
-    private var selectedContentView: some View {
-        switch selectedTab {
-        case .home:
+        TabView(selection: $selectedTab) {
             HomeView(viewModel: container.makeHomeViewModel())
+                .tabItem {
+                    Label(
+                        MainTab.home.title,
+                        systemImage: MainTab.home.icon
+                    )
+                }
+                .tag(MainTab.home)
 
-        case .album:
             AlbumView(
                 viewModel: container.makeAlbumViewModel(),
                 container: container
             )
+            .tabItem {
+                Label(
+                    MainTab.album.title,
+                    systemImage: MainTab.album.icon
+                )
+            }
+            .tag(MainTab.album)
 
-        case .settings:
             SettingsView(
                 viewModel: container.makeSettingsViewModel(),
                 triggersViewModel: container.makeContextualTriggersViewModel()
             )
+            .tabItem {
+                Label(
+                    MainTab.settings.title,
+                    systemImage: MainTab.settings.icon
+                )
+            }
+            .tag(MainTab.settings)
         }
+        .tint(MindMoryColors.primaryGreen)
+        .background(MindMoryColors.background)
     }
 }
 
