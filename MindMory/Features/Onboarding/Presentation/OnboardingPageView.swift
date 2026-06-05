@@ -26,7 +26,7 @@ struct OnboardingPageView: View {
             )
             .padding(
                 .horizontal,
-                index == 2 ? 0 : MindMorySpacing.xl
+                page.imageName == "onboard3" ? 0 : MindMorySpacing.xl
             )
             .accessibilityHidden(true)
     }
@@ -37,13 +37,13 @@ struct OnboardingPageView: View {
             .foregroundStyle(MindMoryColors.textPrimary)
             .multilineTextAlignment(.center)
             .lineSpacing(4)
-            .padding(.horizontal, MindMorySpacing.xxl)
+            .padding(.horizontal, MindMorySpacing.xl)
     }
 }
 
 #Preview {
     OnboardingPageView(
-        page: PreviewData.onboardingPages[2],
+        page: OnboardingPageCatalog.pages[2],
         index: 2
     )
     .background(MindMoryColors.background)

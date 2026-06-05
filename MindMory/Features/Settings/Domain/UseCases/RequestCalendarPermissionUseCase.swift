@@ -1,5 +1,5 @@
 struct RequestCalendarPermissionUseCase {
     private let repository: PermissionRepositoryProtocol
     init(repository: PermissionRepositoryProtocol) { self.repository = repository }
-    func execute() -> PermissionStatus { repository.requestCalendarPermission() }
+    func execute() async -> PermissionStatus { await repository.requestCalendarPermission() }
 }

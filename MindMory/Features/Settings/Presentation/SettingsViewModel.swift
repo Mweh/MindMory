@@ -8,29 +8,50 @@ struct PermissionRowModel: Identifiable, Equatable {
     var status: PermissionStatus
 }
 
+@MainActor
 final class SettingsViewModel: ObservableObject {
 
     @Published private(set) var permissionRows: [PermissionRowModel]
+    @Published private(set) var isRequestingPermissions = false
 
+    private let permissionRepository: PermissionRepositoryProtocol
     private let requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase
     private let requestLocationPermissionUseCase: RequestLocationPermissionUseCase
     private let requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase
 
     init(
+        permissionRepository: PermissionRepositoryProtocol,
         requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase,
         requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
         requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase
     ) {
+        self.permissionRepository = permissionRepository
         self.requestNotificationPermissionUseCase = requestNotificationPermissionUseCase
         self.requestLocationPermissionUseCase = requestLocationPermissionUseCase
         self.requestCalendarPermissionUseCase = requestCalendarPermissionUseCase
         self.permissionRows = Self.defaultPermissionRows
+
+        Task {
+            await refreshStatuses()
+        }
     }
 
-    func requestAll() {
-        permissionRows[0].status = requestNotificationPermissionUseCase.execute()
-        permissionRows[1].status = requestLocationPermissionUseCase.execute()
-        permissionRows[2].status = requestCalendarPermissionUseCase.execute()
+    func requestAll() async {
+        guard !isRequestingPermissions else {
+            return
+        }
+
+        isRequestingPermissions = true
+        permissionRows[0].status = await requestNotificationPermissionUseCase.execute()
+        permissionRows[1].status = await requestLocationPermissionUseCase.execute()
+        permissionRows[2].status = await requestCalendarPermissionUseCase.execute()
+        isRequestingPermissions = false
+    }
+
+    func refreshStatuses() async {
+        permissionRows[0].status = await permissionRepository.notificationStatus()
+        permissionRows[1].status = await permissionRepository.locationStatus()
+        permissionRows[2].status = await permissionRepository.calendarStatus()
     }
 
     private static var defaultPermissionRows: [PermissionRowModel] {

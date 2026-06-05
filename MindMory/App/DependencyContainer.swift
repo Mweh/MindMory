@@ -10,7 +10,7 @@ final class DependencyContainer: ObservableObject {
     init(
         memoryRepository: MemoryRepositoryProtocol = MockMemoryRepository(),
         reminderRepository: ReminderRepositoryProtocol = MockReminderRepository(),
-        permissionRepository: PermissionRepositoryProtocol = MockPermissionRepository(),
+        permissionRepository: PermissionRepositoryProtocol = NativePermissionRepository(),
         contextRepository: ContextRepositoryProtocol = MockContextRepository()
     ) {
         self.memoryRepository = memoryRepository
@@ -19,10 +19,17 @@ final class DependencyContainer: ObservableObject {
         self.contextRepository = contextRepository
     }
 
-    func makeOnboardingViewModel() -> OnboardingViewModel { OnboardingViewModel(pages: PreviewData.onboardingPages) }
+    func makeOnboardingViewModel() -> OnboardingViewModel {
+        OnboardingViewModel(
+            pages: OnboardingPageCatalog.pages,
+            requestLocationPermissionUseCase: RequestLocationPermissionUseCase(repository: permissionRepository),
+            requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase(repository: permissionRepository),
+            requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: permissionRepository)
+        )
+    }
     func makeHomeViewModel() -> HomeViewModel { HomeViewModel(getTodayReminderUseCase: GetTodayReminderUseCase(repository: reminderRepository), memories: memoryRepository.fetchMemories()) }
     func makeAlbumViewModel() -> AlbumViewModel { AlbumViewModel(getAlbumMemoriesUseCase: GetAlbumMemoriesUseCase(repository: memoryRepository), getFavoriteMemoriesUseCase: GetFavoriteMemoriesUseCase(repository: memoryRepository)) }
     func makeMemoryDetailViewModel(memory: Memory) -> MemoryDetailViewModel { MemoryDetailViewModel(memory: memory, saveJournalEntryUseCase: SaveJournalEntryUseCase(repository: memoryRepository), toggleFavoriteMemoryUseCase: ToggleFavoriteMemoryUseCase(repository: memoryRepository), generateShareableMemoryUseCase: GenerateShareableMemoryUseCase()) }
-    func makeSettingsViewModel() -> SettingsViewModel { SettingsViewModel(requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: permissionRepository), requestLocationPermissionUseCase: RequestLocationPermissionUseCase(repository: permissionRepository), requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase(repository: permissionRepository)) }
+    func makeSettingsViewModel() -> SettingsViewModel { SettingsViewModel(permissionRepository: permissionRepository, requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: permissionRepository), requestLocationPermissionUseCase: RequestLocationPermissionUseCase(repository: permissionRepository), requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase(repository: permissionRepository)) }
     func makeContextualTriggersViewModel() -> ContextualTriggersViewModel { ContextualTriggersViewModel(repository: contextRepository) }
 }

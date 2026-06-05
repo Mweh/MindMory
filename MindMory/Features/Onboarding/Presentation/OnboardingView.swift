@@ -1,8 +1,12 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct OnboardingView: View {
 
     @StateObject var viewModel: OnboardingViewModel
+    @Environment(\.openURL) private var openURL
 
     let onComplete: () -> Void
 
@@ -15,28 +19,50 @@ struct OnboardingView: View {
 
             contentView
         }
+        .alert(
+            alertTitle,
+            isPresented: Binding(
+                get: { viewModel.activeAlert != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        viewModel.dismissPermissionAlert()
+                    }
+                }
+            ),
+            presenting: viewModel.activeAlert
+        ) { alert in
+            if settingsURL != nil {
+                Button("Open Settings") {
+                    openSettings()
+                }
+            }
+
+            Button("Continue") {
+                viewModel.continueAfterPermissionAlert()
+            }
+        } message: { alert in
+            Text(alertMessage(for: alert))
+        }
     }
 
     @ViewBuilder
     private var onboardingLeafBackground: some View {
-//        if viewModel.currentIndex == 0 {
-            VStack {
+        VStack {
+            Spacer()
+
+            HStack {
                 Spacer()
 
-                HStack {
-                    Spacer()
-
-                    Image("element-leaf")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 100)
-                        .padding(.trailing, 0)
-                }
-                .padding(.bottom, 140)
+                Image("element-leaf")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 100)
+                    .padding(.trailing, 0)
             }
-            .ignoresSafeArea()
-            .accessibilityHidden(true)
-//        }
+            .padding(.bottom, 140)
+        }
+        .ignoresSafeArea()
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder
@@ -44,13 +70,6 @@ struct OnboardingView: View {
         switch viewModel.state {
         case .showingPage:
             onboardingPagesView
-
-        case .permissionEducation:
-            PermissionEducationView(
-                enableAction: viewModel.permissionsEnabled,
-                laterAction: viewModel.maybeLaterTapped
-            )
-            .padding(MindMorySpacing.xl)
 
         case .completed:
             Color.clear
@@ -75,6 +94,7 @@ struct OnboardingView: View {
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .allowsHitTesting(!viewModel.isProcessingPermission)
 
             PageDots(
                 count: viewModel.pages.count,
@@ -82,12 +102,47 @@ struct OnboardingView: View {
             )
 
             PrimaryButton(
-                title: viewModel.pages[viewModel.currentIndex].buttonTitle,
-                action: viewModel.continueTapped
+                title: "Continue",
+                action: {
+                    Task {
+                        await viewModel.continueTapped()
+                    }
+                },
+                isLoading: viewModel.isProcessingPermission
             )
+            .disabled(viewModel.isProcessingPermission)
             .padding(.horizontal, MindMorySpacing.xl)
         }
         .padding(.bottom, MindMorySpacing.xl)
+    }
+
+    private var alertTitle: String {
+        "Permission Needed"
+    }
+
+    private var settingsURL: URL? {
+#if canImport(UIKit)
+        URL(string: UIApplication.openSettingsURLString)
+#else
+        nil
+#endif
+    }
+
+    private func openSettings() {
+        guard let settingsURL else {
+            viewModel.dismissPermissionAlert()
+            return
+        }
+
+        openURL(settingsURL)
+        viewModel.dismissPermissionAlert()
+    }
+
+    private func alertMessage(for alert: OnboardingAlert) -> String {
+        switch alert {
+        case let .permissionDenied(permission):
+            return permission.deniedMessage
+        }
     }
 }
 
@@ -114,7 +169,10 @@ private struct PageDots: View {
 #Preview {
     OnboardingView(
         viewModel: OnboardingViewModel(
-            pages: PreviewData.onboardingPages
+            pages: OnboardingPageCatalog.pages,
+            requestLocationPermissionUseCase: RequestLocationPermissionUseCase(repository: MockPermissionRepository()),
+            requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase(repository: MockPermissionRepository()),
+            requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: MockPermissionRepository())
         ),
         onComplete: {}
     )

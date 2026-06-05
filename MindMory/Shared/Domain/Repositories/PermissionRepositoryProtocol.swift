@@ -1,8 +1,8 @@
 protocol PermissionRepositoryProtocol {
-    func notificationStatus() -> PermissionStatus
-    func locationStatus() -> PermissionStatus
-    func calendarStatus() -> PermissionStatus
-    func requestNotificationPermission() -> PermissionStatus
-    func requestLocationPermission() -> PermissionStatus
-    func requestCalendarPermission() -> PermissionStatus
+    func notificationStatus() async -> PermissionStatus
+    func locationStatus() async -> PermissionStatus
+    func calendarStatus() async -> PermissionStatus
+    func requestNotificationPermission() async -> PermissionStatus
+    func requestLocationPermission() async -> PermissionStatus
+    func requestCalendarPermission() async -> PermissionStatus
 }

@@ -3,9 +3,20 @@ import SwiftUI
 struct PrimaryButton: View {
     let title: String
     let action: () -> Void
+    var isLoading = false
 
     var body: some View {
-        Button(title, action: action)
+        Button(action: action) {
+            ZStack {
+                Text(title)
+                    .opacity(isLoading ? 0 : 1)
+
+                if isLoading {
+                    ProgressView()
+                        .tint(MindMoryColors.deepGreen)
+                }
+            }
+        }
             .buttonStyle(MindMoryPrimaryButtonStyle())
     }
 }

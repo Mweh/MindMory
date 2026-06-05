@@ -47,8 +47,13 @@ struct SettingsView: View {
 
                 PrimaryButton(
                     title: "Enable Smart Reminders",
-                    action: viewModel.requestAll
+                    action: {
+                        Task {
+                            await viewModel.requestAll()
+                        }
+                    }
                 )
+                .disabled(viewModel.isRequestingPermissions)
             }
         }
     }
