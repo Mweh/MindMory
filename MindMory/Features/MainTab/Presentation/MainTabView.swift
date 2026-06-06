@@ -62,8 +62,7 @@ struct MainTabView: View {
             .tag(MainTab.album)
 
             SettingsView(
-                viewModel: container.makeSettingsViewModel(),
-                triggersViewModel: container.makeContextualTriggersViewModel()
+                viewModel: container.makeSettingsViewModel()
             )
             .tabItem {
                 Label(

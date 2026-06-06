@@ -12,7 +12,8 @@ final class NativePermissionRepository: NSObject, PermissionRepositoryProtocol {
     }
 
     func locationStatus() async -> PermissionStatus {
-        Self.mapLocationStatus(CLLocationManager().authorizationStatus)
+        let status = await Task.detached { CLLocationManager().authorizationStatus }.value
+        return Self.mapLocationStatus(status)
     }
 
     func calendarStatus() async -> PermissionStatus {
@@ -45,7 +46,7 @@ final class NativePermissionRepository: NSObject, PermissionRepositoryProtocol {
             return .denied
         }
 
-        let currentStatus = CLLocationManager().authorizationStatus
+        let currentStatus = await Task.detached { CLLocationManager().authorizationStatus }.value
         if currentStatus != .notDetermined {
             return Self.mapLocationStatus(currentStatus)
         }
@@ -114,7 +115,6 @@ final class NativePermissionRepository: NSObject, PermissionRepositoryProtocol {
     }
 }
 
-@MainActor
 private final class LocationPermissionRequestor: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private var continuation: CheckedContinuation<PermissionStatus, Never>?
@@ -125,14 +125,16 @@ private final class LocationPermissionRequestor: NSObject, CLLocationManagerDele
     }
 
     func requestWhenInUseAuthorization() async -> PermissionStatus {
-        let status = manager.authorizationStatus
+        let status = await Task.detached { CLLocationManager().authorizationStatus }.value
         if status != .notDetermined {
             return NativePermissionRepository.mapLocationStatus(status)
         }
 
         return await withCheckedContinuation { continuation in
             self.continuation = continuation
-            manager.requestWhenInUseAuthorization()
+            Task { @MainActor in
+                manager.requestWhenInUseAuthorization()
+            }
         }
     }
 
