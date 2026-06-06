@@ -6,17 +6,20 @@ final class DependencyContainer: ObservableObject {
     private let reminderRepository: ReminderRepositoryProtocol
     private let permissionRepository: PermissionRepositoryProtocol
     private let contextRepository: ContextRepositoryProtocol
+    private let calendarRepository: CalendarRepositoryProtocol
 
     init(
         memoryRepository: MemoryRepositoryProtocol = MockMemoryRepository(),
         reminderRepository: ReminderRepositoryProtocol = MockReminderRepository(),
         permissionRepository: PermissionRepositoryProtocol = MockPermissionRepository(),
-        contextRepository: ContextRepositoryProtocol = MockContextRepository()
+        contextRepository: ContextRepositoryProtocol = MockContextRepository(),
+        calendarRepository: CalendarRepositoryProtocol = CalendarRepository()
     ) {
         self.memoryRepository = memoryRepository
         self.reminderRepository = reminderRepository
         self.permissionRepository = permissionRepository
         self.contextRepository = contextRepository
+        self.calendarRepository = calendarRepository
     }
 
     func makeOnboardingViewModel() -> OnboardingViewModel { OnboardingViewModel(pages: PreviewData.onboardingPages) }
@@ -25,4 +28,5 @@ final class DependencyContainer: ObservableObject {
     func makeMemoryDetailViewModel(memory: Memory) -> MemoryDetailViewModel { MemoryDetailViewModel(memory: memory, saveJournalEntryUseCase: SaveJournalEntryUseCase(repository: memoryRepository), toggleFavoriteMemoryUseCase: ToggleFavoriteMemoryUseCase(repository: memoryRepository), generateShareableMemoryUseCase: GenerateShareableMemoryUseCase()) }
     func makeSettingsViewModel() -> SettingsViewModel { SettingsViewModel(requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: permissionRepository), requestLocationPermissionUseCase: RequestLocationPermissionUseCase(repository: permissionRepository), requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase(repository: permissionRepository)) }
     func makeContextualTriggersViewModel() -> ContextualTriggersViewModel { ContextualTriggersViewModel(repository: contextRepository) }
+    func makeFetchUpcomingCalendarEventsUseCase() -> FetchUpcomingCalendarEventsUseCase { FetchUpcomingCalendarEventsUseCase(repository: calendarRepository) }
 }

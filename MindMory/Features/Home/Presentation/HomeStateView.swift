@@ -109,3 +109,23 @@ struct HomeStateView: View {
         }
     }
 }
+
+#Preview("Positive State") {
+    HomeStateView(state: .positive(PreviewData.reminder, PreviewData.aromaMemory))
+}
+
+#Preview("Loading State") {
+    HomeStateView(state: .loading)
+}
+
+#Preview("Empty State") {
+    HomeStateView(state: .empty)
+}
+
+#Preview("Permission Required") {
+    HomeStateView(state: .permissionRequired)
+}
+
+#Preview("Error State") {
+    HomeStateView(state: .error("Something went wrong. Please try again."))
+}
