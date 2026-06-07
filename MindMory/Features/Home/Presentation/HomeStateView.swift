@@ -26,9 +26,10 @@ struct HomeStateView: View {
 
         case .empty:
             EmptyStateView(
-                title: "No reminder right now.",
-                message: "We’ll nudge you when a moment feels worth keeping."
+                title: "Your first reminder is being prepared.",
+                message: "We're learning the moments that matter to you so we can remind you at the right time"
             )
+            .frame(maxWidth: .infinity, minHeight: 500)
 
         case .permissionRequired:
             permissionStateView
