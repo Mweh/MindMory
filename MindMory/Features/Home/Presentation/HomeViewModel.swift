@@ -1,5 +1,7 @@
-import SwiftUI
 import Combine
+import Photos
+import SwiftUI
+import UIKit
 
 enum HomeViewState: Equatable {
     case loading
@@ -113,10 +115,53 @@ final class HomeViewModel: ObservableObject {
         isShowingSharePreview = false
     }
 
+    @MainActor
     func didTapAllowPhotoAccess() {
-        statusMessageForPhotoAccessRequest()
+        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+
+        switch status {
+        case .notDetermined:
+            PHPhotoLibrary.requestAuthorization(for: .readWrite) { [weak self] newStatus in
+                Task { @MainActor in
+                    self?.handlePhotoAuthorizationStatus(newStatus)
+                }
+            }
+
+        case .denied, .restricted:
+            openAppSettings()
+
+        case .authorized, .limited:
+            handlePhotoAuthorizationStatus(status)
+
+        @unknown default:
+            break
+        }
     }
 
+    @MainActor
+    private func handlePhotoAuthorizationStatus(_ status: PHAuthorizationStatus) {
+        switch status {
+        case .authorized, .limited:
+            homeCardState = .normal
+
+        case .denied, .restricted:
+            homeCardState = .photoAccessDenied
+
+        case .notDetermined:
+            break
+
+        @unknown default:
+            break
+        }
+    }
+
+    private func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else {
+            return
+        }
+
+        UIApplication.shared.open(url)
+    }
     private func statusMessageForPhotoAccessRequest() {
         // Placeholder hook for a future real Photos permission flow.
     }

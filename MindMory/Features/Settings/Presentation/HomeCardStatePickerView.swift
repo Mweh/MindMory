@@ -4,7 +4,7 @@ struct HomeCardStatePickerView: View {
     @Binding var selectedState: HomeCardState
 
     var body: some View {
-        Picker("Home Card State", selection: $selectedState) {
+        Picker("Choose a state:", selection: $selectedState) {
             ForEach(HomeCardState.allCases) { state in
                 Text(state.title).tag(state)
             }

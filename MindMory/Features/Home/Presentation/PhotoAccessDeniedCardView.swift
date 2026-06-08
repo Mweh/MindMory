@@ -10,22 +10,10 @@ struct PhotoAccessDeniedCardView: View {
                     .font(.system(size: 58, weight: .regular))
                     .foregroundStyle(MindMoryColors.deepGreen)
 
-                Button(action: allowAction) {
-                    Text("Allow Photo Access")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                        .foregroundStyle(MindMoryColors.deepGreen)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 54)
-                        .background(MindMoryColors.surface.opacity(0.5))
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous)
-                                .stroke(MindMoryColors.deepGreen, lineWidth: 1)
-                        }
-                        .shadow(color: MindMoryColors.deepGreen.opacity(0.9), radius: 0, x: 0, y: 5)
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, MindMorySpacing.md)
+                PrimaryButton(
+                    title: "Allow Photo Access",
+                    action: allowAction
+                )
 
                 Text("You might want to see your\nprevious memory")
                     .font(.system(size: 24, weight: .regular, design: .rounded))
@@ -36,10 +24,4 @@ struct PhotoAccessDeniedCardView: View {
             .padding(.horizontal, MindMorySpacing.lg)
         }
     }
-}
-
-#Preview {
-    PhotoAccessDeniedCardView(allowAction: {})
-        .padding()
-        .background(MindMoryColors.background)
 }
