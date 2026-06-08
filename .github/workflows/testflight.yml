@@ -1,0 +1,24 @@
+name: Upload TestFlight Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  testflight:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Ruby dependencies
+        run: bundle install
+
+      - name: Upload to TestFlight
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+        run: bundle exec fastlane beta

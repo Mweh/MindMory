@@ -38,11 +38,10 @@ final class PhotoAccessDeniedCardViewModel: ObservableObject {
     }
 
     private func requestPhotoAccess() {
-        PHPhotoLibrary.requestAuthorization(for: .readWrite) { [weak self] status in
-            Task { @MainActor in
-                self?.authorizationStatus = status
-                self?.buttonTitle = Self.makeButtonTitle(for: status)
-            }
+        Task {
+            let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+            authorizationStatus = status
+            buttonTitle = Self.makeButtonTitle(for: status)
         }
     }
 

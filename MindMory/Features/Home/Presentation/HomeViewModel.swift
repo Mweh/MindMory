@@ -121,10 +121,9 @@ final class HomeViewModel: ObservableObject {
 
         switch status {
         case .notDetermined:
-            PHPhotoLibrary.requestAuthorization(for: .readWrite) { [weak self] newStatus in
-                Task { @MainActor in
-                    self?.handlePhotoAuthorizationStatus(newStatus)
-                }
+            Task {
+                let newStatus = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+                handlePhotoAuthorizationStatus(newStatus)
             }
 
         case .denied, .restricted:
