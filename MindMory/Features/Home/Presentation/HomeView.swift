@@ -17,15 +17,7 @@ struct HomeView: View {
 
                     if let memory = viewModel.focusedMemory {
                         favoriteHeader
-
-                        InteractiveMemoryCardView(
-                            memory: memory,
-                            debugImageURL: viewModel.debugHomeCardImageURL,
-                            side: $viewModel.cardSide,
-                            captionText: $viewModel.captionText,
-                            flipAction: viewModel.flipCard,
-                            shareAction: viewModel.showSharePreview
-                        )
+                        homeCard(for: memory)
                     }
                 }
                 .padding(.horizontal, MindMorySpacing.xl)
@@ -47,6 +39,27 @@ struct HomeView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func homeCard(for memory: Memory) -> some View {
+        switch viewModel.homeCardState {
+        case .normal:
+            InteractiveMemoryCardView(
+                memory: memory,
+                debugImageURL: viewModel.debugHomeCardImageURL,
+                side: $viewModel.cardSide,
+                captionText: $viewModel.captionText,
+                flipAction: viewModel.flipCard,
+                shareAction: viewModel.showSharePreview
+            )
+        case .firstReminderPrepared:
+            FirstReminderPreparedCardView()
+        case .photoAccessDenied:
+            PhotoAccessDeniedCardView(
+                allowAction: viewModel.didTapAllowPhotoAccess
+            )
         }
     }
 

@@ -9,6 +9,12 @@ final class QADebugToolsViewModel: ObservableObject {
     @Published var skipOnboarding: Bool {
         didSet { repository.hasCompletedOnboarding = skipOnboarding }
     }
+    @Published var homeCardState: HomeCardState {
+        didSet {
+            repository.qaHomeCardState = homeCardState
+            NotificationCenter.default.post(name: .qaDebugHomeCardStateDidChange, object: nil)
+        }
+    }
     @Published private(set) var selectedImageURL: URL?
     @Published var statusMessage: String?
 
@@ -22,6 +28,7 @@ final class QADebugToolsViewModel: ObservableObject {
         self.repository = repository
         self.imageStorageService = imageStorageService
         self.skipOnboarding = repository.hasCompletedOnboarding
+        self.homeCardState = repository.qaHomeCardState
         self.selectedImageURL = imageStorageService.imageURL(
             path: repository.debugHomeCardImagePath
         )
@@ -65,4 +72,5 @@ final class QADebugToolsViewModel: ObservableObject {
 
 extension Notification.Name {
     static let qaDebugHomeCardImageDidChange = Notification.Name("qaDebugHomeCardImageDidChange")
+    static let qaDebugHomeCardStateDidChange = Notification.Name("qaDebugHomeCardStateDidChange")
 }

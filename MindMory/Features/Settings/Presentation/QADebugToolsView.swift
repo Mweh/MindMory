@@ -21,6 +21,14 @@ struct QADebugToolsView: View {
             }
 
             Section {
+                HomeCardStatePickerView(selectedState: $viewModel.homeCardState)
+            } header: {
+                Text("Home Card State")
+            } footer: {
+                Text("Controls which large Home card is shown for QA testing.")
+            }
+
+            Section {
                 currentImagePreview
 
                 PhotosPicker(

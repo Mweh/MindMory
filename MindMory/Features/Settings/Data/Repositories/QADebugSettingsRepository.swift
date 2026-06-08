@@ -6,6 +6,7 @@ final class QADebugSettingsRepository: QADebugSettingsRepositoryProtocol {
         static let qaDebugModeEnabled = "qaDebugModeEnabled"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let debugHomeCardImagePath = "debugHomeCardImagePath"
+        static let qaHomeCardState = "qaHomeCardState"
     }
 
     private let userDefaults: UserDefaults
@@ -27,5 +28,16 @@ final class QADebugSettingsRepository: QADebugSettingsRepositoryProtocol {
     var debugHomeCardImagePath: String? {
         get { userDefaults.string(forKey: Keys.debugHomeCardImagePath) }
         set { userDefaults.set(newValue, forKey: Keys.debugHomeCardImagePath) }
+    }
+
+    var qaHomeCardState: HomeCardState {
+        get {
+            guard let rawValue = userDefaults.string(forKey: Keys.qaHomeCardState) else {
+                return .normal
+            }
+
+            return HomeCardState(rawValue: rawValue) ?? .normal
+        }
+        set { userDefaults.set(newValue.rawValue, forKey: Keys.qaHomeCardState) }
     }
 }

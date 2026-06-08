@@ -39,6 +39,7 @@ final class HomeViewModel: ObservableObject {
     @Published var selectedStat: SelectedStatCard? = nil
     @Published var cardSide: MemoryCardSide = .front
     @Published var captionText = ""
+    @Published var homeCardState: HomeCardState = .normal
     @Published var isShowingSharePreview = false
     @Published private(set) var debugHomeCardImageURL: URL?
 
@@ -66,6 +67,14 @@ final class HomeViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .qaDebugHomeCardStateDidChange)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.refreshHomeCardState()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     func load() {
@@ -73,6 +82,7 @@ final class HomeViewModel: ObservableObject {
         captionText = focusedMemory?.journalText ?? ""
         statCards = makeStatCards()
         refreshDebugHomeCardImage()
+        refreshHomeCardState()
         state = focusedMemory == nil ? .empty : .positive(
             Reminder(
                 id: UUID(),
@@ -103,6 +113,14 @@ final class HomeViewModel: ObservableObject {
         isShowingSharePreview = false
     }
 
+    func didTapAllowPhotoAccess() {
+        statusMessageForPhotoAccessRequest()
+    }
+
+    private func statusMessageForPhotoAccessRequest() {
+        // Placeholder hook for a future real Photos permission flow.
+    }
+
     private func refreshDebugHomeCardImage() {
         #if DEBUG
         debugHomeCardImageURL = debugImageStorageService.imageURL(
@@ -110,6 +128,14 @@ final class HomeViewModel: ObservableObject {
         )
         #else
         debugHomeCardImageURL = nil
+        #endif
+    }
+
+    private func refreshHomeCardState() {
+        #if DEBUG
+        homeCardState = qaDebugSettingsRepository.qaHomeCardState
+        #else
+        homeCardState = .normal
         #endif
     }
 
