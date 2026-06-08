@@ -6,20 +6,6 @@ struct EmptyStateView: View {
     let message: String
 
     var body: some View {
-//        VStack(spacing: MindMorySpacing.sm) {
-//            IconBadgeView(systemName: "sparkles")
-//
-//            Text(title)
-//                .font(MindMoryTypography.headingMedium)
-//                .foregroundStyle(MindMoryColors.textPrimary)
-//
-//            Text(message)
-//                .font(MindMoryTypography.bodyMedium)
-//                .foregroundStyle(MindMoryColors.textSecondary)
-//                .multilineTextAlignment(.center)
-//        }
-//        .padding(MindMorySpacing.xl)
-        
         VStack {
             Image(systemName: "bell")
                 .foregroundColor(MindMoryColors.primaryGreen)
@@ -39,6 +25,7 @@ struct EmptyStateView: View {
         }
         .padding(MindMorySpacing.xl)
         .background(MindMoryColors.surface)
+        .cornerRadius(MindMoryRadius.medium)
     }
 }
 
