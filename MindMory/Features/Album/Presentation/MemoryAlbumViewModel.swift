@@ -9,10 +9,38 @@ final class MemoryAlbumViewModel: AlbumCreationViewModel {
         createAlbumUseCase: CreateAlbumUseCase = CreateAlbumUseCase()
     ) {
         super.init(category: .memory, loadAlbumPhotosUseCase: loadAlbumPhotosUseCase, createAlbumUseCase: createAlbumUseCase)
+
+        sections = [
+            MemoryAlbumSection(textSection: MemoryAlbumTextSection(
+                templateVariant: 0,
+                blockType: .titleAndDescription,
+                horizontalAlignment: .leading,
+                verticalAlignment: .top,
+                isTitleFirst: true,
+                title: "A memory headline",
+                description: "Describe this memory section with context and feelings.",
+                style: .default
+            )),
+            MemoryAlbumSection(layoutCount: 1, layoutVariant: 0, photos: [nil])
+        ]
     }
 
     func addSection(_ section: MemoryAlbumSection) {
         sections.append(section)
+    }
+
+    func insertSection(_ section: MemoryAlbumSection, at index: Int) {
+        let adjustedIndex = min(max(index, 0), sections.count)
+        sections.insert(section, at: adjustedIndex)
+    }
+
+    func updateSection(_ updatedSection: MemoryAlbumSection) {
+        guard let sectionIndex = sections.firstIndex(where: { $0.id == updatedSection.id }) else { return }
+        sections[sectionIndex] = updatedSection
+    }
+
+    func removeSection(id: UUID) {
+        sections.removeAll { $0.id == id }
     }
 
     func updateSectionPhoto(sectionId: UUID, index: Int, photo: AlbumPhoto) {

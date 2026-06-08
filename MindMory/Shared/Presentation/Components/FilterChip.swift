@@ -10,8 +10,10 @@ struct FilterChip: View {
             Text(title)
                 .font(MindMoryTypography.bodySmall)
                 .foregroundStyle(isSelected ? Color.white : MindMoryColors.textPrimary)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
                 .padding(.horizontal, MindMorySpacing.md)
-                .padding(.vertical, MindMorySpacing.xs)
+                .padding(.vertical, MindMorySpacing.sm)
                 .background(isSelected ? MindMoryColors.primaryGreen : MindMoryColors.surface)
                 .clipShape(Capsule())
                 .overlay(

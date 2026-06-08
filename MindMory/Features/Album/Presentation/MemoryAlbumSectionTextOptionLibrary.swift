@@ -6,26 +6,35 @@ struct MemoryAlbumTextSectionRenderView: View {
 
     var body: some View {
         content
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: combinedAlignment)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: textSection.isAdaptive ? .center : combinedAlignment)
     }
 
     private var content: some View {
-        VStack(alignment: stackHorizontalAlignment, spacing: MindMorySpacing.xs) {
-            if textSection.blockType == .titleAndDescription {
-                if textSection.isTitleFirst {
+        if textSection.isAdaptive {
+            return AnyView(
+                titleView
+                    .frame(maxWidth: .infinity, alignment: .center)
+            )
+        }
+
+        return AnyView(
+            VStack(alignment: stackHorizontalAlignment, spacing: MindMorySpacing.xs) {
+                if textSection.blockType == .titleAndDescription {
+                    if textSection.isTitleFirst {
+                        titleView
+                        descriptionView
+                    } else {
+                        descriptionView
+                        titleView
+                    }
+                } else if textSection.blockType == .titleOnly {
                     titleView
-                    descriptionView
                 } else {
                     descriptionView
-                    titleView
                 }
-            } else if textSection.blockType == .titleOnly {
-                titleView
-            } else {
-                descriptionView
             }
-        }
-        .frame(maxWidth: .infinity, alignment: frameHorizontalAlignment)
+            .frame(maxWidth: .infinity, alignment: frameHorizontalAlignment)
+        )
     }
 
     private var titleView: some View {
