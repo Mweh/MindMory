@@ -14,11 +14,12 @@ struct ExpandableStatCardView: View {
                     Group {
                         if isSelected {
                             expandedContent
+                                .padding(MindMorySpacing.md)
                         } else {
                             compactContent
+                                .padding(MindMorySpacing.sm)
                         }
                     }
-                    .padding(isSelected ? MindMorySpacing.lg : MindMorySpacing.sm)
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
                 .clipShape(cardShape)
@@ -37,7 +38,7 @@ struct ExpandableStatCardView: View {
     }
 
     private var compactContent: some View {
-        VStack(spacing: 6) {
+        VStack(alignment: .center, spacing: 6) {
             Text(card.title)
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.white.opacity(0.92))
@@ -57,6 +58,7 @@ struct ExpandableStatCardView: View {
                 .minimumScaleFactor(0.65)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .multilineTextAlignment(.center)
     }
 
     @ViewBuilder
@@ -69,28 +71,29 @@ struct ExpandableStatCardView: View {
     }
 
     private var standardExpandedContent: some View {
-        VStack(spacing: MindMorySpacing.md) {
+        VStack(spacing: 6) {
             Text(card.title)
                 .font(.system(size: 24, weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.white.opacity(0.96))
 
             Text(expandedPrimaryValue)
-                .font(.system(size: 76, weight: .regular, design: .serif))
+                .font(.system(size: 62, weight: .regular, design: .serif))
                 .foregroundStyle(Color.white.opacity(0.96))
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
 
             Text(card.secondaryValue)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.white.opacity(0.92))
 
             HStack(spacing: MindMorySpacing.xl) {
                 detailColumn(number: "12", label: "This Month")
                 detailColumn(number: "20", label: "This Year")
             }
-            .padding(.top, MindMorySpacing.xs)
+            .padding(.top, 2)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .multilineTextAlignment(.center)
     }
 
     private var visitedExpandedContent: some View {
@@ -132,7 +135,7 @@ struct ExpandableStatCardView: View {
     private func detailColumn(number: String, label: String) -> some View {
         VStack(spacing: 2) {
             Text(number)
-                .font(.system(size: 34, weight: .regular, design: .rounded))
+                .font(.system(size: 30, weight: .regular, design: .rounded))
             Text(label)
                 .font(.system(size: 12, weight: .regular, design: .rounded))
         }
