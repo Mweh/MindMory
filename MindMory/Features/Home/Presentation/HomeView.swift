@@ -18,6 +18,7 @@ struct HomeView: View {
                     if let memory = viewModel.focusedMemory {
                         InteractiveMemoryCardView(
                             memory: memory,
+                            debugImageURL: viewModel.debugHomeCardImageURL,
                             side: $viewModel.cardSide,
                             captionText: $viewModel.captionText,
                             flipAction: viewModel.flipCard,
@@ -38,6 +39,7 @@ struct HomeView: View {
                 ShareMemoryPreviewView(
                     memory: memory,
                     captionText: viewModel.captionText,
+                    debugImageURL: viewModel.debugHomeCardImageURL,
                     dismissAction: viewModel.dismissSharePreview
                 )
                 .presentationDetents([.large])

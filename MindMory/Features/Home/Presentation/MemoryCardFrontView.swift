@@ -2,12 +2,13 @@ import SwiftUI
 
 struct MemoryCardFrontView: View {
     let memory: Memory
+    var debugImageURL: URL? = nil
     let photoParallax: CGSize
     let contentParallax: CGSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-            MemoryImagePlaceholderView(imageName: memory.imageName)
+            MemoryImagePlaceholderView(imageName: memory.imageName, debugImageURL: debugImageURL)
                 .frame(height: 295)
                 .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous))
                 .offset(photoParallax)

@@ -17,6 +17,7 @@ struct MemoryShareImage: Transferable {
 struct ShareMemoryPreviewView: View {
     let memory: Memory
     let captionText: String
+    var debugImageURL: URL? = nil
     let dismissAction: () -> Void
 
     @Environment(\.displayScale) private var displayScale
@@ -38,7 +39,7 @@ struct ShareMemoryPreviewView: View {
                     }
                     .multilineTextAlignment(.center)
 
-                    StackedShareCardView(memory: memory, captionText: captionText)
+                    StackedShareCardView(memory: memory, captionText: captionText, debugImageURL: debugImageURL)
 
                     if let renderError {
                         Text(renderError)
@@ -99,7 +100,8 @@ struct ShareMemoryPreviewView: View {
         let renderer = ImageRenderer(
             content: ShareableMemoryExportView(
                 memory: memory,
-                captionText: captionText
+                captionText: captionText,
+                debugImageURL: debugImageURL
             )
         )
         renderer.scale = displayScale

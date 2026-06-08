@@ -40,21 +40,39 @@ final class HomeViewModel: ObservableObject {
     @Published var cardSide: MemoryCardSide = .front
     @Published var captionText = ""
     @Published var isShowingSharePreview = false
+    @Published private(set) var debugHomeCardImageURL: URL?
 
     private let memories: [Memory]
+    private let qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
+    private let debugImageStorageService: DebugImageStorageService
+    private var cancellables = Set<AnyCancellable>()
 
     var eventName: String {
         focusedMemory?.locationName ?? focusedMemory?.title ?? "this moment"
     }
 
-    init(memories: [Memory]) {
+    init(
+        memories: [Memory],
+        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol = QADebugSettingsRepository(),
+        debugImageStorageService: DebugImageStorageService = DebugImageStorageService()
+    ) {
         self.memories = memories
+        self.qaDebugSettingsRepository = qaDebugSettingsRepository
+        self.debugImageStorageService = debugImageStorageService
+        NotificationCenter.default.publisher(for: .qaDebugHomeCardImageDidChange)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.refreshDebugHomeCardImage()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     func load() {
         focusedMemory = memories.first(where: \.isFavorite) ?? memories.first
         captionText = focusedMemory?.journalText ?? ""
         statCards = makeStatCards()
+        refreshDebugHomeCardImage()
         state = focusedMemory == nil ? .empty : .positive(
             Reminder(
                 id: UUID(),
@@ -81,6 +99,16 @@ final class HomeViewModel: ObservableObject {
 
     func dismissSharePreview() {
         isShowingSharePreview = false
+    }
+
+    private func refreshDebugHomeCardImage() {
+        #if DEBUG
+        debugHomeCardImageURL = debugImageStorageService.imageURL(
+            path: qaDebugSettingsRepository.debugHomeCardImagePath
+        )
+        #else
+        debugHomeCardImageURL = nil
+        #endif
     }
 
     private func makeStatCards() -> [HomeStatCardModel] {

@@ -3,6 +3,7 @@ import SwiftUI
 struct StackedShareCardView: View {
     let memory: Memory
     let captionText: String
+    var debugImageURL: URL? = nil
     var exportMode = false
 
     var body: some View {
@@ -22,7 +23,7 @@ struct StackedShareCardView: View {
 
     private var photoCard: some View {
         VStack(alignment: .leading, spacing: exportMode ? MindMorySpacing.lg : MindMorySpacing.sm) {
-            MemoryImagePlaceholderView(imageName: memory.imageName)
+            MemoryImagePlaceholderView(imageName: memory.imageName, debugImageURL: debugImageURL)
                 .frame(height: exportMode ? 410 : 230)
                 .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
 
