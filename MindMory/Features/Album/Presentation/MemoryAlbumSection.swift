@@ -4,90 +4,13 @@ import Foundation
 enum MemoryAlbumSectionType: String, Equatable {
     case image
     case text
-    case shape
+    case base
 }
 
-enum MemoryAlbumShapeType: String, CaseIterable, Identifiable, Equatable {
-    case rectangle
-    case roundedRectangle
-    case circle
-    case capsule
-    case diamond
-
-    var id: Self { self }
-    var label: String {
-        switch self {
-        case .rectangle:
-            return "Rectangle"
-        case .roundedRectangle:
-            return "Rounded"
-        case .circle:
-            return "Circle"
-        case .capsule:
-            return "Capsule"
-        case .diamond:
-            return "Diamond"
-        }
-    }
-}
-
-enum MemoryAlbumShapeBlendMode: String, CaseIterable, Identifiable, Equatable {
-    case normal
-    case multiply
-    case overlay
-    case screen
-
-    var id: Self { self }
-    var label: String {
-        switch self {
-        case .normal:
-            return "Normal"
-        case .multiply:
-            return "Multiply"
-        case .overlay:
-            return "Overlay"
-        case .screen:
-            return "Screen"
-        }
-    }
-}
-
-struct MemoryAlbumShapeStyle: Equatable {
-    let fillHex: String
-    let borderHex: String
-    let borderWidth: Double
-    let opacity: Double
-    let blendMode: MemoryAlbumShapeBlendMode
-
-    static let `default` = MemoryAlbumShapeStyle(
-        fillHex: "3B82F6",
-        borderHex: "FFFFFF",
-        borderWidth: 2,
-        opacity: 1,
-        blendMode: .normal
-    )
-
-    var fillColor: Color {
-        Color(hex: fillHex)
-    }
-
-    var borderColor: Color {
-        Color(hex: borderHex)
-    }
-}
-
-struct MemoryAlbumShapeSection: Equatable {
-    let type: MemoryAlbumShapeType
-    let style: MemoryAlbumShapeStyle
-    let offset: CGSize
-    let scale: CGFloat
-
-    init(type: MemoryAlbumShapeType, style: MemoryAlbumShapeStyle, offset: CGSize = .zero, scale: CGFloat = 1) {
-        self.type = type
-        self.style = style
-        self.offset = offset
-        self.scale = scale
-    }
+enum MemoryAlbumSectionCellContent: Equatable {
+    case placeholder
+    case image(AlbumPhoto)
+    case text(MemoryAlbumTextSection)
 }
 
 enum MemoryAlbumTextBlockType: String, CaseIterable, Identifiable, Equatable {
@@ -169,9 +92,6 @@ struct MemoryAlbumTextSection: Equatable {
     let title: String
     let description: String
     let style: MemoryAlbumTextStyle
-    let isAdaptive: Bool
-    let offset: CGSize
-    let scale: CGFloat
 
     init(
         templateVariant: Int,
@@ -181,10 +101,7 @@ struct MemoryAlbumTextSection: Equatable {
         isTitleFirst: Bool,
         title: String,
         description: String,
-        style: MemoryAlbumTextStyle,
-        isAdaptive: Bool = false,
-        offset: CGSize = .zero,
-        scale: CGFloat = 1
+        style: MemoryAlbumTextStyle
     ) {
         self.templateVariant = templateVariant
         self.blockType = blockType
@@ -194,16 +111,13 @@ struct MemoryAlbumTextSection: Equatable {
         self.title = title
         self.description = description
         self.style = style
-        self.isAdaptive = isAdaptive
-        self.offset = offset
-        self.scale = scale
     }
 }
 
 enum MemoryAlbumSectionContent: Equatable {
     case image(layoutCount: Int, layoutVariant: Int, photos: [AlbumPhoto?])
     case text(MemoryAlbumTextSection)
-    case shape(MemoryAlbumShapeSection)
+    case base(layoutCount: Int, layoutVariant: Int, cells: [MemoryAlbumSectionCellContent])
 }
 
 struct MemoryAlbumSection: Identifiable, Equatable {
@@ -220,6 +134,11 @@ struct MemoryAlbumSection: Identifiable, Equatable {
         self.content = .text(textSection)
     }
 
+    init(id: UUID = UUID(), baseLayoutCount: Int, layoutVariant: Int = 0, cells: [MemoryAlbumSectionCellContent] = []) {
+        self.id = id
+        self.content = .base(layoutCount: baseLayoutCount, layoutVariant: layoutVariant, cells: cells)
+    }
+
     init(id: UUID = UUID(), content: MemoryAlbumSectionContent) {
         self.id = id
         self.content = content
@@ -231,19 +150,27 @@ struct MemoryAlbumSection: Identifiable, Equatable {
             return .image
         case .text:
             return .text
-        case .shape:
-            return .shape
+        case .base:
+            return .base
         }
     }
 
     var layoutCount: Int? {
-        guard case .image(let layoutCount, _, _) = content else { return nil }
-        return layoutCount
+        switch content {
+        case .image(let layoutCount, _, _), .base(let layoutCount, _, _):
+            return layoutCount
+        default:
+            return nil
+        }
     }
 
     var layoutVariant: Int? {
-        guard case .image(_, let layoutVariant, _) = content else { return nil }
-        return layoutVariant
+        switch content {
+        case .image(_, let layoutVariant, _), .base(_, let layoutVariant, _):
+            return layoutVariant
+        default:
+            return nil
+        }
     }
 
     var photos: [AlbumPhoto?] {
@@ -251,13 +178,13 @@ struct MemoryAlbumSection: Identifiable, Equatable {
         return photos
     }
 
+    var baseCells: [MemoryAlbumSectionCellContent] {
+        guard case .base(_, _, let cells) = content else { return [] }
+        return cells
+    }
+
     var textSection: MemoryAlbumTextSection? {
         guard case .text(let textSection) = content else { return nil }
         return textSection
-    }
-
-    var shapeSection: MemoryAlbumShapeSection? {
-        guard case .shape(let shapeSection) = content else { return nil }
-        return shapeSection
     }
 }

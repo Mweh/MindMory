@@ -27,6 +27,10 @@ struct MemoryAlbumSectionLayoutTemplate: Identifiable {
     let node: MemoryAlbumSectionLayoutNode
 
     var id: Int { variant }
+
+    var isOverlayStyle: Bool {
+        title.contains("Staggered") || title.contains("Offset")
+    }
 }
 
 enum MemoryAlbumSectionLayoutCatalog {
@@ -76,7 +80,8 @@ enum MemoryAlbumSectionLayoutCatalog {
         .init(layoutCount: 2, variant: 6, title: "Narrow Gutter", subtitle: "Tight side-by-side", selectionHeight: 180, albumHeight: 220, contentInset: MindMorySpacing.xs, node: row([.photo(index: 0), .photo(index: 1)], spacing: MindMorySpacing.xxs)),
         .init(layoutCount: 2, variant: 7, title: "Airy Stack", subtitle: "Large spacing between rows", selectionHeight: 230, albumHeight: 270, contentInset: MindMorySpacing.xs, node: column([.photo(index: 0), .photo(index: 1)], spacing: MindMorySpacing.md)),
         .init(layoutCount: 2, variant: 8, title: "Editorial Pair", subtitle: "Inset and balanced columns", selectionHeight: 190, albumHeight: 230, contentInset: MindMorySpacing.md, node: row([.photo(index: 0), .photo(index: 1)])),
-        .init(layoutCount: 2, variant: 9, title: "Story Pair", subtitle: "Inset stacked narrative", selectionHeight: 235, albumHeight: 275, contentInset: MindMorySpacing.md, node: column([.photo(index: 0), .photo(index: 1)]))
+        .init(layoutCount: 2, variant: 9, title: "Story Pair", subtitle: "Inset stacked narrative", selectionHeight: 235, albumHeight: 275, contentInset: MindMorySpacing.md, node: column([.photo(index: 0), .photo(index: 1)])),
+        .init(layoutCount: 2, variant: 10, title: "Staggered Pair", subtitle: "One image offset below the other", selectionHeight: 210, albumHeight: 250, contentInset: MindMorySpacing.xs, node: row([.photo(index: 0), column([.spacer, .photo(index: 1)], weights: [1, 0.9])], weights: [1.3, 0.9], spacing: MindMorySpacing.sm))
     ]
 
     private static let threePhotoTemplates: [MemoryAlbumSectionLayoutTemplate] = [
@@ -89,7 +94,8 @@ enum MemoryAlbumSectionLayoutCatalog {
         .init(layoutCount: 3, variant: 6, title: "Center Emphasis", subtitle: "Wide center column", selectionHeight: 180, albumHeight: 220, contentInset: 0, node: row([.photo(index: 0), .photo(index: 1), .photo(index: 2)], weights: [1, 1.5, 1])),
         .init(layoutCount: 3, variant: 7, title: "Center Story", subtitle: "Large middle row", selectionHeight: 250, albumHeight: 290, contentInset: 0, node: column([.photo(index: 0), .photo(index: 1), .photo(index: 2)], weights: [1, 1.5, 1])),
         .init(layoutCount: 3, variant: 8, title: "Compact Feature", subtitle: "Inset featured-left layout", selectionHeight: 220, albumHeight: 255, contentInset: MindMorySpacing.sm, node: row([.photo(index: 0), column([.photo(index: 1), .photo(index: 2)])], weights: [1.35, 1], spacing: MindMorySpacing.xs)),
-        .init(layoutCount: 3, variant: 9, title: "Compact Banner", subtitle: "Inset top-banner layout", selectionHeight: 240, albumHeight: 275, contentInset: MindMorySpacing.sm, node: column([.photo(index: 0), row([.photo(index: 1), .photo(index: 2)])], weights: [1.1, 1], spacing: MindMorySpacing.xs))
+        .init(layoutCount: 3, variant: 9, title: "Compact Banner", subtitle: "Inset top-banner layout", selectionHeight: 240, albumHeight: 275, contentInset: MindMorySpacing.sm, node: column([.photo(index: 0), row([.photo(index: 1), .photo(index: 2)])], weights: [1.1, 1], spacing: MindMorySpacing.xs)),
+        .init(layoutCount: 3, variant: 10, title: "Staggered Trio", subtitle: "Offset feature with stacked smaller photos", selectionHeight: 240, albumHeight: 285, contentInset: MindMorySpacing.xs, node: row([.photo(index: 0), column([.photo(index: 1), .spacer, .photo(index: 2)], weights: [1, 0.25, 1])], weights: [1.35, 0.95], spacing: MindMorySpacing.sm))
     ]
 
     private static let fourPhotoTemplates: [MemoryAlbumSectionLayoutTemplate] = [
@@ -120,7 +126,11 @@ enum MemoryAlbumSectionLayoutCatalog {
         .init(layoutCount: 4, variant: 15, title: "Portrait Stagger Right", subtitle: "Right starts higher with portrait-size cells", selectionHeight: 360, albumHeight: 430, contentInset: 0, node: row([
             column([.spacer, .photo(index: 0), .photo(index: 1)], weights: [0.3, 1, 1]),
             column([.photo(index: 2), .photo(index: 3), .spacer], weights: [1, 1, 0.3])
-        ]))
+        ])),
+        .init(layoutCount: 4, variant: 16, title: "Offset Grid", subtitle: "Diagonal staggered photo grid", selectionHeight: 300, albumHeight: 340, contentInset: MindMorySpacing.xs, node: row([
+            column([.photo(index: 0), .spacer, .photo(index: 1)], weights: [1, 0.3, 1]),
+            column([.spacer, .photo(index: 2), .photo(index: 3)], weights: [0.3, 1, 1])
+        ], spacing: MindMorySpacing.sm))
     ]
 
     private static let fivePhotoTemplates: [MemoryAlbumSectionLayoutTemplate] = [
@@ -135,7 +145,8 @@ enum MemoryAlbumSectionLayoutCatalog {
         .init(layoutCount: 5, variant: 8, title: "Dual Story", subtitle: "Two left rows + three right rows", selectionHeight: 285, albumHeight: 325, contentInset: 0, node: row([column([.photo(index: 0), .photo(index: 1)]), column([.photo(index: 2), .photo(index: 3), .photo(index: 4)])], weights: [1, 1.05])),
         .init(layoutCount: 5, variant: 9, title: "Dual Story Mirror", subtitle: "Three left rows + two right rows", selectionHeight: 285, albumHeight: 325, contentInset: 0, node: row([column([.photo(index: 0), .photo(index: 1), .photo(index: 2)]), column([.photo(index: 3), .photo(index: 4)])], weights: [1.05, 1])),
         .init(layoutCount: 5, variant: 10, title: "Center Hero", subtitle: "Rows around a big center", selectionHeight: 300, albumHeight: 340, contentInset: 0, node: column([row([.photo(index: 0), .photo(index: 1)]), .photo(index: 2), row([.photo(index: 3), .photo(index: 4)])], weights: [1, 1.25, 1])),
-        .init(layoutCount: 5, variant: 11, title: "Inset Mosaic", subtitle: "Soft padded 2x3 blend", selectionHeight: 295, albumHeight: 335, contentInset: MindMorySpacing.sm, node: column([row([.photo(index: 0), .photo(index: 1)]), row([.photo(index: 2), .photo(index: 3), .photo(index: 4)])], spacing: MindMorySpacing.xs))
+        .init(layoutCount: 5, variant: 11, title: "Inset Mosaic", subtitle: "Soft padded 2x3 blend", selectionHeight: 295, albumHeight: 335, contentInset: MindMorySpacing.sm, node: column([row([.photo(index: 0), .photo(index: 1)]), row([.photo(index: 2), .photo(index: 3), .photo(index: 4)])], spacing: MindMorySpacing.xs)),
+        .init(layoutCount: 5, variant: 12, title: "Offset Mosaic", subtitle: "Staggered feature photo with supporting shots", selectionHeight: 305, albumHeight: 345, contentInset: MindMorySpacing.xs, node: row([column([.photo(index: 0), .spacer, .photo(index: 1)], weights: [1, 0.25, 1]), column([.photo(index: 2), .photo(index: 3), .photo(index: 4)], spacing: MindMorySpacing.xs)], weights: [1.3, 1], spacing: MindMorySpacing.sm))
     ]
 
     private static func row(
@@ -275,10 +286,15 @@ struct MemoryAlbumSectionTemplateCard: View {
                 .font(MindMoryTypography.bodySmall)
                 .foregroundStyle(MindMoryColors.textSecondary)
 
-            MemoryAlbumSectionLayoutRenderer(template: template) { _ in
-                placeholderCell
+            if template.isOverlayStyle {
+                overlayPlaceholder
+                    .frame(height: template.selectionHeight)
+            } else {
+                MemoryAlbumSectionLayoutRenderer(template: template) { _ in
+                    placeholderCell
+                }
+                .frame(height: template.selectionHeight)
             }
-            .frame(height: template.selectionHeight)
         }
         .padding(MindMorySpacing.md)
         .background(MindMoryColors.surface)
@@ -301,5 +317,51 @@ struct MemoryAlbumSectionTemplateCard: View {
                 RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
                     .stroke(MindMoryColors.border)
             )
+    }
+
+    private var overlayPlaceholder: some View {
+        GeometryReader { geometry in
+            let size = min(geometry.size.width, geometry.size.height)
+            let cardSize = size * 0.72
+            ZStack {
+                ForEach(overlayIndexes, id: \.self) { index in
+                    placeholderCard
+                        .frame(width: cardSize, height: cardSize * 1.15)
+                        .rotationEffect(overlayRotation(for: index))
+                        .offset(overlayOffset(for: index, size: size))
+                        .zIndex(Double(index))
+                }
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+        }
+    }
+
+    private var placeholderCard: some View {
+        Color(MindMoryColors.surface)
+            .overlay(
+                Image(systemName: "photo")
+                    .font(.title3)
+                    .foregroundStyle(MindMoryColors.textSecondary)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                    .stroke(MindMoryColors.border)
+            )
+    }
+
+    private var overlayIndexes: [Int] {
+        Array(0..<template.layoutCount)
+    }
+
+    private func overlayRotation(for index: Int) -> Angle {
+        let base: [Angle] = [.degrees(-12), .degrees(8), .degrees(-6), .degrees(10), .degrees(-4)]
+        return base[index % base.count]
+    }
+
+    private func overlayOffset(for index: Int, size: CGFloat) -> CGSize {
+        let dx: [CGFloat] = [-22, 12, -6, 22, 8]
+        let dy: [CGFloat] = [18, 10, -16, 18, -8]
+        return CGSize(width: dx[index % dx.count], height: dy[index % dy.count])
     }
 }
