@@ -1,8 +1,6 @@
 import PhotosUI
 import SwiftUI
-#if canImport(UIKit)
 import UIKit
-#endif
 
 struct MemoryAlbumCreateView: View {
     enum Step {
@@ -21,19 +19,6 @@ struct MemoryAlbumCreateView: View {
     @State private var selectedTextTitle: String = ""
     @State private var selectedTextDescription: String = ""
     @State private var isShowingTextEditor = false
-    @State private var selectedBaseCellSectionID: UUID?
-    @State private var selectedBaseCellIndex: Int?
-    @State private var isShowingBaseTextEditor = false
-    @State private var selectedBaseTextBlockType: MemoryAlbumTextBlockType = .titleAndDescription
-    @State private var selectedBaseTextHorizontalAlignment: MemoryAlbumTextHorizontalAlignment = .leading
-    @State private var selectedBaseTextVerticalAlignment: MemoryAlbumTextVerticalAlignment = .top
-    @State private var selectedBaseTextIsTitleFirst: Bool = true
-    @State private var selectedBaseTitle: String = "A memory headline"
-    @State private var selectedBaseDescription: String = "Describe this memory section with context and feelings."
-    @State private var selectedBaseTitleSize: Double = MemoryAlbumTextStyle.default.titleSize
-    @State private var selectedBaseDescriptionSize: Double = MemoryAlbumTextStyle.default.descriptionSize
-    @State private var selectedBaseTitleWeight: MemoryAlbumTextWeight = MemoryAlbumTextStyle.default.titleWeight
-    @State private var selectedBaseDescriptionWeight: MemoryAlbumTextWeight = MemoryAlbumTextStyle.default.descriptionWeight
     @State private var sectionInsertionIndex: Int?
     @State private var draggingSectionID: UUID?
     @State private var currentStep: Step = .details
@@ -110,9 +95,6 @@ struct MemoryAlbumCreateView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $isShowingTextEditor) {
             sectionTextEditorSheet
-        }
-        .sheet(isPresented: $isShowingBaseTextEditor) {
-            baseCellTextEditorSheet
         }
         .onChange(of: selectedCoverPhotoItem) { _, newItem in
             Task {
@@ -191,221 +173,6 @@ struct MemoryAlbumCreateView: View {
         dismiss()
     }
 
-    private var footerButtons: some View {
-        HStack(spacing: MindMorySpacing.sm) {
-            if currentStep == .selectPhotos {
-                Button("Back") {
-                    currentStep = .details
-                }
-                .buttonStyle(.bordered)
-            }
-
-            Spacer()
-
-            Button(currentStep == .details ? "Continue" : "Preview") {
-                if currentStep == .details {
-                    currentStep = .selectPhotos
-                    selectedSectionID = selectedSectionID ?? viewModel.sections.first?.id
-                } else {
-                    isShowingPreview = true
-                }
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(currentStep == .details && viewModel.albumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-        }
-    }
-
-    private var stepTitle: String {
-        switch currentStep {
-        case .details:
-            return "Album details"
-        case .selectPhotos:
-            return "Add sections"
-        }
-    }
-
-    private var stepSubtitle: String {
-        switch currentStep {
-        case .details:
-            return "Choose an album title and cover photo."
-        case .selectPhotos:
-            return "Add sections, then pick photos or text content."
-        }
-    }
-
-    private func syncSelectedTextSection() {
-        guard let sectionId = selectedSectionID,
-              let section = viewModel.sections.first(where: { $0.id == sectionId }),
-              case .text(let textSection) = section.content
-        else {
-            return
-        }
-
-        selectedTextTitle = textSection.title
-        selectedTextDescription = textSection.description
-    }
-
-    private var sectionTextEditorSheet: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                    Text("Edit text section")
-                        .font(MindMoryTypography.headingLarge)
-                        .foregroundStyle(MindMoryColors.textPrimary)
-
-                    VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-                        Text("Title")
-                            .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.textSecondary)
-
-                        TextField("Enter title", text: $selectedTextTitle)
-                            .font(MindMoryTypography.bodyMedium)
-                            .padding(MindMorySpacing.sm)
-                            .background(MindMoryColors.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                                    .stroke(MindMoryColors.border)
-                            )
-                    }
-
-                    VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-                        Text("Description")
-                            .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.textSecondary)
-
-                        TextField("Enter description", text: $selectedTextDescription, axis: .vertical)
-                            .lineLimit(2...4)
-                            .font(MindMoryTypography.bodyMedium)
-                            .padding(MindMorySpacing.sm)
-                            .background(MindMoryColors.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                                    .stroke(MindMoryColors.border)
-                            )
-                    }
-                }
-                .padding(MindMorySpacing.xl)
-            }
-            .navigationTitle("Edit text")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        updateSelectedTextSection()
-                    }
-                    .disabled(selectedTextTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        isShowingTextEditor = false
-                    }
-                }
-            }
-        }
-    }
-
-    private func updateSelectedTextSection() {
-        guard let sectionId = selectedSectionID,
-              let section = viewModel.sections.first(where: { $0.id == sectionId }),
-              case .text(let currentTextSection) = section.content
-        else {
-            return
-        }
-
-        let updatedTextSection = MemoryAlbumTextSection(
-            templateVariant: currentTextSection.templateVariant,
-            blockType: currentTextSection.blockType,
-            horizontalAlignment: currentTextSection.horizontalAlignment,
-            verticalAlignment: currentTextSection.verticalAlignment,
-            isTitleFirst: currentTextSection.isTitleFirst,
-            title: selectedTextTitle,
-            description: selectedTextDescription,
-            style: currentTextSection.style
-        )
-
-        viewModel.updateSection(
-            MemoryAlbumSection(id: sectionId, textSection: updatedTextSection)
-        )
-
-        isShowingTextEditor = false
-    }
-
-    private func previewImageCell(at index: Int, in section: MemoryAlbumSection) -> some View {
-        let shape = RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-
-        return ZStack {
-            Color.clear
-
-            if let image = imageForSectionCell(index: index, section: section) {
-                GeometryReader { geometry in
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .clipped()
-                }
-            } else {
-                Image(systemName: "photo")
-                    .font(.title2)
-                    .foregroundStyle(MindMoryColors.textSecondary)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .clipShape(shape)
-        .overlay(shape.stroke(MindMoryColors.border))
-    }
-
-    private func overlappedImageSection(_ section: MemoryAlbumSection, template: MemoryAlbumSectionLayoutTemplate, isPreview: Bool) -> some View {
-        return GeometryReader { geometry in
-            let size = min(geometry.size.width, geometry.size.height)
-            let cardWidth = size * 0.72
-            ZStack {
-                ForEach(0..<template.layoutCount, id: \.self) { index in
-                    Group {
-                        if isPreview {
-                            previewImageCell(at: index, in: section)
-                        } else {
-                            sectionImageCell(at: index, in: section)
-                        }
-                    }
-                    .frame(width: cardWidth, height: cardWidth * 1.2)
-                    .rotationEffect(overlayRotations(for: template.layoutCount)[index])
-                    .offset(x: CGFloat(index - template.layoutCount / 2) * 14, y: CGFloat(index - template.layoutCount / 2) * 6)
-                    .zIndex(Double(index))
-                }
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)
-        }
-    }
-
-    private func controlRow<T: CaseIterable & Identifiable & Equatable & Hashable>(
-        title: String,
-        values: T.AllCases,
-        selected: T,
-        onSelect: @escaping (T) -> Void
-    ) -> some View where T: MemoryAlbumLabelable {
-        VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-            Text(title)
-                .font(MindMoryTypography.caption)
-                .foregroundStyle(MindMoryColors.textSecondary)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: MindMorySpacing.sm) {
-                    ForEach(Array(values), id: \.self) { value in
-                        FilterChip(
-                            title: value.label,
-                            isSelected: selected == value
-                        ) {
-                            onSelect(value)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     private var stepHeader: some View {
         HStack(spacing: MindMorySpacing.sm) {
             Text(stepTitle)
@@ -420,7 +187,6 @@ struct MemoryAlbumCreateView: View {
                 .multilineTextAlignment(.trailing)
         }
     }
-    
 
     private var detailsStep: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
@@ -607,16 +373,6 @@ struct MemoryAlbumCreateView: View {
             }
         case .text(let textSection):
             MemoryAlbumTextSectionRenderView(textSection: textSection, isPreview: true)
-        case .base(let layoutCount, let layoutVariant, _):
-            let template = MemoryAlbumSectionLayoutCatalog.template(
-                layoutCount: layoutCount,
-                variant: layoutVariant
-            )
-
-            MemoryAlbumSectionLayoutRenderer(template: template) { cellIndex in
-                baseSectionCell(at: cellIndex, in: section, isPreview: false)
-            }
-            .frame(height: template.albumHeight)
         }
     }
 
@@ -656,6 +412,13 @@ struct MemoryAlbumCreateView: View {
         .buttonStyle(.plain)
     }
 
+    private func imageForSectionCell(index: Int, section: MemoryAlbumSection) -> UIImage? {
+        guard case .image(_, _, let photos) = section.content else { return nil }
+        guard photos.indices.contains(index) else { return nil }
+        guard let photo = photos[index] else { return nil }
+        return photo.uiImage
+    }
+
     private func bindingForSectionPhoto(sectionId: UUID, index: Int) -> Binding<PhotosPickerItem?> {
         Binding(
             get: { selectedSectionPhotoItem },
@@ -667,317 +430,429 @@ struct MemoryAlbumCreateView: View {
         )
     }
 
-    private func imageForSectionCell(index: Int, section: MemoryAlbumSection) -> UIImage? {
-        switch section.content {
-        case .image(_, _, let photos):
-            guard photos.indices.contains(index) else { return nil }
-            guard let photo = photos[index] else { return nil }
-            return photo.uiImage
-        case .base(_, _, let cells):
-            guard cells.indices.contains(index) else { return nil }
-            guard case .image(let photo) = cells[index] else { return nil }
-            return photo.uiImage
-        default:
-            return nil
+    @ViewBuilder
+    private func overlappedImageSection(_ section: MemoryAlbumSection, template: MemoryAlbumSectionLayoutTemplate, isPreview: Bool) -> some View {
+        GeometryReader { geometry in
+            let size = geometry.size
+            let widthFactor: CGFloat = template.layoutCount <= 3 ? 0.72 : 0.58
+            let cardWidth = size.width * widthFactor
+            let cardHeight = size.height * 0.82
+            let positions = overlayPositions(for: template.layoutCount, in: size)
+            let rotations = overlayRotations(for: template.layoutCount)
+
+            ZStack {
+                ForEach(0..<template.layoutCount, id: \.self) { index in
+                    let card = photoCell(at: index, in: section, isPreview: isPreview)
+                        .frame(width: cardWidth, height: cardHeight)
+                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+                        .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
+                        .rotationEffect(rotations[index])
+                        .offset(positions[index])
+                        .zIndex(Double(index))
+
+                    card
+                }
+            }
+            .frame(width: size.width, height: size.height)
         }
     }
 
     @ViewBuilder
-    private func baseSectionCell(at index: Int, in section: MemoryAlbumSection, isPreview: Bool) -> some View {
-        if case .base(_, _, let cells) = section.content {
-            let cell = cells.indices.contains(index) ? cells[index] : .placeholder
+    private func photoCell(at index: Int, in section: MemoryAlbumSection, isPreview: Bool) -> some View {
+        sectionImageCell(at: index, in: section)
+    }
 
-            switch cell {
-            case .placeholder:
-                basePlaceholderCell(sectionId: section.id, index: index)
-            case .image:
-                if isPreview {
-                    previewImageCell(at: index, in: section)
-                } else {
-                    sectionImageCell(at: index, in: section)
+    private func overlayRotations(for count: Int) -> [Angle] {
+        switch count {
+        case 2:
+            return [.degrees(-12), .degrees(10)]
+        case 3:
+            return [.degrees(-14), .degrees(6), .degrees(-8)]
+        case 4:
+            return [.degrees(-16), .degrees(8), .degrees(-6), .degrees(12)]
+        case 5:
+            return [.degrees(-16), .degrees(10), .degrees(-4), .degrees(8), .degrees(-10)]
+        default:
+            return Array(repeating: .degrees(0), count: count)
+        }
+    }
+
+    private func overlayPositions(for count: Int, in size: CGSize) -> [CGSize] {
+        let baseX = size.width * 0.12
+        let baseY = size.height * 0.05
+
+        switch count {
+        case 2:
+            return [CGSize(width: -baseX * 1.1, height: baseY * 1.4), CGSize(width: baseX * 1.2, height: -baseY)]
+        case 3:
+            return [CGSize(width: -baseX * 1.4, height: baseY * 1.3), CGSize(width: 0, height: -baseY * 1.5), CGSize(width: baseX * 1.6, height: baseY * 1.1)]
+        case 4:
+            return [CGSize(width: -baseX * 1.7, height: baseY * 1.2), CGSize(width: -baseX * 0.2, height: -baseY * 1.4), CGSize(width: baseX * 0.8, height: baseY * 0.8), CGSize(width: baseX * 1.8, height: baseY * 1.6)]
+        case 5:
+            return [CGSize(width: -baseX * 1.8, height: baseY * 1.4), CGSize(width: -baseX * 0.6, height: -baseY * 1.3), CGSize(width: 0, height: baseY * 0.1), CGSize(width: baseX * 1.1, height: baseY * 1.1), CGSize(width: baseX * 1.9, height: -baseY * 0.3)]
+        default:
+            return Array(repeating: .zero, count: count)
+        }
+    }
+
+    private var footerButtons: some View {
+        HStack(spacing: MindMorySpacing.sm) {
+            if currentStep != .details {
+                Button {
+                    previousStep()
+                } label: {
+                    Text("Back")
+                        .font(MindMoryTypography.bodyMedium)
+                        .foregroundStyle(MindMoryColors.textPrimary)
+                        .padding(.vertical, MindMorySpacing.sm)
+                        .frame(maxWidth: .infinity)
+                        .background(MindMoryColors.surface)
+                        .cornerRadius(MindMoryRadius.large)
                 }
-            case .text(let textSection):
-                if isPreview {
-                    MemoryAlbumTextSectionRenderView(textSection: textSection, isPreview: true)
-                } else {
-                    Button {
-                        openBaseTextEditor(sectionId: section.id, index: index, existingText: textSection)
-                    } label: {
-                        MemoryAlbumTextSectionRenderView(textSection: textSection, isPreview: false)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            PrimaryButton(title: primaryButtonTitle, action: primaryButtonAction)
+                .disabled(primaryButtonDisabled)
+        }
+    }
+
+    private var stepTitle: String {
+        switch currentStep {
+        case .details:
+            return "Step 1"
+        case .selectPhotos:
+            return "Step 2"
+        }
+    }
+
+    private var stepSubtitle: String {
+        switch currentStep {
+        case .details:
+            return "Memory title and cover photo"
+        case .selectPhotos:
+            return "Build sections and save your memory album"
+        }
+    }
+
+    private var primaryButtonTitle: String {
+        switch currentStep {
+        case .details:
+            return "Continue"
+        case .selectPhotos:
+            return "Simpan Album"
+        }
+    }
+
+    private var primaryButtonDisabled: Bool {
+        switch currentStep {
+        case .details:
+            return viewModel.isSaveButtonDisabled
+        case .selectPhotos:
+            return viewModel.sections.isEmpty || viewModel.hasIncompleteSections
+        }
+    }
+
+    private func primaryButtonAction() {
+        switch currentStep {
+        case .details:
+            currentStep = .selectPhotos
+        case .selectPhotos:
+            viewModel.saveAlbum()
+        }
+    }
+
+
+    private func selectedSectionState() -> MemoryAlbumSection? {
+        guard let selectedSectionID = selectedSectionID else { return nil }
+        return viewModel.sections.first(where: { $0.id == selectedSectionID })
+    }
+
+    private var selectedSection: MemoryAlbumSection? {
+        selectedSectionState()
+    }
+
+    private func syncSelectedTextSection() {
+        guard let selectedSection = selectedSection,
+              case .text(let textSection) = selectedSection.content
+        else {
+            return
+        }
+
+        selectedTextTitle = textSection.title
+        selectedTextDescription = textSection.description
+    }
+
+    private func updateSelectedTextSection() {
+        guard let selectedSection = selectedSection,
+              case .text(let existingTextSection) = selectedSection.content
+        else {
+            return
+        }
+
+        let updatedTextSection = MemoryAlbumTextSection(
+            templateVariant: existingTextSection.templateVariant,
+            blockType: existingTextSection.blockType,
+            horizontalAlignment: existingTextSection.horizontalAlignment,
+            verticalAlignment: existingTextSection.verticalAlignment,
+            isTitleFirst: existingTextSection.isTitleFirst,
+            title: selectedTextTitle,
+            description: selectedTextDescription,
+            style: existingTextSection.style
+        )
+
+        viewModel.updateSection(
+            MemoryAlbumSection(id: selectedSection.id, textSection: updatedTextSection)
+        )
+    }
+
+    private var sectionTextEditorSheet: some View {
+        NavigationStack {
+            if let selectedSection = selectedSection,
+               case .text = selectedSection.content {
+                VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                    VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+                        Text("Title")
+                            .font(MindMoryTypography.bodySmall)
+                            .foregroundStyle(MindMoryColors.textSecondary)
+
+                        TextField("Enter title", text: $selectedTextTitle)
+                            .font(MindMoryTypography.bodyMedium)
+                            .padding(MindMorySpacing.sm)
                             .background(MindMoryColors.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
                             .overlay(
-                                RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
                                     .stroke(MindMoryColors.border)
                             )
                     }
-                    .buttonStyle(.plain)
+
+                    VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+                        Text("Description")
+                            .font(MindMoryTypography.bodySmall)
+                            .foregroundStyle(MindMoryColors.textSecondary)
+
+                        TextField("Enter description", text: $selectedTextDescription, axis: .vertical)
+                            .lineLimit(2...4)
+                            .font(MindMoryTypography.bodyMedium)
+                            .padding(MindMorySpacing.sm)
+                            .background(MindMoryColors.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                                    .stroke(MindMoryColors.border)
+                            )
+                    }
+
+                    Spacer()
+                }
+                .padding(MindMorySpacing.xl)
+                .navigationTitle("Edit Text Section")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            updateSelectedTextSection()
+                            isShowingTextEditor = false
+                        }
+                        .disabled(selectedTextTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            isShowingTextEditor = false
+                        }
+                    }
+                }
+            } else {
+                EmptyView()
+            }
+        }
+    }
+
+    private func previousStep() {
+        switch currentStep {
+        case .details:
+            break
+        case .selectPhotos:
+            currentStep = .details
+        }
+    }
+}
+
+private struct MemoryAlbumPreviewView: View {
+    @ObservedObject var viewModel: MemoryAlbumViewModel
+    let onSave: () -> Void
+    let onCreate: (Album) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                previewHeader
+
+                if viewModel.sections.isEmpty {
+                    Text("No sections added yet.")
+                        .font(MindMoryTypography.bodyMedium)
+                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(MindMorySpacing.md)
+                        .background(MindMoryColors.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+                } else {
+                    VStack(spacing: MindMorySpacing.lg) {
+                        ForEach(viewModel.sections) { section in
+                            previewSectionCard(section)
+                        }
+                    }
+                }
+
+                PrimaryButton(title: "Simpan Album") {
+                    onSave()
+                }
+                .disabled(viewModel.sections.isEmpty || viewModel.hasIncompleteSections || viewModel.isSaveButtonDisabled)
+            }
+            .padding(MindMorySpacing.xl)
+        }
+        .background(MindMoryColors.background.ignoresSafeArea())
+        .navigationTitle("Preview")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("Memory Album", isPresented: alertBinding) {
+            Button("OK", role: .cancel) {
+                handleAlertDismiss()
+            }
+        } message: {
+            Text(viewModel.alertMessage ?? "")
+        }
+    }
+
+    private var alertBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.alertMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    viewModel.dismissAlert()
                 }
             }
-        } else {
-            EmptyView()
+        )
+    }
+
+    private func handleAlertDismiss() {
+        guard let album = viewModel.savedAlbum else {
+            viewModel.dismissAlert()
+            return
+        }
+
+        viewModel.dismissAlert()
+        onCreate(album)
+    }
+
+    private var previewHeader: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            Text(viewModel.albumName.isEmpty ? "Untitled memory" : viewModel.albumName)
+                .font(MindMoryTypography.headingLarge)
+                .foregroundStyle(MindMoryColors.textPrimary)
+
+            if let coverPhoto = viewModel.coverPhoto, let image = coverPhoto.uiImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 220)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+                    .cornerRadius(MindMoryRadius.large)
+            } else {
+                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                    .fill(MindMoryColors.surface)
+                    .frame(height: 220)
+                    .overlay(
+                        Image(systemName: "photo")
+                            .font(.largeTitle)
+                            .foregroundStyle(MindMoryColors.textSecondary)
+                    )
+            }
         }
     }
 
     @ViewBuilder
-    private func basePlaceholderCell(sectionId: UUID, index: Int) -> some View {
+    private func previewSectionCard(_ section: MemoryAlbumSection) -> some View {
+        switch section.content {
+        case .image(let layoutCount, let layoutVariant, _):
+            let template = MemoryAlbumSectionLayoutCatalog.template(layoutCount: layoutCount, variant: layoutVariant)
+
+            if template.isOverlayStyle {
+                overlappedImageSection(section, template: template, isPreview: true)
+                    .frame(height: template.albumHeight)
+            } else {
+                MemoryAlbumSectionLayoutRenderer(template: template) { photoIndex in
+                    previewImageCell(at: photoIndex, in: section)
+                }
+                .frame(height: template.albumHeight)
+            }
+        case .text(let textSection):
+            MemoryAlbumTextSectionRenderView(textSection: textSection, isPreview: false)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    @ViewBuilder
+    private func previewImageCell(at index: Int, in section: MemoryAlbumSection) -> some View {
         let shape = RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
 
-        VStack(spacing: MindMorySpacing.sm) {
-            Image(systemName: "plus")
-                .font(.title)
-                .foregroundStyle(MindMoryColors.textSecondary)
-
-            Text("Add content")
-                .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.textSecondary)
-
-            HStack(spacing: MindMorySpacing.sm) {
-                PhotosPicker(
-                    selection: bindingForSectionPhoto(sectionId: sectionId, index: index),
-                    matching: .images,
-                    photoLibrary: .shared()
-                ) {
-                    Image(systemName: "photo")
-                        .font(.title3)
-                        .foregroundStyle(MindMoryColors.primaryGreen)
-                        .padding(EdgeInsets(top: MindMorySpacing.xs, leading: MindMorySpacing.sm, bottom: MindMorySpacing.xs, trailing: MindMorySpacing.sm))
-                        .background(MindMoryColors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
+        ZStack {
+            if let image = imageForSectionCell(index: index, section: section) {
+                GeometryReader { geometry in
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
                 }
-                .buttonStyle(.plain)
-
-                Button {
-                    openBaseTextEditor(sectionId: sectionId, index: index, existingText: nil)
-                } label: {
-                    Image(systemName: "text.quote")
-                        .font(.title3)
-                        .foregroundStyle(MindMoryColors.primaryGreen)
-                        .padding(EdgeInsets(top: MindMorySpacing.xs, leading: MindMorySpacing.sm, bottom: MindMorySpacing.xs, trailing: MindMorySpacing.sm))
-                        .background(MindMoryColors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
-                }
-                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                Image(systemName: "photo")
+                    .font(.title2)
+                    .foregroundStyle(MindMoryColors.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(MindMorySpacing.sm)
-        .background(MindMoryColors.background)
         .clipShape(shape)
-        .overlay(shape.stroke(MindMoryColors.border))
     }
 
-    private func openBaseTextEditor(sectionId: UUID, index: Int, existingText: MemoryAlbumTextSection?) {
-        selectedBaseCellSectionID = sectionId
-        selectedBaseCellIndex = index
-        let textSection = existingText ?? MemoryAlbumTextSection(
-            templateVariant: 0,
-            blockType: .titleAndDescription,
-            horizontalAlignment: .leading,
-            verticalAlignment: .top,
-            isTitleFirst: true,
-            title: "A memory headline",
-            description: "Describe this memory section with context and feelings.",
-            style: .default
-        )
-
-        selectedBaseTextBlockType = textSection.blockType
-        selectedBaseTextHorizontalAlignment = textSection.horizontalAlignment
-        selectedBaseTextVerticalAlignment = textSection.verticalAlignment
-        selectedBaseTextIsTitleFirst = textSection.isTitleFirst
-        selectedBaseTitle = textSection.title
-        selectedBaseDescription = textSection.description
-        selectedBaseTitleSize = textSection.style.titleSize
-        selectedBaseDescriptionSize = textSection.style.descriptionSize
-        selectedBaseTitleWeight = textSection.style.titleWeight
-        selectedBaseDescriptionWeight = textSection.style.descriptionWeight
-        isShowingBaseTextEditor = true
+    private func imageForSectionCell(index: Int, section: MemoryAlbumSection) -> UIImage? {
+        guard case .image(_, _, let photos) = section.content else { return nil }
+        guard photos.indices.contains(index) else { return nil }
+        guard let photo = photos[index] else { return nil }
+        return photo.uiImage
     }
 
-    private func updateBaseTextCell() {
-        guard let sectionId = selectedBaseCellSectionID,
-              let index = selectedBaseCellIndex
-        else { return }
+    @ViewBuilder
+    private func overlappedImageSection(_ section: MemoryAlbumSection, template: MemoryAlbumSectionLayoutTemplate, isPreview: Bool) -> some View {
+        GeometryReader { geometry in
+            let size = geometry.size
+            let widthFactor: CGFloat = template.layoutCount <= 3 ? 0.72 : 0.58
+            let cardWidth = size.width * widthFactor
+            let cardHeight = size.height * 0.82
+            let positions = overlayPositions(for: template.layoutCount, in: size)
+            let rotations = overlayRotations(for: template.layoutCount)
 
-        let updatedTextSection = MemoryAlbumTextSection(
-            templateVariant: 0,
-            blockType: selectedBaseTextBlockType,
-            horizontalAlignment: selectedBaseTextHorizontalAlignment,
-            verticalAlignment: selectedBaseTextVerticalAlignment,
-            isTitleFirst: selectedBaseTextIsTitleFirst,
-            title: selectedBaseTitle,
-            description: selectedBaseDescription,
-            style: MemoryAlbumTextStyle(
-                titleSize: selectedBaseTitleSize,
-                descriptionSize: selectedBaseDescriptionSize,
-                titleWeight: selectedBaseTitleWeight,
-                descriptionWeight: selectedBaseDescriptionWeight
-            )
-        )
+            ZStack {
+                ForEach(0..<template.layoutCount, id: \.self) { index in
+                    let card = photoCell(at: index, in: section, isPreview: isPreview)
+                        .frame(width: cardWidth, height: cardHeight)
+                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+                        .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
+                        .rotationEffect(rotations[index])
+                        .offset(positions[index])
+                        .zIndex(Double(index))
 
-        viewModel.updateBaseSectionCell(
-            sectionId: sectionId,
-            index: index,
-            content: .text(updatedTextSection)
-        )
-
-        selectedBaseCellSectionID = nil
-        selectedBaseCellIndex = nil
-        isShowingBaseTextEditor = false
-    }
-
-    private func baseTextEditorControls() -> some View {
-        VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-            controlRow(title: "Content", values: MemoryAlbumTextBlockType.allCases, selected: selectedBaseTextBlockType) { type in
-                selectedBaseTextBlockType = type
-            }
-
-            controlRow(title: "Horizontal", values: MemoryAlbumTextHorizontalAlignment.allCases, selected: selectedBaseTextHorizontalAlignment) { alignment in
-                selectedBaseTextHorizontalAlignment = alignment
-            }
-
-            controlRow(title: "Vertical", values: MemoryAlbumTextVerticalAlignment.allCases, selected: selectedBaseTextVerticalAlignment) { alignment in
-                selectedBaseTextVerticalAlignment = alignment
-            }
-
-            if selectedBaseTextBlockType == .titleAndDescription {
-                HStack(spacing: MindMorySpacing.sm) {
-                    FilterChip(title: "Title first", isSelected: selectedBaseTextIsTitleFirst) {
-                        selectedBaseTextIsTitleFirst = true
-                    }
-
-                    FilterChip(title: "Description first", isSelected: !selectedBaseTextIsTitleFirst) {
-                        selectedBaseTextIsTitleFirst = false
-                    }
+                    card
                 }
             }
-
-            if selectedBaseTextBlockType != .descriptionOnly {
-                VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-                    Text("Title")
-                        .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
-
-                    TextField("Enter title", text: $selectedBaseTitle)
-                        .font(MindMoryTypography.bodyMedium)
-                        .padding(MindMorySpacing.sm)
-                        .background(MindMoryColors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                                .stroke(MindMoryColors.border)
-                        )
-                }
-            }
-
-            if selectedBaseTextBlockType != .titleOnly {
-                VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-                    Text("Description")
-                        .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
-
-                    TextField("Enter description", text: $selectedBaseDescription, axis: .vertical)
-                        .lineLimit(2...4)
-                        .font(MindMoryTypography.bodyMedium)
-                        .padding(MindMorySpacing.sm)
-                        .background(MindMoryColors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                                .stroke(MindMoryColors.border)
-                        )
-                }
-            }
-
-            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                Text("Typography")
-                    .font(MindMoryTypography.bodySmall)
-                    .foregroundStyle(MindMoryColors.textPrimary)
-
-                if selectedBaseTextBlockType != .descriptionOnly {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-                        Text("Title size: \(Int(selectedBaseTitleSize))")
-                            .font(MindMoryTypography.caption)
-                            .foregroundStyle(MindMoryColors.textSecondary)
-
-                        Slider(value: $selectedBaseTitleSize, in: 18...44, step: 1)
-
-                        controlRow(title: "Title weight", values: MemoryAlbumTextWeight.allCases, selected: selectedBaseTitleWeight) { selectedWeight in
-                            selectedBaseTitleWeight = selectedWeight
-                        }
-                    }
-                }
-
-                if selectedBaseTextBlockType != .titleOnly {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-                        Text("Description size: \(Int(selectedBaseDescriptionSize))")
-                            .font(MindMoryTypography.caption)
-                            .foregroundStyle(MindMoryColors.textSecondary)
-
-                        Slider(value: $selectedBaseDescriptionSize, in: 12...28, step: 1)
-
-                        controlRow(title: "Description weight", values: MemoryAlbumTextWeight.allCases, selected: selectedBaseDescriptionWeight) { selectedWeight in
-                            selectedBaseDescriptionWeight = selectedWeight
-                        }
-                    }
-                }
-            }
+            .frame(width: size.width, height: size.height)
         }
     }
 
-    private var baseCellTextEditorSheet: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                    baseTextEditorControls()
-
-                    VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-                        Text("Preview")
-                            .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-
-                        MemoryAlbumTextSectionRenderView(
-                            textSection: MemoryAlbumTextSection(
-                                templateVariant: 0,
-                                blockType: selectedBaseTextBlockType,
-                                horizontalAlignment: selectedBaseTextHorizontalAlignment,
-                                verticalAlignment: selectedBaseTextVerticalAlignment,
-                                isTitleFirst: selectedBaseTextIsTitleFirst,
-                                title: selectedBaseTitle,
-                                description: selectedBaseDescription,
-                                style: MemoryAlbumTextStyle(
-                                    titleSize: selectedBaseTitleSize,
-                                    descriptionSize: selectedBaseDescriptionSize,
-                                    titleWeight: selectedBaseTitleWeight,
-                                    descriptionWeight: selectedBaseDescriptionWeight
-                                )
-                            ),
-                            isPreview: true
-                        )
-                        .frame(height: 180)
-                    }
-                }
-                .padding(MindMorySpacing.xl)
-            }
-            .navigationTitle("Add Text Cell")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        updateBaseTextCell()
-                    }
-                    .disabled(selectedBaseTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        isShowingBaseTextEditor = false
-                        selectedBaseCellSectionID = nil
-                        selectedBaseCellIndex = nil
-                    }
-                }
-            }
-        }
+    @ViewBuilder
+    private func photoCell(at index: Int, in section: MemoryAlbumSection, isPreview: Bool) -> some View {
+        previewImageCell(at: index, in: section)
     }
 
     private func overlayRotations(for count: Int) -> [Angle] {
@@ -1014,51 +889,10 @@ struct MemoryAlbumCreateView: View {
     }
 }
 
-struct MemoryAlbumPreviewView: View {
-    @ObservedObject var viewModel: MemoryAlbumViewModel
-    let onSave: () -> Void
-    let onCreate: (Album) -> Void
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                    Text("Album preview")
-                        .font(MindMoryTypography.headingLarge)
-                        .foregroundStyle(MindMoryColors.textPrimary)
-
-                    Text(viewModel.albumName)
-                        .font(MindMoryTypography.bodyMedium)
-                        .foregroundStyle(MindMoryColors.textSecondary)
-
-                    ForEach(viewModel.sections) { section in
-                        Text(section.type.rawValue.capitalized)
-                            .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.textSecondary)
-                    }
-                }
-                .padding(MindMorySpacing.xl)
-            }
-            .navigationTitle("Preview")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        onSave()
-                    }
-                }
-            }
-            .onChange(of: viewModel.savedAlbum) { _, newAlbum in
-                if let album = newAlbum {
-                    onCreate(album)
-                }
-            }
-        }
-    }
-}
-
-#Preview {
+#Preview("Graduation Album") {
     NavigationStack {
-        MemoryAlbumCreateView(viewModel: MemoryAlbumViewModel()) { _ in }
+        MemoryAlbumCreateView(
+            viewModel: MemoryAlbumViewModel(sampleSections: PreviewData.graduationAlbumSections)
+        ) { _ in }
     }
 }

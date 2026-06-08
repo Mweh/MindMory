@@ -15,7 +15,7 @@ enum CreateAlbumError: LocalizedError {
 }
 
 struct CreateAlbumUseCase {
-    func execute(name: String, note: String, photos: [AlbumPhoto], category: AlbumCategory) throws -> Album {
+    func execute(name: String, note: String, photos: [AlbumPhoto], sections: [MemoryAlbumSection] = [], category: AlbumCategory) throws -> Album {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmedName.isEmpty else {
@@ -31,6 +31,7 @@ struct CreateAlbumUseCase {
             name: trimmedName,
             note: note,
             photos: photos,
+            sections: sections,
             createdAt: Date(),
             category: category
         )

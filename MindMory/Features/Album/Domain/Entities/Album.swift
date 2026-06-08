@@ -10,6 +10,11 @@ struct Album: Identifiable, Equatable {
     let name: String
     let note: String
     let photos: [AlbumPhoto]
+    let sections: [MemoryAlbumSection]
     let createdAt: Date
     let category: AlbumCategory
+
+    var coverPhoto: AlbumPhoto? {
+        photos.first
+    }
 }

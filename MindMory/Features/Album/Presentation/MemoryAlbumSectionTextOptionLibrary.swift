@@ -6,7 +6,8 @@ struct MemoryAlbumTextSectionRenderView: View {
 
     var body: some View {
         content
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: combinedAlignment)
+            .frame(maxWidth: .infinity, alignment: combinedAlignment)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private var content: some View {

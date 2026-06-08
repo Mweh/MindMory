@@ -54,25 +54,19 @@ struct MemoryAlbumSectionCreateView: View {
 
                 sectionTypeChips
 
-                switch selectedSectionType {
-                case .image:
+                if selectedSectionType == .image {
                     imageSectionBuilder
-                case .base:
-                    baseSectionBuilder
-                case .text:
+                } else {
                     textSectionBuilder
                 }
+
+                Spacer(minLength: MindMorySpacing.xl)
             }
             .padding(MindMorySpacing.xl)
         }
         .background(MindMoryColors.background.ignoresSafeArea())
         .navigationTitle("Add Section")
         .navigationBarTitleDisplayMode(.inline)
-        .onChange(of: selectedSectionType) { _, selectedSectionType in
-            if selectedSectionType == .base && selectedLayoutCount < 2 {
-                selectedLayoutCount = 2
-            }
-        }
     }
 
     private var imageSectionBuilder: some View {
@@ -80,18 +74,6 @@ struct MemoryAlbumSectionCreateView: View {
             layoutChips
 
             Text("Pick a layout for your image section. You’ll choose the photos after returning to the album page.")
-                .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.textSecondary)
-
-            layoutOptions
-        }
-    }
-
-    private var baseSectionBuilder: some View {
-        VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-            layoutChips
-
-            Text("Pick a base layout for a mixed content section. You can add image or text cells after it is created.")
                 .font(MindMoryTypography.bodySmall)
                 .foregroundStyle(MindMoryColors.textSecondary)
 
@@ -137,10 +119,6 @@ struct MemoryAlbumSectionCreateView: View {
 
                 FilterChip(title: "Text", isSelected: selectedSectionType == .text) {
                     selectedSectionType = .text
-                }
-
-                FilterChip(title: "Base", isSelected: selectedSectionType == .base) {
-                    selectedSectionType = .base
                 }
             }
             .padding(.vertical, MindMorySpacing.xs)
@@ -307,7 +285,7 @@ struct MemoryAlbumSectionCreateView: View {
     private var layoutChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: MindMorySpacing.sm) {
-                ForEach(layoutCountOptions, id: \.self) { count in
+                ForEach(1...5, id: \.self) { count in
                     FilterChip(
                         title: "\(count)",
                         isSelected: selectedLayoutCount == count
@@ -317,17 +295,6 @@ struct MemoryAlbumSectionCreateView: View {
                 }
             }
             .padding(.vertical, MindMorySpacing.xs)
-        }
-    }
-
-    private var layoutCountOptions: [Int] {
-        switch selectedSectionType {
-        case .image:
-            return Array(1...5)
-        case .base:
-            return Array(2...5)
-        case .text:
-            return []
         }
     }
 
@@ -354,30 +321,12 @@ struct MemoryAlbumSectionCreateView: View {
     }
 
     private func saveLayoutTemplate(variant: Int) {
-        let section: MemoryAlbumSection
-
-        switch selectedSectionType {
-        case .image:
-            section = MemoryAlbumSection(
-                id: existingSection?.id ?? UUID(),
-                layoutCount: selectedLayoutCount,
-                layoutVariant: variant,
-                photos: Array(repeating: nil, count: selectedLayoutCount)
-            )
-        case .base:
-            section = MemoryAlbumSection(
-                id: existingSection?.id ?? UUID(),
-                baseLayoutCount: selectedLayoutCount,
-                layoutVariant: variant,
-                cells: Array(repeating: .placeholder, count: selectedLayoutCount)
-            )
-        case .text:
-            section = MemoryAlbumSection(
-                id: existingSection?.id ?? UUID(),
-                textSection: configuredTextSection
-            )
-        }
-
+        let section = MemoryAlbumSection(
+            id: existingSection?.id ?? UUID(),
+            layoutCount: selectedLayoutCount,
+            layoutVariant: variant,
+            photos: Array(repeating: nil, count: selectedLayoutCount)
+        )
         onSave(section)
     }
 }

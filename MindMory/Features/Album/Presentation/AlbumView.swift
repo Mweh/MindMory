@@ -10,19 +10,26 @@ struct AlbumView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                content
-                    .padding(.horizontal, MindMorySpacing.xl)
-                    .padding(.top, MindMorySpacing.lg)
-            }
-            .navigationDestination(isPresented: $isShowingCreateAlbum) {
-                MemoryAlbumCreateView(viewModel: MemoryAlbumViewModel()) { album in
-                    viewModel.addAlbum(album)
+            content
+                .padding(.horizontal, MindMorySpacing.xl)
+                .padding(.top, MindMorySpacing.lg)
+                .navigationDestination(isPresented: $isShowingCreateAlbum) {
+                    MemoryAlbumCreateView(viewModel: MemoryAlbumViewModel()) { album in
+                        viewModel.addAlbum(album)
+                    }
                 }
-            }
-            .background(MindMoryColors.background.ignoresSafeArea())
-            .navigationTitle("Album")
-            .navigationBarTitleDisplayMode(.large)
+                .background(MindMoryColors.background.ignoresSafeArea())
+                .navigationTitle("")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            isShowingCreateAlbum = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                    }
+                }
         }
     }
 
@@ -78,55 +85,58 @@ struct AlbumView: View {
     }
 
     private func albumItem(for album: Album) -> some View {
-        AppCard {
+        NavigationLink(destination: AlbumDetailView(album: album)) {
             VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-                HStack(alignment: .top, spacing: MindMorySpacing.md) {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-                        Text(album.name)
-                            .font(MindMoryTypography.headingMedium)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-
-                        Text(album.createdAt.formatted(date: .abbreviated, time: .omitted))
-                            .font(MindMoryTypography.caption)
-                            .foregroundStyle(MindMoryColors.textSecondary)
-                    }
-
-                    Spacer()
-
-                    Text(album.category == .timeline ? "Timeline" : "Memory")
-                        .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(album.category == .timeline ? MindMoryColors.primaryGreen : MindMoryColors.mutedIndigo)
-                        .padding(.horizontal, MindMorySpacing.sm)
-                        .padding(.vertical, MindMorySpacing.xs)
-                        .background(album.category == .timeline ? MindMoryColors.surface : MindMoryColors.surfaceStrong)
-                        .clipShape(Capsule())
-
-                    Text("\(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")")
-                        .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.primaryGreen)
-                }
-
-                if let image = album.photos.first?.uiImage {
+                if let image = album.coverPhoto?.uiImage {
                     Image(uiImage: image)
                         .resizable()
                         .scaledToFill()
-                        .frame(height: 180)
+                        .frame(height: 190)
                         .frame(maxWidth: .infinity)
                         .clipped()
                         .cornerRadius(MindMoryRadius.large)
+                } else {
+                    RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                        .fill(MindMoryColors.surface)
+                        .frame(height: 190)
+                        .overlay(
+                            Image(systemName: "photo")
+                                .font(.title)
+                                .foregroundStyle(MindMoryColors.textSecondary)
+                        )
                 }
 
-                if !album.note.isEmpty {
-                    Text(album.note)
-                        .font(MindMoryTypography.bodyMedium)
-                        .foregroundStyle(MindMoryColors.textSecondary)
-                        .lineLimit(3)
+                VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
+                    Text(album.name)
+                        .font(MindMoryTypography.headingMedium)
+                        .foregroundStyle(MindMoryColors.textPrimary)
+
+                    HStack(spacing: MindMorySpacing.sm) {
+                        Text(album.createdAt.formatted(date: .abbreviated, time: .omitted))
+                            .font(MindMoryTypography.caption)
+                            .foregroundStyle(MindMoryColors.textSecondary)
+
+                        Spacer()
+
+                        Text(album.photos.isEmpty ? "No photos" : "\(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")")
+                            .font(MindMoryTypography.caption)
+                            .foregroundStyle(MindMoryColors.textSecondary)
+                    }
                 }
+                .padding(.top, MindMorySpacing.sm)
             }
+            .padding(MindMorySpacing.lg)
+            .background(MindMoryColors.background)
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                    .stroke(MindMoryColors.border, lineWidth: 1)
+            )
         }
+        .buttonStyle(.plain)
     }
 }
 
 #Preview {
-    AlbumView(viewModel: AlbumListViewModel())
+    AlbumView(viewModel: AlbumListViewModel(albums: PreviewData.sampleAlbums))
 }

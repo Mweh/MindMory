@@ -5,10 +5,16 @@ final class MemoryAlbumViewModel: AlbumCreationViewModel {
     @Published private(set) var sections: [MemoryAlbumSection] = []
 
     init(
+        sampleSections: [MemoryAlbumSection]? = nil,
         loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase = LoadAlbumPhotosUseCase(),
         createAlbumUseCase: CreateAlbumUseCase = CreateAlbumUseCase()
     ) {
         super.init(category: .memory, loadAlbumPhotosUseCase: loadAlbumPhotosUseCase, createAlbumUseCase: createAlbumUseCase)
+
+        if let sampleSections = sampleSections {
+            sections = sampleSections
+            return
+        }
 
         sections = [
             MemoryAlbumSection(textSection: MemoryAlbumTextSection(
@@ -47,55 +53,18 @@ final class MemoryAlbumViewModel: AlbumCreationViewModel {
         guard let sectionIndex = sections.firstIndex(where: { $0.id == sectionId }) else { return }
 
         let section = sections[sectionIndex]
-        switch section.content {
-        case .image(let layoutCount, let layoutVariant, var photos):
-            if photos.count != layoutCount {
-                photos = Array(repeating: nil, count: layoutCount)
-            }
-            guard photos.indices.contains(index) else { return }
-            photos[index] = photo
+        guard case .image(let layoutCount, let layoutVariant, var photos) = section.content else { return }
 
-            sections[sectionIndex] = MemoryAlbumSection(
-                id: section.id,
-                content: .image(layoutCount: layoutCount, layoutVariant: layoutVariant, photos: photos)
-            )
-
-        case .base(let layoutCount, let layoutVariant, var cells):
-            if cells.count != layoutCount {
-                cells = Array(repeating: .placeholder, count: layoutCount)
-            }
-            guard cells.indices.contains(index) else { return }
-            cells[index] = .image(photo)
-
-            sections[sectionIndex] = MemoryAlbumSection(
-                id: section.id,
-                content: .base(layoutCount: layoutCount, layoutVariant: layoutVariant, cells: cells)
-            )
-
-        default:
-            return
+        if photos.count != layoutCount {
+            photos = Array(repeating: nil, count: layoutCount)
         }
-    }
+        guard photos.indices.contains(index) else { return }
+        photos[index] = photo
 
-    func updateBaseSectionCell(sectionId: UUID, index: Int, content: MemoryAlbumSectionCellContent) {
-        guard let sectionIndex = sections.firstIndex(where: { $0.id == sectionId }) else { return }
-
-        let section = sections[sectionIndex]
-        switch section.content {
-        case .base(let layoutCount, let layoutVariant, var cells):
-            if cells.count != layoutCount {
-                cells = Array(repeating: .placeholder, count: layoutCount)
-            }
-            guard cells.indices.contains(index) else { return }
-            cells[index] = content
-
-            sections[sectionIndex] = MemoryAlbumSection(
-                id: section.id,
-                content: .base(layoutCount: layoutCount, layoutVariant: layoutVariant, cells: cells)
-            )
-        default:
-            return
-        }
+        sections[sectionIndex] = MemoryAlbumSection(
+            id: section.id,
+            content: .image(layoutCount: layoutCount, layoutVariant: layoutVariant, photos: photos)
+        )
     }
 
     func moveSection(sourceId: UUID, destinationId: UUID) {
@@ -132,15 +101,9 @@ final class MemoryAlbumViewModel: AlbumCreationViewModel {
 
     var hasIncompleteSections: Bool {
         sections.contains { section in
-            switch section.content {
-            case .image(let layoutCount, _, let photos):
-                guard photos.count == layoutCount else { return true }
-                return photos.contains(where: { $0 == nil })
-            case .base(_, _, let cells):
-                return cells.contains(.placeholder)
-            default:
-                return false
-            }
+            guard case .image(let layoutCount, _, let photos) = section.content else { return false }
+            guard photos.count == layoutCount else { return true }
+            return photos.contains(where: { $0 == nil })
         }
     }
 
@@ -152,19 +115,8 @@ final class MemoryAlbumViewModel: AlbumCreationViewModel {
             }
 
             let sectionPhotos = sections.reduce(into: [AlbumPhoto]()) { result, section in
-                switch section.content {
-                case .image(_, _, let photos):
-                    result.append(contentsOf: photos.compactMap { $0 })
-                case .base(_, _, let cells):
-                    result.append(contentsOf: cells.compactMap { cell in
-                        if case .image(let photo) = cell {
-                            return photo
-                        }
-                        return nil
-                    })
-                default:
-                    break
-                }
+                guard case .image(_, _, let photos) = section.content else { return }
+                result.append(contentsOf: photos.compactMap { $0 })
             }
             albumPhotos.append(contentsOf: sectionPhotos)
 
@@ -172,6 +124,7 @@ final class MemoryAlbumViewModel: AlbumCreationViewModel {
                 name: albumName,
                 note: note,
                 photos: albumPhotos,
+                sections: sections,
                 category: category
             )
 

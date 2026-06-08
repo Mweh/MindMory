@@ -4,13 +4,6 @@ import Foundation
 enum MemoryAlbumSectionType: String, Equatable {
     case image
     case text
-    case base
-}
-
-enum MemoryAlbumSectionCellContent: Equatable {
-    case placeholder
-    case image(AlbumPhoto)
-    case text(MemoryAlbumTextSection)
 }
 
 enum MemoryAlbumTextBlockType: String, CaseIterable, Identifiable, Equatable {
@@ -117,7 +110,6 @@ struct MemoryAlbumTextSection: Equatable {
 enum MemoryAlbumSectionContent: Equatable {
     case image(layoutCount: Int, layoutVariant: Int, photos: [AlbumPhoto?])
     case text(MemoryAlbumTextSection)
-    case base(layoutCount: Int, layoutVariant: Int, cells: [MemoryAlbumSectionCellContent])
 }
 
 struct MemoryAlbumSection: Identifiable, Equatable {
@@ -134,11 +126,6 @@ struct MemoryAlbumSection: Identifiable, Equatable {
         self.content = .text(textSection)
     }
 
-    init(id: UUID = UUID(), baseLayoutCount: Int, layoutVariant: Int = 0, cells: [MemoryAlbumSectionCellContent] = []) {
-        self.id = id
-        self.content = .base(layoutCount: baseLayoutCount, layoutVariant: layoutVariant, cells: cells)
-    }
-
     init(id: UUID = UUID(), content: MemoryAlbumSectionContent) {
         self.id = id
         self.content = content
@@ -150,37 +137,22 @@ struct MemoryAlbumSection: Identifiable, Equatable {
             return .image
         case .text:
             return .text
-        case .base:
-            return .base
         }
     }
 
     var layoutCount: Int? {
-        switch content {
-        case .image(let layoutCount, _, _), .base(let layoutCount, _, _):
-            return layoutCount
-        default:
-            return nil
-        }
+        guard case .image(let layoutCount, _, _) = content else { return nil }
+        return layoutCount
     }
 
     var layoutVariant: Int? {
-        switch content {
-        case .image(_, let layoutVariant, _), .base(_, let layoutVariant, _):
-            return layoutVariant
-        default:
-            return nil
-        }
+        guard case .image(_, let layoutVariant, _) = content else { return nil }
+        return layoutVariant
     }
 
     var photos: [AlbumPhoto?] {
         guard case .image(_, _, let photos) = content else { return [] }
         return photos
-    }
-
-    var baseCells: [MemoryAlbumSectionCellContent] {
-        guard case .base(_, _, let cells) = content else { return [] }
-        return cells
     }
 
     var textSection: MemoryAlbumTextSection? {
