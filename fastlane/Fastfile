@@ -21,7 +21,8 @@ platform :ios do
 
     build_app(
       scheme: "MindMory",
-      export_method: "app-store"
+      export_method: "app-store",
+      xcargs: "-allowProvisioningUpdates"
     )
 
     upload_to_testflight(
