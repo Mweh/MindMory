@@ -180,7 +180,6 @@ struct MemoryAlbumSectionLayoutRenderer<CellContent: View>: View {
             return AnyView(
                 cellContent(index)
                     .frame(width: size.width, height: size.height)
-                    .clipped()
             )
         case .spacer:
             return AnyView(
@@ -200,7 +199,6 @@ struct MemoryAlbumSectionLayoutRenderer<CellContent: View>: View {
                         }
                     }
                     .frame(width: size.width, height: size.height, alignment: .topLeading)
-                    .clipped()
                 )
             case .vertical:
                 let heights = measuredLengths(total: size.height, spacing: spacing, ratios: ratios)
@@ -211,7 +209,6 @@ struct MemoryAlbumSectionLayoutRenderer<CellContent: View>: View {
                         }
                     }
                     .frame(width: size.width, height: size.height, alignment: .topLeading)
-                    .clipped()
                 )
             }
         }

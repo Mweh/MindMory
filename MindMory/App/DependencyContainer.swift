@@ -29,7 +29,6 @@ final class DependencyContainer: ObservableObject {
     }
     func makeHomeViewModel() -> HomeViewModel { HomeViewModel(getTodayReminderUseCase: GetTodayReminderUseCase(repository: reminderRepository), memories: memoryRepository.fetchMemories()) }
     func makeAlbumListViewModel() -> AlbumListViewModel { AlbumListViewModel() }
-    func makeTimelineAlbumViewModel() -> TimelineAlbumViewModel { TimelineAlbumViewModel(loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase(), createAlbumUseCase: CreateAlbumUseCase()) }
     func makeMemoryAlbumViewModel() -> MemoryAlbumViewModel { MemoryAlbumViewModel(loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase(), createAlbumUseCase: CreateAlbumUseCase()) }
     func makeMemoryDetailViewModel(memory: Memory) -> MemoryDetailViewModel { MemoryDetailViewModel(memory: memory, saveJournalEntryUseCase: SaveJournalEntryUseCase(repository: memoryRepository), toggleFavoriteMemoryUseCase: ToggleFavoriteMemoryUseCase(repository: memoryRepository), generateShareableMemoryUseCase: GenerateShareableMemoryUseCase()) }
     func makeSettingsViewModel() -> SettingsViewModel { SettingsViewModel(permissionRepository: permissionRepository, requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: permissionRepository), requestLocationPermissionUseCase: RequestLocationPermissionUseCase(repository: permissionRepository), requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase(repository: permissionRepository)) }

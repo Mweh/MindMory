@@ -332,24 +332,25 @@ struct MemoryAlbumCreateView: View {
         ) {
             let shape = RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
 
-            Group {
+            ZStack {
+                Color(MindMoryColors.background)
+
                 if let image = imageForSectionCell(index: index, section: section) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipped()
+                    GeometryReader { geometry in
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .clipped()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    Color.clear
-                        .overlay(
-                            Image(systemName: "photo")
-                                .font(.title2)
-                                .foregroundStyle(MindMoryColors.textSecondary)
-                        )
+                    Image(systemName: "photo")
+                        .font(.title2)
+                        .foregroundStyle(MindMoryColors.textSecondary)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .compositingGroup()
             .clipShape(shape)
             .overlay(shape.stroke(MindMoryColors.border))
             .contentShape(shape)

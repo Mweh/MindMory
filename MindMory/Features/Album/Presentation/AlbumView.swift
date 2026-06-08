@@ -16,28 +16,13 @@ struct AlbumView: View {
                     .padding(.top, MindMorySpacing.lg)
             }
             .navigationDestination(isPresented: $isShowingCreateAlbum) {
-                AlbumCategorySelectionView(
-                    timelineDestination: TimelineAlbumCreateView(viewModel: TimelineAlbumViewModel()) { album in
-                        viewModel.addAlbum(album)
-                    },
-                    memoryDestination: MemoryAlbumCreateView(viewModel: MemoryAlbumViewModel()) { album in
-                        viewModel.addAlbum(album)
-                    }
-                )
+                MemoryAlbumCreateView(viewModel: MemoryAlbumViewModel()) { album in
+                    viewModel.addAlbum(album)
+                }
             }
             .background(MindMoryColors.background.ignoresSafeArea())
             .navigationTitle("Album")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        isShowingCreateAlbum = true
-                    } label: {
-                        Label("New Album", systemImage: "plus")
-                            .font(MindMoryTypography.button)
-                    }
-                }
-            }
         }
     }
 
