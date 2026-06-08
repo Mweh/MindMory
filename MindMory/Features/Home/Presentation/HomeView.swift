@@ -16,6 +16,8 @@ struct HomeView: View {
                     )
 
                     if let memory = viewModel.focusedMemory {
+                        favoriteHeader
+
                         InteractiveMemoryCardView(
                             memory: memory,
                             debugImageURL: viewModel.debugHomeCardImageURL,
@@ -51,13 +53,26 @@ struct HomeView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
             Text("You’re in the middle of \(viewModel.eventName).")
-                .font(MindMoryTypography.displayLarge)
+                .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundStyle(MindMoryColors.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text("Capture it before it’s gone.")
-                .font(MindMoryTypography.headingMedium)
+                .font(.system(size: 16, weight: .regular, design: .rounded))
                 .foregroundStyle(MindMoryColors.primaryGreen)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var favoriteHeader: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("One of your favorites.")
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .foregroundStyle(MindMoryColors.primaryGreen)
+
+            Text("Look at this picture... and tap to flip it!")
+                .font(.system(size: 12, weight: .regular, design: .rounded))
+                .foregroundStyle(MindMoryColors.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

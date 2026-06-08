@@ -9,7 +9,7 @@ enum HomeViewState: Equatable {
     case error(String)
 }
 
-enum SelectedHomeStat: CaseIterable, Equatable {
+enum SelectedStatCard: CaseIterable, Equatable {
     case captured
     case visited
     case reminder
@@ -21,14 +21,14 @@ enum MemoryCardSide: Equatable {
 }
 
 struct HomeStatCardModel: Identifiable, Equatable {
-    let stat: SelectedHomeStat
+    let stat: SelectedStatCard
     let title: String
     let primaryValue: String
     let secondaryValue: String
     let monthlyDetail: String
     let yearlyDetail: String
 
-    var id: SelectedHomeStat { stat }
+    var id: SelectedStatCard { stat }
 }
 
 final class HomeViewModel: ObservableObject {
@@ -36,7 +36,7 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var state: HomeViewState = .loading
     @Published private(set) var focusedMemory: Memory?
     @Published private(set) var statCards: [HomeStatCardModel] = []
-    @Published var selectedStat: SelectedHomeStat = .captured
+    @Published var selectedStat: SelectedStatCard? = nil
     @Published var cardSide: MemoryCardSide = .front
     @Published var captionText = ""
     @Published var isShowingSharePreview = false
@@ -85,8 +85,10 @@ final class HomeViewModel: ObservableObject {
         )
     }
 
-    func selectStat(_ stat: SelectedHomeStat) {
-        selectedStat = stat
+    func selectStat(_ stat: SelectedStatCard) {
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
+            selectedStat = selectedStat == stat ? nil : stat
+        }
     }
 
     func flipCard() {

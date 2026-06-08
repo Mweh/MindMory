@@ -7,64 +7,142 @@ struct ExpandableStatCardView: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-                Text(card.title)
-                    .font(MindMoryTypography.caption)
-                    .foregroundStyle(Color.white.opacity(0.72))
-                    .textCase(.uppercase)
-                    .tracking(1.2)
-
-                Spacer(minLength: MindMorySpacing.xs)
-
-                Text(card.primaryValue)
-                    .font(isSelected ? MindMoryTypography.displayLarge : MindMoryTypography.headingLarge)
-                    .foregroundStyle(Color.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                Text(card.secondaryValue)
-                    .font(isSelected ? MindMoryTypography.headingMedium : MindMoryTypography.bodyMedium)
-                    .foregroundStyle(Color.white.opacity(0.82))
-                    .lineLimit(isSelected ? 2 : 1)
-                    .minimumScaleFactor(0.75)
-
+            Group {
                 if isSelected {
-                    HStack(spacing: MindMorySpacing.sm) {
-                        detailPill(card.monthlyDetail)
-                        detailPill(card.yearlyDetail)
-                    }
-                    .padding(.top, MindMorySpacing.xs)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    expandedContent
+                } else {
+                    compactContent
                 }
             }
-            .padding(isSelected ? MindMorySpacing.lg : MindMorySpacing.md)
-            .frame(maxWidth: .infinity, minHeight: isSelected ? 180 : 118, alignment: .topLeading)
+            .padding(isSelected ? MindMorySpacing.lg : MindMorySpacing.sm)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(cardBackground)
             .clipShape(cardShape)
             .overlay {
-                cardShape.stroke(Color.white.opacity(isSelected ? 0.18 : 0.09), lineWidth: 1)
+                cardShape.stroke(Color.white.opacity(isSelected ? 0.16 : 0.08), lineWidth: 1)
             }
-            .shadow(color: MindMoryColors.deepGreen.opacity(isSelected ? 0.28 : 0.16), radius: isSelected ? 22 : 12, x: 0, y: isSelected ? 16 : 8)
-            .scaleEffect(isSelected ? 1 : 0.96)
+            .shadow(
+                color: MindMoryColors.deepGreen.opacity(isSelected ? 0.24 : 0.14),
+                radius: isSelected ? 20 : 10,
+                x: 0,
+                y: isSelected ? 14 : 7
+            )
         }
         .buttonStyle(.plain)
     }
 
-    private func detailPill(_ text: String) -> some View {
-        Text(text)
-            .font(MindMoryTypography.caption)
-            .foregroundStyle(Color.white.opacity(0.86))
-            .padding(.horizontal, MindMorySpacing.sm)
+    private var compactContent: some View {
+        VStack(spacing: 6) {
+            Text(card.title)
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.white.opacity(0.92))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Text(card.primaryValue)
+                .font(.system(size: 38, weight: .regular, design: .serif))
+                .foregroundStyle(Color.white.opacity(0.95))
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
+
+            Text(card.secondaryValue)
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.white.opacity(0.9))
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private var expandedContent: some View {
+        if card.stat == .visited {
+            visitedExpandedContent
+        } else {
+            standardExpandedContent
+        }
+    }
+
+    private var standardExpandedContent: some View {
+        VStack(spacing: MindMorySpacing.md) {
+            Text(card.title)
+                .font(.system(size: 24, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.white.opacity(0.96))
+
+            Text(expandedPrimaryValue)
+                .font(.system(size: 76, weight: .regular, design: .serif))
+                .foregroundStyle(Color.white.opacity(0.96))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+
+            Text(card.secondaryValue)
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.white.opacity(0.92))
+
+            HStack(spacing: MindMorySpacing.xl) {
+                detailColumn(number: "12", label: "This Month")
+                detailColumn(number: "20", label: "This Year")
+            }
+            .padding(.top, MindMorySpacing.xs)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var visitedExpandedContent: some View {
+        VStack(spacing: MindMorySpacing.lg) {
+            Text("Visited Places")
+                .font(.system(size: 24, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.white.opacity(0.96))
+
+            HStack(spacing: MindMorySpacing.xs) {
+                Image(systemName: "location.north.fill")
+                Text("Academy")
+                    .fontWeight(.bold)
+            }
+            .font(.system(size: 24, weight: .semibold, design: .rounded))
+            .foregroundStyle(Color.white.opacity(0.96))
+            .padding(.horizontal, MindMorySpacing.lg)
             .padding(.vertical, MindMorySpacing.xs)
-            .background(Color.white.opacity(0.12))
+            .background(Color.white.opacity(0.32))
             .clipShape(Capsule(style: .continuous))
+
+            Text("2 times")
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundStyle(Color.white.opacity(0.96))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var expandedPrimaryValue: String {
+        switch card.stat {
+        case .captured:
+            return "22"
+        case .visited:
+            return card.primaryValue
+        case .reminder:
+            return "5"
+        }
+    }
+
+    private func detailColumn(number: String, label: String) -> some View {
+        VStack(spacing: 2) {
+            Text(number)
+                .font(.system(size: 34, weight: .regular, design: .rounded))
+            Text(label)
+                .font(.system(size: 12, weight: .regular, design: .rounded))
+        }
+        .foregroundStyle(Color.white.opacity(0.92))
     }
 
     private var cardBackground: some View {
-        LinearGradient(colors: [MindMoryColors.deepGreen, MindMoryColors.primaryGreen, Color(hex: "#2F7055")], startPoint: .topLeading, endPoint: .bottomTrailing)
+        LinearGradient(
+            colors: [MindMoryColors.deepGreen, MindMoryColors.primaryGreen, Color(hex: "#235B43")],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 
     private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous)
+        RoundedRectangle(cornerRadius: 22, style: .continuous)
     }
 }
