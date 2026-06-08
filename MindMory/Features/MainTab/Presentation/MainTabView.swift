@@ -49,17 +49,14 @@ struct MainTabView: View {
                 }
                 .tag(MainTab.home)
 
-            AlbumView(
-                viewModel: container.makeAlbumViewModel(),
-                container: container
-            )
-            .tabItem {
-                Label(
-                    MainTab.album.title,
-                    systemImage: MainTab.album.icon
-                )
-            }
-            .tag(MainTab.album)
+            AlbumView(viewModel: container.makeAlbumListViewModel())
+                .tabItem {
+                    Label(
+                        MainTab.album.title,
+                        systemImage: MainTab.album.icon
+                    )
+                }
+                .tag(MainTab.album)
 
             SettingsView(
                 viewModel: container.makeSettingsViewModel()

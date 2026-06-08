@@ -3,21 +3,12 @@ import SwiftUI
 struct PrimaryButton: View {
     let title: String
     let action: () -> Void
-    var isLoading = false
 
     var body: some View {
         Button(action: action) {
-            ZStack {
-                Text(title)
-                    .opacity(isLoading ? 0 : 1)
-
-                if isLoading {
-                    ProgressView()
-                        .tint(MindMoryColors.deepGreen)
-                }
-            }
+            Text(title)
         }
-            .buttonStyle(MindMoryPrimaryButtonStyle())
+        .buttonStyle(MindMoryPrimaryButtonStyle())
     }
 }
 
@@ -37,7 +28,10 @@ private struct MindMoryPrimaryButtonStyle: ButtonStyle {
     }
 
     func makeBody(configuration: Configuration) -> some View {
-        let pressDepth = configuration.isPressed ? Metrics.pressTravel : 0
+        let pressDepth = configuration.isPressed && isEnabled ? Metrics.pressTravel : 0
+        let fillColor = isEnabled ? MindMoryColors.background : MindMoryColors.surfaceStrong
+        let borderColor = isEnabled ? MindMoryColors.primaryGreen : MindMoryColors.border
+        let textColor = isEnabled ? MindMoryColors.deepGreen : MindMoryColors.mutedIndigo
 
         return Color.clear
             .frame(maxWidth: .infinity)
@@ -53,11 +47,12 @@ private struct MindMoryPrimaryButtonStyle: ButtonStyle {
                     cornerRadius: Metrics.cornerRadius,
                     borderWidth: Metrics.borderWidth,
                     height: Metrics.faceHeight,
-                    fillColor: MindMoryColors.background
+                    fillColor: fillColor,
+                    borderColor: borderColor
                 ) {
                     configuration.label
                         .font(MindMoryTypography.button)
-                        .foregroundStyle(MindMoryColors.deepGreen)
+                        .foregroundStyle(textColor)
                         .lineLimit(1)
                         .minimumScaleFactor(0.9)
                         .padding(.horizontal, Metrics.horizontalPadding)
@@ -65,9 +60,7 @@ private struct MindMoryPrimaryButtonStyle: ButtonStyle {
                 .offset(y: pressDepth)
             }
             .contentShape(RoundedRectangle(cornerRadius: Metrics.cornerRadius, style: .continuous))
-            .opacity(isEnabled ? 1 : 0.55)
             .animation(Metrics.pressAnimation, value: configuration.isPressed)
-            .animation(.easeOut(duration: 0.18), value: isEnabled)
     }
 }
 
@@ -76,6 +69,7 @@ private struct ButtonFace<Label: View>: View {
     let borderWidth: CGFloat
     let height: CGFloat
     let fillColor: Color
+    let borderColor: Color
     @ViewBuilder let label: () -> Label
 
     var body: some View {
@@ -86,7 +80,7 @@ private struct ButtonFace<Label: View>: View {
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(MindMoryColors.primaryGreen, lineWidth: borderWidth)
+                    .stroke(borderColor, lineWidth: borderWidth)
             }
     }
 }
