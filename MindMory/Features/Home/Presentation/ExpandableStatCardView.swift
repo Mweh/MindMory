@@ -6,29 +6,34 @@ struct ExpandableStatCardView: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Group {
-                if isSelected {
-                    expandedContent
-                } else {
-                    compactContent
+        GeometryReader { proxy in
+            Button(action: action) {
+                ZStack {
+                    cardBackground
+
+                    Group {
+                        if isSelected {
+                            expandedContent
+                        } else {
+                            compactContent
+                        }
+                    }
+                    .padding(isSelected ? MindMorySpacing.lg : MindMorySpacing.sm)
                 }
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .clipShape(cardShape)
+                .overlay {
+                    cardShape.stroke(Color.white.opacity(isSelected ? 0.16 : 0.08), lineWidth: 1)
+                }
+                .shadow(
+                    color: MindMoryColors.deepGreen.opacity(isSelected ? 0.24 : 0.14),
+                    radius: isSelected ? 20 : 10,
+                    x: 0,
+                    y: isSelected ? 14 : 7
+                )
             }
-            .padding(isSelected ? MindMorySpacing.lg : MindMorySpacing.sm)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(cardBackground)
-            .clipShape(cardShape)
-            .overlay {
-                cardShape.stroke(Color.white.opacity(isSelected ? 0.16 : 0.08), lineWidth: 1)
-            }
-            .shadow(
-                color: MindMoryColors.deepGreen.opacity(isSelected ? 0.24 : 0.14),
-                radius: isSelected ? 20 : 10,
-                x: 0,
-                y: isSelected ? 14 : 7
-            )
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
     private var compactContent: some View {
@@ -40,7 +45,7 @@ struct ExpandableStatCardView: View {
                 .minimumScaleFactor(0.7)
 
             Text(card.primaryValue)
-                .font(.system(size: 38, weight: .regular, design: .serif))
+                .font(.system(size: 30, weight: .regular, design: .serif))
                 .foregroundStyle(Color.white.opacity(0.95))
                 .lineLimit(1)
                 .minimumScaleFactor(0.55)

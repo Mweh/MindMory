@@ -5,51 +5,105 @@ struct HomeStatsGridView: View {
     let selectedStat: SelectedStatCard?
     let selectAction: (SelectedStatCard) -> Void
 
+    private let spacing = MindMorySpacing.sm
+    private let defaultHeight: CGFloat = 92
+    private let expandedHeight: CGFloat = 200
+    private let smallColumnWidth: CGFloat = 104
+
     var body: some View {
-        Group {
-            if let selectedStat,
-               let selectedCard = card(for: selectedStat) {
-                expandedLayout(selectedCard: selectedCard)
-            } else {
-                defaultLayout
-            }
-        }
-        .animation(.spring(response: 0.45, dampingFraction: 0.82), value: selectedStat)
-    }
+        GeometryReader { proxy in
+            let layout = layoutMetrics(for: proxy.size.width)
 
-    private var defaultLayout: some View {
-        HStack(spacing: MindMorySpacing.sm) {
-            ForEach(cards) { card in
-                ExpandableStatCardView(card: card, isSelected: false) {
-                    selectAction(card.stat)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 92)
-            }
-        }
-    }
+            ZStack(alignment: .topLeading) {
+                ForEach(cards) { card in
+                    let frame = frame(for: card, metrics: layout)
 
-    private func expandedLayout(selectedCard: HomeStatCardModel) -> some View {
-        HStack(alignment: .top, spacing: MindMorySpacing.md) {
-            VStack(spacing: MindMorySpacing.sm) {
-                ForEach(cards.filter { $0.stat != selectedCard.stat }) { card in
-                    ExpandableStatCardView(card: card, isSelected: false) {
+                    ExpandableStatCardView(
+                        card: card,
+                        isSelected: selectedStat == card.stat
+                    ) {
                         selectAction(card.stat)
                     }
-                    .frame(height: 96)
+                    .frame(width: frame.size.width, height: frame.size.height)
+                    .position(x: frame.midX, y: frame.midY)
                 }
             }
-            .frame(width: 104)
+        }
+        .frame(height: selectedStat == nil ? defaultHeight : expandedHeight)
+        .animation(.easeInOut(duration: 0.35), value: selectedStat)
+    }
 
-            ExpandableStatCardView(card: selectedCard, isSelected: true) {
-                selectAction(selectedCard.stat)
+    private func layoutMetrics(for width: CGFloat) -> StatCardLayoutMetrics {
+        if selectedStat == nil {
+            let cardWidth = (width - spacing * 2) / 3
+            return StatCardLayoutMetrics(
+                mode: .default(cardWidth: cardWidth),
+                totalWidth: width,
+                spacing: spacing,
+                defaultHeight: defaultHeight,
+                expandedHeight: expandedHeight,
+                smallColumnWidth: smallColumnWidth
+            )
+        }
+
+        return StatCardLayoutMetrics(
+            mode: .expanded,
+            totalWidth: width,
+            spacing: spacing,
+            defaultHeight: defaultHeight,
+            expandedHeight: expandedHeight,
+            smallColumnWidth: smallColumnWidth
+        )
+    }
+
+    private func frame(
+        for card: HomeStatCardModel,
+        metrics: StatCardLayoutMetrics
+    ) -> CGRect {
+        switch metrics.mode {
+        case .default(let cardWidth):
+            let index = CGFloat(cards.firstIndex(where: { $0.id == card.id }) ?? 0)
+            return CGRect(
+                x: index * (cardWidth + metrics.spacing),
+                y: 0,
+                width: cardWidth,
+                height: metrics.defaultHeight
+            )
+
+        case .expanded:
+            guard selectedStat != card.stat else {
+                let largeWidth = metrics.totalWidth - metrics.smallColumnWidth - metrics.spacing
+                return CGRect(
+                    x: metrics.smallColumnWidth + metrics.spacing,
+                    y: 0,
+                    width: largeWidth,
+                    height: metrics.expandedHeight
+                )
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 200)
+
+            let smallCards = cards.filter { $0.stat != selectedStat }
+            let smallIndex = CGFloat(smallCards.firstIndex(where: { $0.id == card.id }) ?? 0)
+            let smallHeight = (metrics.expandedHeight - metrics.spacing) / 2
+            return CGRect(
+                x: 0,
+                y: smallIndex * (smallHeight + metrics.spacing),
+                width: metrics.smallColumnWidth,
+                height: smallHeight
+            )
         }
     }
+}
 
-    private func card(for stat: SelectedStatCard) -> HomeStatCardModel? {
-        cards.first { $0.stat == stat }
-    }
+private struct StatCardLayoutMetrics {
+    let mode: StatCardLayoutMode
+    let totalWidth: CGFloat
+    let spacing: CGFloat
+    let defaultHeight: CGFloat
+    let expandedHeight: CGFloat
+    let smallColumnWidth: CGFloat
+}
+
+private enum StatCardLayoutMode {
+    case `default`(cardWidth: CGFloat)
+    case expanded
 }

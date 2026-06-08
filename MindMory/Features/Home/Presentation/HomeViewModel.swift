@@ -86,7 +86,7 @@ final class HomeViewModel: ObservableObject {
     }
 
     func selectStat(_ stat: SelectedStatCard) {
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
+        withAnimation(.easeInOut(duration: 0.35)) {
             selectedStat = selectedStat == stat ? nil : stat
         }
     }
