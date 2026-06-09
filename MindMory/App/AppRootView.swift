@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AppRootView: View {
     @StateObject private var container = DependencyContainer()
-    @State private var didCompleteOnboarding = false
+    @AppStorage("hasCompletedOnboarding") private var didCompleteOnboarding = false
 
     var body: some View {
         Group {

@@ -9,6 +9,9 @@ private enum SettingsDestination: Hashable {
     case delivery
     case message
     case customize
+    #if DEBUG
+    case qaDebugTools
+    #endif
 }
 
 struct SettingsView: View {
@@ -26,6 +29,9 @@ struct SettingsView: View {
                     calendarContextSection
                     reminderSettingSection
                     privacySection
+                    #if DEBUG
+                    qaDebugSection
+                    #endif
                 }
                 .padding(.horizontal, MindMorySpacing.lg)
                 .padding(.vertical, MindMorySpacing.xl)
@@ -44,6 +50,10 @@ struct SettingsView: View {
                     MessageSettingsDetailView(viewModel: viewModel)
                 case .customize:
                     CustomizePreferencesDetailView(viewModel: viewModel)
+                #if DEBUG
+                case .qaDebugTools:
+                    QADebugToolsView(viewModel: viewModel.makeQADebugToolsViewModel())
+                #endif
                 }
             }
             .task {
@@ -382,6 +392,42 @@ struct SettingsView: View {
             }
         }
     }
+
+    #if DEBUG
+    private var qaDebugSection: some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
+                sectionTitle(
+                    title: "QA Debug",
+                    subtitle: "Debug/testing only. Hidden from Release builds."
+                )
+
+                Toggle(
+                    "Enable QA Debug Mode",
+                    isOn: Binding(
+                        get: { viewModel.qaDebugModeEnabled },
+                        set: { viewModel.qaDebugModeEnabled = $0 }
+                    )
+                )
+                .font(MindMoryTypography.bodyLarge)
+                .tint(MindMoryColors.primaryGreen)
+
+                if viewModel.qaDebugModeEnabled {
+                    Divider()
+                        .overlay(MindMoryColors.border)
+
+                    SettingsNavigationRow(
+                        title: "Open QA Debug Tools",
+                        subtitle: "Reset onboarding and test Home card photos.",
+                        summary: "Debug mode enabled",
+                        iconName: "wrench.and.screwdriver.fill",
+                        destination: .qaDebugTools
+                    )
+                }
+            }
+        }
+    }
+    #endif
 
     private func sectionTitle(title: String, subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.xxs) {
