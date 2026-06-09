@@ -1,5 +1,7 @@
-import SwiftUI
 import Combine
+import Photos
+import SwiftUI
+import UIKit
 
 enum HomeViewState: Equatable {
     case loading
@@ -9,30 +11,183 @@ enum HomeViewState: Equatable {
     case error(String)
 }
 
+enum SelectedStatCard: CaseIterable, Equatable {
+    case captured
+    case visited
+    case reminder
+}
+
+enum MemoryCardSide: Equatable {
+    case front
+    case back
+}
+
+struct HomeStatCardModel: Identifiable, Equatable {
+    let stat: SelectedStatCard
+    let title: String
+    let primaryValue: String
+    let secondaryValue: String
+    let monthlyDetail: String
+    let yearlyDetail: String
+
+    var id: SelectedStatCard { stat }
+}
+
 final class HomeViewModel: ObservableObject {
 
     @Published private(set) var state: HomeViewState = .loading
+    @Published private(set) var focusedMemory: Memory?
+    @Published private(set) var statCards: [HomeStatCardModel] = []
+    @Published var selectedStat: SelectedStatCard? = nil
+    @Published var cardSide: MemoryCardSide = .front
+    @Published var captionText = ""
+    @Published var homeCardState: HomeCardState = .normal
+    @Published var isShowingSharePreview = false
+    @Published private(set) var debugHomeCardImageURL: URL?
 
-    private let getTodayReminderUseCase: GetTodayReminderUseCase
     private let memories: [Memory]
+    private let qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
+    private let debugImageStorageService: DebugImageStorageService
+    private var cancellables = Set<AnyCancellable>()
+
+    var eventName: String {
+        focusedMemory?.locationName ?? focusedMemory?.title ?? "this moment"
+    }
 
     init(
-        getTodayReminderUseCase: GetTodayReminderUseCase,
-        memories: [Memory]
+        memories: [Memory],
+        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol = QADebugSettingsRepository(),
+        debugImageStorageService: DebugImageStorageService = DebugImageStorageService()
     ) {
-        self.getTodayReminderUseCase = getTodayReminderUseCase
         self.memories = memories
+        self.qaDebugSettingsRepository = qaDebugSettingsRepository
+        self.debugImageStorageService = debugImageStorageService
+        NotificationCenter.default.publisher(for: .qaDebugHomeCardImageDidChange)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.refreshDebugHomeCardImage()
+                }
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .qaDebugHomeCardStateDidChange)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.refreshHomeCardState()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     func load() {
-        if let reminder = getTodayReminderUseCase.execute() {
-            state = .positive(reminder, memories.first)
-        } else {
-            state = .empty
+        focusedMemory = memories.first(where: \.isFavorite) ?? memories.first
+        captionText = focusedMemory?.journalText ?? ""
+        statCards = makeStatCards()
+        refreshDebugHomeCardImage()
+        refreshHomeCardState()
+        state = focusedMemory == nil ? .empty : .positive(
+            Reminder(
+                id: UUID(),
+                title: "Capture it before it’s gone.",
+                message: "You’re in the middle of \(eventName).",
+                context: .none,
+                imageName: focusedMemory?.imageName
+            ),
+            focusedMemory
+        )
+    }
+
+    func selectStat(_ stat: SelectedStatCard) {
+        withAnimation(.easeInOut(duration: 0.35)) {
+            selectedStat = selectedStat == stat ? nil : stat
         }
     }
 
-    func favoriteTapped() {}
+    func flipCard() {
+        cardSide = cardSide == .front ? .back : .front
+    }
 
-    func shareTapped() {}
+    func showSharePreview() {
+        isShowingSharePreview = true
+    }
+
+    func dismissSharePreview() {
+        isShowingSharePreview = false
+    }
+
+    @MainActor
+    func didTapAllowPhotoAccess() {
+        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+
+        switch status {
+        case .notDetermined:
+            Task {
+                let newStatus = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+                handlePhotoAuthorizationStatus(newStatus)
+            }
+
+        case .denied, .restricted:
+            openAppSettings()
+
+        case .authorized, .limited:
+            handlePhotoAuthorizationStatus(status)
+
+        @unknown default:
+            break
+        }
+    }
+
+    @MainActor
+    private func handlePhotoAuthorizationStatus(_ status: PHAuthorizationStatus) {
+        switch status {
+        case .authorized, .limited:
+            homeCardState = .normal
+
+        case .denied, .restricted:
+            homeCardState = .photoAccessDenied
+
+        case .notDetermined:
+            break
+
+        @unknown default:
+            break
+        }
+    }
+
+    private func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else {
+            return
+        }
+
+        UIApplication.shared.open(url)
+    }
+    private func statusMessageForPhotoAccessRequest() {
+        // Placeholder hook for a future real Photos permission flow.
+    }
+
+    private func refreshDebugHomeCardImage() {
+        #if DEBUG
+        debugHomeCardImageURL = debugImageStorageService.imageURL(
+            path: qaDebugSettingsRepository.debugHomeCardImagePath
+        )
+        #else
+        debugHomeCardImageURL = nil
+        #endif
+    }
+
+    private func refreshHomeCardState() {
+        #if DEBUG
+        homeCardState = qaDebugSettingsRepository.qaHomeCardState
+        #else
+        homeCardState = .normal
+        #endif
+    }
+
+    private func makeStatCards() -> [HomeStatCardModel] {
+        [
+            HomeStatCardModel(stat: .captured, title: "Captured", primaryValue: "5", secondaryValue: "Moments", monthlyDetail: "12 This Month", yearlyDetail: "20 This Year"),
+            HomeStatCardModel(stat: .visited, title: "Visited", primaryValue: "2 times", secondaryValue: eventName, monthlyDetail: "4 This Month", yearlyDetail: "9 This Year"),
+            HomeStatCardModel(stat: .reminder, title: "Reminder", primaryValue: "5", secondaryValue: "Responded", monthlyDetail: "8 This Month", yearlyDetail: "18 This Year")
+        ]
+    }
 }

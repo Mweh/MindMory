@@ -42,7 +42,7 @@ private struct MindMoryPrimaryButtonStyle: ButtonStyle {
         let shadowColor: Color = isEnabled ? MindMoryColors.primaryGreen : MindMoryColors.neutral.opacity(0.4)
         let fillColor: Color = isEnabled ? MindMoryColors.background : MindMoryColors.neutral.opacity(0.12)
         let borderColor: Color = isEnabled ? MindMoryColors.primaryGreen : MindMoryColors.neutral.opacity(0.25)
-        let textColor: Color = isEnabled ? MindMoryColors.deepGreen : MindMoryColors.neutral.opacity(0.6)
+        let textColor: Color = isEnabled ? MindMoryColors.primaryGreen : MindMoryColors.neutral.opacity(0.6)
         
         return Color.clear
             .frame(maxWidth: .infinity)

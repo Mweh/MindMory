@@ -27,10 +27,10 @@ final class DependencyContainer: ObservableObject {
             requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: permissionRepository)
         )
     }
-    func makeHomeViewModel() -> HomeViewModel { HomeViewModel(getTodayReminderUseCase: GetTodayReminderUseCase(repository: reminderRepository), memories: memoryRepository.fetchMemories()) }
+    func makeHomeViewModel() -> HomeViewModel { HomeViewModel(memories: memoryRepository.fetchMemories()) }
     func makeAlbumListViewModel() -> AlbumListViewModel { AlbumListViewModel(albums: PreviewData.sampleAlbums) }
     func makeMemoryAlbumViewModel() -> MemoryAlbumViewModel { MemoryAlbumViewModel(loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase(), createAlbumUseCase: CreateAlbumUseCase()) }
     func makeMemoryDetailViewModel(memory: Memory) -> MemoryDetailViewModel { MemoryDetailViewModel(memory: memory, saveJournalEntryUseCase: SaveJournalEntryUseCase(repository: memoryRepository), toggleFavoriteMemoryUseCase: ToggleFavoriteMemoryUseCase(repository: memoryRepository), generateShareableMemoryUseCase: GenerateShareableMemoryUseCase()) }
-    func makeSettingsViewModel() -> SettingsViewModel { SettingsViewModel(permissionRepository: permissionRepository, requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: permissionRepository), requestLocationPermissionUseCase: RequestLocationPermissionUseCase(repository: permissionRepository), requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase(repository: permissionRepository)) }
+    func makeSettingsViewModel() -> SettingsViewModel { SettingsViewModel(permissionRepository: permissionRepository, requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: permissionRepository), requestLocationPermissionUseCase: RequestLocationPermissionUseCase(repository: permissionRepository), requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase(repository: permissionRepository), qaDebugSettingsRepository: QADebugSettingsRepository(), debugImageStorageService: DebugImageStorageService()) }
     func makeContextualTriggersViewModel() -> ContextualTriggersViewModel { ContextualTriggersViewModel(repository: contextRepository) }
 }

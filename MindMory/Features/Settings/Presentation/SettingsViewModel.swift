@@ -22,6 +22,24 @@ final class SettingsViewModel: ObservableObject {
     private let requestLocationPermissionUseCase: RequestLocationPermissionUseCase
     private let requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase
 
+    private let qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
+    private let debugImageStorageService: DebugImageStorageService
+
+    var qaDebugModeEnabled: Bool {
+        get { qaDebugSettingsRepository.qaDebugModeEnabled }
+        set {
+            qaDebugSettingsRepository.qaDebugModeEnabled = newValue
+            objectWillChange.send()
+        }
+    }
+
+    func makeQADebugToolsViewModel() -> QADebugToolsViewModel {
+        QADebugToolsViewModel(
+            repository: qaDebugSettingsRepository,
+            imageStorageService: debugImageStorageService
+        )
+    }
+
     var allAccessGranted: Bool {
         permissionRows.allSatisfy { $0.status == .granted }
     }
@@ -86,12 +104,16 @@ final class SettingsViewModel: ObservableObject {
         permissionRepository: PermissionRepositoryProtocol,
         requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase,
         requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
-        requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase
+        requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase,
+        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol,
+        debugImageStorageService: DebugImageStorageService
     ) {
         self.permissionRepository = permissionRepository
         self.requestNotificationPermissionUseCase = requestNotificationPermissionUseCase
         self.requestLocationPermissionUseCase = requestLocationPermissionUseCase
         self.requestCalendarPermissionUseCase = requestCalendarPermissionUseCase
+        self.qaDebugSettingsRepository = qaDebugSettingsRepository
+        self.debugImageStorageService = debugImageStorageService
         self.permissionRows = Self.defaultPermissionRows
 
         Task {
