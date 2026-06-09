@@ -12,4 +12,5 @@ enum MindMoryColors {
     static let border = Color(hex: "#D4DDD7")
     static let error = Color(hex: "#C95050")
     static let success = Color(hex: "#2F7055")
+    static let neutral = Color(hex: "#8E9A95") // Single neutral color for disabled states
 }
