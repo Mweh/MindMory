@@ -131,6 +131,7 @@ enum PreviewData {
             AlbumPhoto.from(urlString: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80")
         ].compactMap { $0 },
         sections: graduationAlbumSections,
+        albumDate: AlbumDate(start: Date(), end: Date()),
         createdAt: Date(),
         category: .memory
     )

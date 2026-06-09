@@ -99,12 +99,25 @@ final class MemoryAlbumViewModel: AlbumCreationViewModel {
         sections = reordered
     }
 
+    var hasImageSections: Bool {
+        sections.contains { section in
+            if case .image = section.content {
+                return true
+            }
+            return false
+        }
+    }
+
     var hasIncompleteSections: Bool {
         sections.contains { section in
             guard case .image(let layoutCount, _, let photos) = section.content else { return false }
             guard photos.count == layoutCount else { return true }
             return photos.contains(where: { $0 == nil })
         }
+    }
+
+    var hasCompleteImageSections: Bool {
+        hasImageSections && !hasIncompleteSections
     }
 
     override func saveAlbum() {
@@ -125,6 +138,7 @@ final class MemoryAlbumViewModel: AlbumCreationViewModel {
                 note: note,
                 photos: albumPhotos,
                 sections: sections,
+                albumDate: albumDate,
                 category: category
             )
 

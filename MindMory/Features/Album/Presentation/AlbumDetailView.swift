@@ -4,8 +4,8 @@ struct AlbumDetailView: View {
     let album: Album
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: MindMorySpacing.xl) {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 header
                 sectionList
             }
@@ -20,10 +20,11 @@ struct AlbumDetailView: View {
 
     private var header: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
                 Text(album.name)
                     .font(MindMoryTypography.headingLarge)
                     .foregroundStyle(MindMoryColors.textPrimary)
+                    .textSectionAnimation(delay: 0.02)
 
                 if let coverPhoto = album.coverPhoto?.uiImage {
                     Image(uiImage: coverPhoto)
@@ -33,6 +34,7 @@ struct AlbumDetailView: View {
                         .frame(maxWidth: .infinity)
                         .clipped()
                         .cornerRadius(MindMoryRadius.large)
+                        .imageSectionAnimation(delay: 0.1)
                 } else {
                     RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
                         .fill(MindMoryColors.surface)
@@ -42,32 +44,38 @@ struct AlbumDetailView: View {
                             Image(systemName: "photo")
                                 .font(.largeTitle)
                                 .foregroundStyle(MindMoryColors.textSecondary)
+                                .imageSectionAnimation(delay: 0.1)
                         )
+                        .imageSectionAnimation(delay: 0.05)
                 }
 
                 HStack(spacing: MindMorySpacing.md) {
-                    Text(album.createdAt.formatted(date: .abbreviated, time: .omitted))
+                    Text(album.albumDate.displayText)
                         .font(MindMoryTypography.bodySmall)
                         .foregroundStyle(MindMoryColors.textSecondary)
+                        .textSectionAnimation(delay: 0.15)
 
                     Spacer()
 
                     Text(album.photos.isEmpty ? "No photos" : "\(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")")
                         .font(MindMoryTypography.bodySmall)
                         .foregroundStyle(MindMoryColors.primaryGreen)
+                        .textSectionAnimation(delay: 0.2)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .headerAnimation()
     }
 
     private var sectionList: some View {
-        VStack(spacing: MindMorySpacing.lg) {
+        VStack(spacing: MindMorySpacing.md) {
             if album.sections.isEmpty {
                 noSections
+                    .sectionFadeInAnimation(delay: 0.1)
             } else {
-                ForEach(album.sections) { section in
-                    sectionCard(for: section)
+                ForEach(Array(album.sections.enumerated()), id: \.element.id) { index, section in
+                    sectionCard(for: section, at: index)
                 }
             }
         }
@@ -75,44 +83,51 @@ struct AlbumDetailView: View {
     }
 
     @ViewBuilder
-    private func sectionCard(for section: MemoryAlbumSection) -> some View {
+    private func sectionCard(for section: MemoryAlbumSection, at index: Int) -> some View {
+        let baseDelay = 0.0
+        let staggerDelay = Double(index) * 0.1
+        let totalDelay = baseDelay + staggerDelay
+        
         switch section.content {
         case .image:
-            imageSection(for: section)
+            imageSection(for: section, delay: totalDelay)
         case .text(let textSection):
-            textSectionCard(textSection)
+            textSectionCard(textSection, delay: totalDelay)
         }
     }
 
     @ViewBuilder
-    private func imageSection(for section: MemoryAlbumSection) -> some View {
+    private func imageSection(for section: MemoryAlbumSection, delay: Double = 0) -> some View {
         if let layoutCount = section.layoutCount, let layoutVariant = section.layoutVariant {
             let template = MemoryAlbumSectionLayoutCatalog.template(layoutCount: layoutCount, variant: layoutVariant)
 
             if template.isOverlayStyle {
-                overlappedImageSection(section, template: template)
+                overlappedImageSection(section, template: template, delay: delay)
                     .frame(height: template.albumHeight)
                     .frame(maxWidth: .infinity)
+                    .imageSectionAnimation(delay: delay)
             } else {
                 MemoryAlbumSectionLayoutRenderer(template: template) { photoIndex in
-                    detailImageCell(at: photoIndex, in: section)
+                    detailImageCell(at: photoIndex, in: section, delay: delay)
                 }
                 .frame(height: template.albumHeight)
                 .frame(maxWidth: .infinity)
+                .imageSectionAnimation(delay: delay)
             }
         } else {
             EmptyView()
         }
     }
 
-    private func textSectionCard(_ textSection: MemoryAlbumTextSection) -> some View {
-        MemoryAlbumTextSectionRenderView(textSection: textSection, isPreview: false)
+    private func textSectionCard(_ textSection: MemoryAlbumTextSection, delay: Double = 0) -> some View {
+        AnimatedTextSectionView(textSection: textSection, isPreview: false, delay: delay)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
-    private func detailImageCell(at index: Int, in section: MemoryAlbumSection) -> some View {
+    private func detailImageCell(at index: Int, in section: MemoryAlbumSection, delay: Double = 0) -> some View {
         let shape = RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+        let cellDelay = delay + (Double(index) * 0.08)
 
         if let image = imageForSectionCell(index: index, section: section) {
             GeometryReader { geometry in
@@ -122,6 +137,7 @@ struct AlbumDetailView: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
                     .clipShape(shape)
+                    .imageSectionAnimation(delay: cellDelay)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -131,8 +147,10 @@ struct AlbumDetailView: View {
                     Image(systemName: "photo")
                         .font(.title2)
                         .foregroundStyle(MindMoryColors.textSecondary)
+                        .imageSectionAnimation(delay: cellDelay)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .imageSectionAnimation(delay: cellDelay)
         }
     }
 
@@ -142,7 +160,7 @@ struct AlbumDetailView: View {
         return photo.uiImage
     }
 
-    private func overlappedImageSection(_ section: MemoryAlbumSection, template: MemoryAlbumSectionLayoutTemplate) -> some View {
+    private func overlappedImageSection(_ section: MemoryAlbumSection, template: MemoryAlbumSectionLayoutTemplate, delay: Double = 0) -> some View {
         GeometryReader { geometry in
             let size = geometry.size
             let widthFactor: CGFloat = template.layoutCount <= 3 ? 0.72 : 0.58
@@ -153,13 +171,16 @@ struct AlbumDetailView: View {
 
             ZStack {
                 ForEach(0..<template.layoutCount, id: \.self) { index in
-                    let card = detailImageCell(at: index, in: section)
+                    let cardDelay = delay + (Double(index) * 0.1)
+                    
+                    let card = detailImageCell(at: index, in: section, delay: cardDelay)
                         .frame(width: cardWidth, height: cardHeight)
                         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
                         .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
                         .rotationEffect(rotations[index])
                         .offset(positions[index])
                         .zIndex(Double(index))
+                        .overlappedCardAnimation(delay: cardDelay, rotation: rotations[index])
 
                     card
                 }

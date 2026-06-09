@@ -62,11 +62,14 @@ struct AlbumView: View {
 
     private var albumList: some View {
         ScrollView {
-            LazyVStack(spacing: MindMorySpacing.lg) {
+            VStack(alignment: .leading, spacing: 0) {
                 headerSection
-
-                ForEach(viewModel.albums) { album in
-                    albumItem(for: album)
+                    .padding(.bottom, MindMorySpacing.lg)
+                
+                LazyVStack(spacing: MindMorySpacing.lg) {
+                    ForEach(viewModel.albums) { album in
+                        albumItem(for: album)
+                    }
                 }
             }
             .padding(.bottom, 120)
@@ -112,7 +115,7 @@ struct AlbumView: View {
                         .foregroundStyle(MindMoryColors.textPrimary)
 
                     HStack(spacing: MindMorySpacing.sm) {
-                        Text(album.createdAt.formatted(date: .abbreviated, time: .omitted))
+                        Text(album.albumDate.displayText)
                             .font(MindMoryTypography.caption)
                             .foregroundStyle(MindMoryColors.textSecondary)
 

@@ -247,6 +247,36 @@ struct MemoryAlbumCreateView: View {
                 }
             }
 
+            AppCard {
+                VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+                    Text("Album date")
+                        .font(MindMoryTypography.bodySmall)
+                        .foregroundStyle(MindMoryColors.textPrimary)
+
+                    Picker("Album date type", selection: $viewModel.isDateRange) {
+                        Text("Single day").tag(false)
+                        Text("Range").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+
+                    DatePicker(
+                        "Start date",
+                        selection: $viewModel.albumDateStart,
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.compact)
+
+                    if viewModel.isDateRange {
+                        DatePicker(
+                            "End date",
+                            selection: $viewModel.albumDateEnd,
+                            in: viewModel.albumDateStart...,
+                            displayedComponents: .date
+                        )
+                        .datePickerStyle(.compact)
+                    }
+                }
+            }
         }
     }
 
@@ -548,7 +578,7 @@ struct MemoryAlbumCreateView: View {
         case .details:
             return viewModel.isSaveButtonDisabled
         case .selectPhotos:
-            return viewModel.sections.isEmpty || viewModel.hasIncompleteSections
+            return viewModel.sections.isEmpty || !viewModel.hasImageSections || viewModel.hasIncompleteSections
         }
     }
 
@@ -707,7 +737,7 @@ private struct MemoryAlbumPreviewView: View {
                 PrimaryButton(title: "Simpan Album") {
                     onSave()
                 }
-                .disabled(viewModel.sections.isEmpty || viewModel.hasIncompleteSections || viewModel.isSaveButtonDisabled)
+                .disabled(viewModel.sections.isEmpty || !viewModel.hasImageSections || viewModel.hasIncompleteSections || viewModel.isSaveButtonDisabled)
             }
             .padding(MindMorySpacing.xl)
         }
@@ -745,30 +775,59 @@ private struct MemoryAlbumPreviewView: View {
     }
 
     private var previewHeader: some View {
-        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-            Text(viewModel.albumName.isEmpty ? "Untitled memory" : viewModel.albumName)
-                .font(MindMoryTypography.headingLarge)
-                .foregroundStyle(MindMoryColors.textPrimary)
+        AppCard {
+            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                Text(viewModel.albumName.isEmpty ? "Untitled memory" : viewModel.albumName)
+                    .font(MindMoryTypography.headingLarge)
+                    .foregroundStyle(MindMoryColors.textPrimary)
 
-            if let coverPhoto = viewModel.coverPhoto, let image = coverPhoto.uiImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(height: 220)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-                    .cornerRadius(MindMoryRadius.large)
-            } else {
-                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                    .fill(MindMoryColors.surface)
-                    .frame(height: 220)
-                    .overlay(
-                        Image(systemName: "photo")
-                            .font(.largeTitle)
+                if let coverPhoto = viewModel.coverPhoto, let image = coverPhoto.uiImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 220)
+                        .frame(maxWidth: .infinity)
+                        .clipped()
+                        .cornerRadius(MindMoryRadius.large)
+                } else {
+                    RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                        .fill(MindMoryColors.surface)
+                        .frame(height: 220)
+                        .overlay(
+                            Image(systemName: "photo")
+                                .font(.largeTitle)
+                                .foregroundStyle(MindMoryColors.textSecondary)
+                        )
+                }
+
+                HStack(spacing: MindMorySpacing.md) {
+                    VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
+                        Text(viewModel.albumDate.displayText)
+                            .font(MindMoryTypography.bodySmall)
                             .foregroundStyle(MindMoryColors.textSecondary)
-                    )
+
+                        Text(previewPhotoSummary)
+                            .font(MindMoryTypography.bodySmall)
+                            .foregroundStyle(MindMoryColors.primaryGreen)
+                    }
+
+                    Spacer()
+                }
             }
         }
+    }
+
+    private var previewPhotoSummary: String {
+        let photoCount = viewModel.sections.reduce(0) { result, section in
+            guard case .image(_, _, let photos) = section.content else { return result }
+            return result + photos.compactMap { $0 }.count
+        } + (viewModel.coverPhoto != nil ? 1 : 0)
+
+        if photoCount == 0 {
+            return "No photos"
+        }
+
+        return "\(photoCount) photo\(photoCount == 1 ? "" : "s")"
     }
 
     @ViewBuilder
