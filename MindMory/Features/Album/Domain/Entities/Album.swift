@@ -5,7 +5,7 @@ enum AlbumCategory: String, Codable {
     case memory
 }
 
-struct AlbumDate: Equatable {
+struct AlbumDate: Equatable, Codable {
     let start: Date
     let end: Date
 
@@ -24,7 +24,7 @@ struct AlbumDate: Equatable {
     }
 }
 
-struct Album: Identifiable, Equatable {
+struct Album: Identifiable, Codable, Equatable {
     let id: UUID
     let name: String
     let note: String

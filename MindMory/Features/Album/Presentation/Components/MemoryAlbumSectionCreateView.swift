@@ -73,7 +73,7 @@ struct MemoryAlbumSectionCreateView: View {
         VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
             layoutChips
 
-            Text("Pick a layout for your image section. You’ll choose the photos after returning to the album page.")
+            Text("Pick a layout for your image section. Choose from horizontal, vertical, and mixed arrangements to match your story.")
                 .font(MindMoryTypography.bodySmall)
                 .foregroundStyle(MindMoryColors.textSecondary)
 
@@ -282,6 +282,26 @@ struct MemoryAlbumSectionCreateView: View {
         }
     }
 
+    private func labeledDivider(_ title: String) -> some View {
+        HStack(spacing: MindMorySpacing.sm) {
+            Rectangle()
+                .frame(height: 1)
+                .foregroundStyle(MindMoryColors.border)
+                .frame(maxWidth: .infinity)
+
+            Text(title)
+                .font(MindMoryTypography.caption)
+                .foregroundStyle(MindMoryColors.textSecondary)
+                .fixedSize()
+
+            Rectangle()
+                .frame(height: 1)
+                .foregroundStyle(MindMoryColors.border)
+                .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     private var layoutChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: MindMorySpacing.sm) {
@@ -299,19 +319,16 @@ struct MemoryAlbumSectionCreateView: View {
     }
 
     private var layoutOptions: some View {
-        VStack(spacing: MindMorySpacing.md) {
-            ForEach(Array(layoutVariants.enumerated()), id: \.element.id) { index, variant in
+        VStack(spacing: MindMorySpacing.lg) {
+            ForEach(Array(layoutVariants.enumerated()), id: \.element.id) { _, variant in
+                LabeledDivider(title: variant.title)
+
                 Button {
                     saveLayoutTemplate(variant: variant.variant)
                 } label: {
-                    MemoryAlbumSectionTemplateCard(template: variant)
+                    MemoryAlbumSectionLayoutOptionView(template: variant)
                 }
                 .buttonStyle(.plain)
-
-                if index < layoutVariants.count - 1 {
-                    Divider()
-                        .background(MindMoryColors.border)
-                }
             }
         }
     }
@@ -328,6 +345,58 @@ struct MemoryAlbumSectionCreateView: View {
             photos: Array(repeating: nil, count: selectedLayoutCount)
         )
         onSave(section)
+    }
+}
+
+private struct MemoryAlbumSectionLayoutOptionView: View {
+    let template: MemoryAlbumSectionLayoutTemplate
+
+    var body: some View {
+        MemoryAlbumSectionLayoutRenderer(template: template) { _ in
+            MemoryAlbumSectionTemplatePlaceholder()
+        }
+        .frame(height: template.albumHeight)
+        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+    }
+}
+
+private struct MemoryAlbumSectionTemplatePlaceholder: View {
+    var body: some View {
+        MemoryImagePlaceholderView(
+            image: nil,
+            imageName: nil,
+            placeholderIcon: "photo.on.rectangle.angled",
+            placeholderText: "Layout preview"
+        )
+        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                .stroke(MindMoryColors.border)
+        )
+    }
+}
+
+private struct LabeledDivider: View {
+    let title: String
+
+    var body: some View {
+        HStack(spacing: MindMorySpacing.sm) {
+            Rectangle()
+                .frame(height: 1)
+                .foregroundStyle(MindMoryColors.border)
+                .frame(maxWidth: .infinity)
+
+            Text(title)
+                .font(MindMoryTypography.caption)
+                .foregroundStyle(MindMoryColors.textSecondary)
+                .fixedSize()
+
+            Rectangle()
+                .frame(height: 1)
+                .foregroundStyle(MindMoryColors.border)
+                .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 

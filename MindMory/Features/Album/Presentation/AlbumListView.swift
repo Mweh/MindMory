@@ -1,35 +1,42 @@
 import SwiftUI
 
-struct AlbumView: View {
+struct AlbumListView: View {
     @StateObject private var viewModel: AlbumListViewModel
     @State private var isShowingCreateAlbum = false
+    @Environment(\.modelContext) private var modelContext
 
     init(viewModel: AlbumListViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 
+    private var albumRepository: AlbumRepository {
+        AlbumRepository(context: modelContext)
+    }
+
     var body: some View {
         NavigationStack {
-            content
-                .padding(.horizontal, MindMorySpacing.xl)
-                .padding(.top, MindMorySpacing.lg)
-                .navigationDestination(isPresented: $isShowingCreateAlbum) {
-                    MemoryAlbumCreateView(viewModel: MemoryAlbumViewModel()) { album in
-                        viewModel.addAlbum(album)
-                    }
+            ZStack(alignment: .bottomTrailing) {
+                content
+                    .padding(.horizontal, MindMorySpacing.xl)
+                    .padding(.top, MindMorySpacing.lg)
+
+                floatingActionButton
+                    .padding(.trailing, MindMorySpacing.xl)
+                    .padding(.bottom, MindMorySpacing.xl)
+            }
+            .navigationDestination(isPresented: $isShowingCreateAlbum) {
+                MemoryAlbumCreationView(
+                    viewModel: MemoryAlbumCreationViewModel(albumRepository: albumRepository)
+                ) { album in
+                    viewModel.addAlbum(album)
                 }
-                .background(MindMoryColors.background.ignoresSafeArea())
-                .navigationTitle("")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button {
-                            isShowingCreateAlbum = true
-                        } label: {
-                            Image(systemName: "plus")
-                        }
-                    }
-                }
+            }
+            .background(MindMoryColors.background.ignoresSafeArea())
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .task {
+            viewModel.configure(repository: albumRepository)
         }
     }
 
@@ -40,6 +47,22 @@ struct AlbumView: View {
         } else {
             albumList
         }
+    }
+
+    private var floatingActionButton: some View {
+        Button {
+            isShowingCreateAlbum = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.title3.weight(.bold))
+                .foregroundColor(.white)
+                .frame(width: 56, height: 56)
+                .background(MindMoryColors.primaryGreen)
+                .clipShape(Circle())
+                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Create album")
     }
 
     private var emptyState: some View {
@@ -65,14 +88,14 @@ struct AlbumView: View {
             VStack(alignment: .leading, spacing: 0) {
                 headerSection
                     .padding(.bottom, MindMorySpacing.lg)
-                
+
                 LazyVStack(spacing: MindMorySpacing.lg) {
                     ForEach(viewModel.albums) { album in
                         albumItem(for: album)
                     }
                 }
             }
-            .padding(.bottom, 120)
+            .padding(.bottom, 140)
         }
     }
 
@@ -91,21 +114,18 @@ struct AlbumView: View {
         NavigationLink(destination: AlbumDetailView(album: album)) {
             VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
                 if let image = album.coverPhoto?.uiImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
+                    MemoryImagePlaceholderView(image: image, imageName: nil)
                         .frame(height: 190)
                         .frame(maxWidth: .infinity)
-                        .clipped()
-                        .cornerRadius(MindMoryRadius.large)
+                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
                 } else {
-                    RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                        .fill(MindMoryColors.surface)
+                    MemoryImagePlaceholderView(image: nil, imageName: nil)
                         .frame(height: 190)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
                         .overlay(
-                            Image(systemName: "photo")
-                                .font(.title)
-                                .foregroundStyle(MindMoryColors.textSecondary)
+                            RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                                .stroke(MindMoryColors.border)
                         )
                 }
 
@@ -141,5 +161,5 @@ struct AlbumView: View {
 }
 
 #Preview {
-    AlbumView(viewModel: AlbumListViewModel(albums: PreviewData.sampleAlbums))
+    AlbumListView(viewModel: AlbumListViewModel(albums: PreviewData.sampleAlbums))
 }

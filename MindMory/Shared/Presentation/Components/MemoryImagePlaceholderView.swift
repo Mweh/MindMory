@@ -7,27 +7,54 @@ private struct LoadedDebugImage {
 }
 
 struct MemoryImagePlaceholderView: View {
-
-    let imageName: String
+    let image: UIImage?
+    let imageName: String?
     var debugImageURL: URL? = nil
+    let placeholderIcon: String
+    let placeholderText: String?
+
+    init(
+        image: UIImage? = nil,
+        imageName: String? = nil,
+        debugImageURL: URL? = nil,
+        placeholderIcon: String = "photo",
+        placeholderText: String? = nil
+    ) {
+        self.image = image
+        self.imageName = imageName
+        self.debugImageURL = debugImageURL
+        self.placeholderIcon = placeholderIcon
+        self.placeholderText = placeholderText
+    }
 
     var body: some View {
-        if let debugImageURL,
-           let debugImage = loadDebugImage(from: debugImageURL) {
-            GeometryReader { proxy in
-                Image(
-                    decorative: debugImage.cgImage,
-                    scale: 1,
-                    orientation: debugImage.orientation
-                )
-                .resizable()
-                .scaledToFill()
-                .frame(width: proxy.size.width, height: proxy.size.height)
-                .clipped()
+        GeometryReader { proxy in
+            Group {
+                if let debugImageURL,
+                   let debugImage = loadDebugImage(from: debugImageURL) {
+                    Image(
+                        decorative: debugImage.cgImage,
+                        scale: 1,
+                        orientation: debugImage.orientation
+                    )
+                    .resizable()
+                    .scaledToFill()
+                } else if let image = image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else if let imageName = imageName, !imageName.isEmpty {
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    placeholderContent
+                }
             }
-        } else {
-            placeholderContent
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .clipped()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func loadDebugImage(from url: URL) -> LoadedDebugImage? {
@@ -71,47 +98,24 @@ struct MemoryImagePlaceholderView: View {
     }
 
     private var placeholderContent: some View {
-        ZStack(alignment: .bottomLeading) {
-            backgroundGradient
-            decorativeContent
+        ZStack {
+            MindMoryColors.surface
+
+            VStack(spacing: MindMorySpacing.sm) {
+                Image(systemName: placeholderIcon)
+                    .font(.title)
+                    .foregroundStyle(MindMoryColors.textSecondary)
+
+                if let placeholderText = placeholderText {
+                    Text(placeholderText)
+                        .font(MindMoryTypography.bodySmall)
+                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, MindMorySpacing.md)
+                }
+            }
+            .padding(MindMorySpacing.lg)
         }
-    }
-
-    private var backgroundGradient: some View {
-        LinearGradient(
-            colors: [
-                MindMoryColors.surfaceStrong,
-                MindMoryColors.surface,
-                MindMoryColors.background
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private var decorativeContent: some View {
-        VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-            overlappingCircles
-
-            Image(systemName: "leaf.fill")
-                .foregroundStyle(MindMoryColors.primaryGreen.opacity(0.55))
-        }
-        .padding(MindMorySpacing.md)
-    }
-
-    private var overlappingCircles: some View {
-        HStack(spacing: -8) {
-            Circle()
-                .fill(MindMoryColors.primaryGreen.opacity(0.85))
-                .frame(width: 44, height: 44)
-
-            Circle()
-                .fill(MindMoryColors.mutedIndigo.opacity(0.45))
-                .frame(width: 44, height: 44)
-
-            Circle()
-                .fill(MindMoryColors.primaryGreen.opacity(0.55))
-                .frame(width: 44, height: 44)
-        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
