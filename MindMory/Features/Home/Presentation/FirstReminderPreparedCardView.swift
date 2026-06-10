@@ -6,17 +6,17 @@ struct FirstReminderPreparedCardView: View {
             VStack(spacing: MindMorySpacing.xl) {
                 Image(systemName: "bell")
                     .font(.system(size: 54, weight: .regular))
-                    .foregroundStyle(MindMoryColors.deepGreen)
+                    .foregroundStyle(MindMoryColors.primaryGreen)
 
                 Text("Your first reminder is\nbeing prepared.")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(MindMoryColors.deepGreen)
+                    .foregroundStyle(MindMoryColors.primaryGreen)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
 
                 Text("We’re learning the\nmoments that matter to\nyou so we can remind you\nat the right time.")
                     .font(.system(size: 22, weight: .regular, design: .rounded))
-                    .foregroundStyle(MindMoryColors.deepGreen)
+                    .foregroundStyle(MindMoryColors.primaryGreen)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
             }

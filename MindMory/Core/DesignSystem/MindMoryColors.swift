@@ -5,7 +5,6 @@ enum MindMoryColors {
     static let surface = Color(hex: "#EEF3EE")
     static let surfaceStrong = Color(hex: "#DDE7E0")
     static let primaryGreen = Color(hex: "#235B43")
-    static let deepGreen = Color(hex: "#174833")
     static let mutedIndigo = Color(hex: "#6F7F8F")
     static let textPrimary = Color(hex: "#252927")
     static let textSecondary = Color(hex: "#666E68")
