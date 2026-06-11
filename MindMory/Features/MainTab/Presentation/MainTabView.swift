@@ -8,7 +8,7 @@ enum MainTab: CaseIterable {
     var title: String {
         switch self {
         case .home:
-            return "Home"
+            return "Memories"
 
         case .album:
             return "Album"

@@ -1,7 +1,11 @@
 import Combine
-import Photos
 import SwiftUI
 import UIKit
+
+struct MemoriesHeaderCopy: Equatable {
+    let title: String
+    let subtitle: String
+}
 
 enum HomeViewState: Equatable {
     case loading
@@ -33,10 +37,13 @@ struct HomeStatCardModel: Identifiable, Equatable {
     var id: SelectedStatCard { stat }
 }
 
+@MainActor
 final class HomeViewModel: ObservableObject {
 
     @Published private(set) var state: HomeViewState = .loading
+    @Published private(set) var contextualState: ContextualMemoryState = .idle
     @Published private(set) var focusedMemory: Memory?
+    @Published private(set) var contextualAssetLocalIdentifier: String?
     @Published private(set) var statCards: [HomeStatCardModel] = []
     @Published var selectedStat: SelectedStatCard? = nil
     @Published var cardSide: MemoryCardSide = .front
@@ -46,20 +53,68 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var debugHomeCardImageURL: URL?
 
     private let memories: [Memory]
+    private let findContextualMemoryUseCase: FindContextualMemoryUseCase?
     private let qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
     private let debugImageStorageService: DebugImageStorageService
+    private var contextualDiscoveryTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
     var eventName: String {
         focusedMemory?.locationName ?? focusedMemory?.title ?? "this moment"
     }
 
+    var headerCopy: MemoriesHeaderCopy {
+        if case .loaded(let contextualMemory) = contextualState {
+            if let event = contextualMemory.context.currentEvent {
+                return MemoriesHeaderCopy(
+                    title: "You’re in \(event.title).",
+                    subtitle: "Here’s a memory connected to this moment."
+                )
+            }
+
+            return MemoriesHeaderCopy(
+                title: "You’ve been here before.",
+                subtitle: "A memory from around this place."
+            )
+        }
+
+        if case .empty = contextualState {
+            return MemoriesHeaderCopy(
+                title: "This might be your first memory here.",
+                subtitle: "We’ll help you keep this moment when it becomes worth remembering."
+            )
+        }
+
+        if case .permissionRequired = contextualState {
+            return MemoriesHeaderCopy(
+                title: "Memories can meet you where you are.",
+                subtitle: "Allow access when you’re ready to rediscover nearby moments."
+            )
+        }
+
+        return MemoriesHeaderCopy(
+            title: "You’re in the middle of \(eventName).",
+            subtitle: "Finding a memory connected to this moment."
+        )
+    }
+
+    var shouldShowContextualEmptyState: Bool {
+        switch contextualState {
+        case .empty, .error:
+            return true
+        default:
+            return false
+        }
+    }
+
     init(
         memories: [Memory],
-        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol = QADebugSettingsRepository(),
-        debugImageStorageService: DebugImageStorageService = DebugImageStorageService()
+        findContextualMemoryUseCase: FindContextualMemoryUseCase? = nil,
+        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol,
+        debugImageStorageService: DebugImageStorageService
     ) {
         self.memories = memories
+        self.findContextualMemoryUseCase = findContextualMemoryUseCase
         self.qaDebugSettingsRepository = qaDebugSettingsRepository
         self.debugImageStorageService = debugImageStorageService
         NotificationCenter.default.publisher(for: .qaDebugHomeCardImageDidChange)
@@ -81,6 +136,7 @@ final class HomeViewModel: ObservableObject {
 
     func load() {
         focusedMemory = memories.first(where: \.isFavorite) ?? memories.first
+        contextualAssetLocalIdentifier = nil
         captionText = focusedMemory?.journalText ?? ""
         statCards = makeStatCards()
         refreshDebugHomeCardImage()
@@ -95,6 +151,7 @@ final class HomeViewModel: ObservableObject {
             ),
             focusedMemory
         )
+        discoverContextualMemory()
     }
 
     func selectStat(_ stat: SelectedStatCard) {
@@ -115,43 +172,57 @@ final class HomeViewModel: ObservableObject {
         isShowingSharePreview = false
     }
 
-    @MainActor
     func didTapAllowPhotoAccess() {
-        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-
-        switch status {
-        case .notDetermined:
-            Task {
-                let newStatus = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
-                handlePhotoAuthorizationStatus(newStatus)
-            }
-
-        case .denied, .restricted:
+        if case .permissionRequired(.photoLibrary) = contextualState {
+            discoverContextualMemory()
+        } else {
             openAppSettings()
-
-        case .authorized, .limited:
-            handlePhotoAuthorizationStatus(status)
-
-        @unknown default:
-            break
         }
     }
 
-    @MainActor
-    private func handlePhotoAuthorizationStatus(_ status: PHAuthorizationStatus) {
-        switch status {
-        case .authorized, .limited:
-            homeCardState = .normal
+    private func discoverContextualMemory() {
+        guard let findContextualMemoryUseCase else { return }
+        contextualDiscoveryTask?.cancel()
+        contextualState = .loading
 
-        case .denied, .restricted:
+        contextualDiscoveryTask = Task { [weak self] in
+            let result = await findContextualMemoryUseCase.execute()
+            guard !Task.isCancelled else { return }
+
+            await MainActor.run {
+                self?.applyContextualMemoryState(result)
+            }
+        }
+    }
+
+    private func applyContextualMemoryState(_ newState: ContextualMemoryState) {
+        contextualState = newState
+
+        switch newState {
+        case .loaded(let contextualMemory):
+            focusedMemory = contextualMemory.asMemory
+            contextualAssetLocalIdentifier = contextualMemory.assetLocalIdentifier
+            captionText = contextualMemory.journalText ?? ""
+            state = .positive(
+                Reminder(
+                    id: UUID(),
+                    title: contextualMemory.title,
+                    message: contextualMemory.subtitle,
+                    context: .none,
+                    imageName: nil
+                ),
+                focusedMemory
+            )
+        case .permissionRequired(.photoLibrary):
+            contextualAssetLocalIdentifier = nil
             homeCardState = .photoAccessDenied
-
-        case .notDetermined:
-            break
-
-        @unknown default:
+        case .empty, .error:
+            contextualAssetLocalIdentifier = nil
+        case .idle, .loading, .permissionRequired:
             break
         }
+
+        statCards = makeStatCards()
     }
 
     private func openAppSettings() {
@@ -160,9 +231,6 @@ final class HomeViewModel: ObservableObject {
         }
 
         UIApplication.shared.open(url)
-    }
-    private func statusMessageForPhotoAccessRequest() {
-        // Placeholder hook for a future real Photos permission flow.
     }
 
     private func refreshDebugHomeCardImage() {
@@ -189,5 +257,9 @@ final class HomeViewModel: ObservableObject {
             HomeStatCardModel(stat: .visited, title: "Visited", primaryValue: "2 times", secondaryValue: eventName, monthlyDetail: "4 This Month", yearlyDetail: "9 This Year"),
             HomeStatCardModel(stat: .reminder, title: "Reminder", primaryValue: "5", secondaryValue: "Responded", monthlyDetail: "8 This Month", yearlyDetail: "18 This Year")
         ]
+    }
+
+    deinit {
+        contextualDiscoveryTask?.cancel()
     }
 }
