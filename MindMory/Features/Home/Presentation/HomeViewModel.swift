@@ -180,6 +180,46 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
+    func showContextualAsset(localIdentifier: String) {
+        contextualAssetLocalIdentifier = localIdentifier
+        let routedMemory = Memory(
+            id: UUID(),
+            title: "A memory is nearby",
+            subtitle: "You’re near a place connected to this photo.",
+            dateText: "Memory",
+            locationName: nil,
+            imageName: "",
+            journalText: nil,
+            isFavorite: false,
+            tags: ["Nearby"]
+        )
+        focusedMemory = routedMemory
+        captionText = ""
+        contextualState = .loaded(ContextualMemory(
+            id: routedMemory.id,
+            title: routedMemory.title,
+            subtitle: routedMemory.subtitle,
+            dateText: routedMemory.dateText,
+            locationName: routedMemory.locationName,
+            assetLocalIdentifier: localIdentifier,
+            journalText: routedMemory.journalText,
+            tags: routedMemory.tags,
+            context: ContextualMemoryContext(now: Date(), currentLocation: nil, currentEvent: nil),
+            score: 0
+        ))
+        homeCardState = .normal
+        state = .positive(
+            Reminder(
+                id: UUID(),
+                title: routedMemory.title,
+                message: routedMemory.subtitle,
+                context: .none,
+                imageName: nil
+            ),
+            routedMemory
+        )
+    }
+
     private func discoverContextualMemory() {
         guard let findContextualMemoryUseCase else { return }
         contextualDiscoveryTask?.cancel()

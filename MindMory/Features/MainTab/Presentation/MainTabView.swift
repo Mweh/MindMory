@@ -1,4 +1,6 @@
+import Combine
 import SwiftUI
+
 
 enum MainTab: CaseIterable {
     case home
@@ -35,12 +37,18 @@ enum MainTab: CaseIterable {
 struct MainTabView: View {
 
     let container: DependencyContainer
+    @ObservedObject var router: AppRouter
+    @StateObject private var homeViewModel: HomeViewModel
 
-    @State private var selectedTab: MainTab = .home
+    init(container: DependencyContainer, router: AppRouter) {
+        self.container = container
+        self.router = router
+        _homeViewModel = StateObject(wrappedValue: container.makeHomeViewModel())
+    }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            HomeView(viewModel: container.makeHomeViewModel())
+        TabView(selection: $router.selectedTab) {
+            HomeView(viewModel: homeViewModel)
                 .tabItem {
                     Label(
                         MainTab.home.title,
@@ -71,9 +79,14 @@ struct MainTabView: View {
         }
         .tint(MindMoryColors.primaryGreen)
         .background(MindMoryColors.background)
+        .onReceive(router.$routedAssetLocalIdentifier.compactMap { $0 }) { assetLocalIdentifier in
+            homeViewModel.showContextualAsset(localIdentifier: assetLocalIdentifier)
+            _ = router.consumeRoutedAssetLocalIdentifier()
+        }
     }
 }
 
 #Preview {
-    MainTabView(container: DependencyContainer())
+    let container = DependencyContainer()
+    MainTabView(container: container, router: container.appRouter)
 }
