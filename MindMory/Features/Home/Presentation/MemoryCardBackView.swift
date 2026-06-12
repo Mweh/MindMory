@@ -4,6 +4,7 @@ struct MemoryCardBackView: View {
     let memory: Memory
     @Binding var captionText: String
     let shareAction: () -> Void
+    
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
