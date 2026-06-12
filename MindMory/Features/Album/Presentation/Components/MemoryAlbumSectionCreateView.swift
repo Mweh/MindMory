@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 protocol MemoryAlbumLabelable {
     var label: String { get }
@@ -7,12 +8,13 @@ protocol MemoryAlbumLabelable {
 struct MemoryAlbumSectionCreateView: View {
     @State private var selectedSectionType: MemoryAlbumSectionType = .image
     @State private var selectedLayoutCount: Int = 1
+    @State private var selectedMirrorVariants: [Int: Int] = [:]  // [variantId: selectedMirrorVariant]
     @State private var textBlockType: MemoryAlbumTextBlockType = .titleAndDescription
     @State private var textHorizontalAlignment: MemoryAlbumTextHorizontalAlignment = .leading
     @State private var textVerticalAlignment: MemoryAlbumTextVerticalAlignment = .top
     @State private var textIsTitleFirst: Bool = true
-    @State private var textTitle: String = "A memory headline"
-    @State private var textDescription: String = "Describe this memory section with context and feelings."
+    @State private var textTitle: String = ""
+    @State private var textDescription: String = ""
     @State private var titleSize: Double = MemoryAlbumTextStyle.default.titleSize
     @State private var descriptionSize: Double = MemoryAlbumTextStyle.default.descriptionSize
     @State private var titleWeight: MemoryAlbumTextWeight = MemoryAlbumTextStyle.default.titleWeight
@@ -20,6 +22,8 @@ struct MemoryAlbumSectionCreateView: View {
 
     let existingSection: MemoryAlbumSection?
     let onSave: (MemoryAlbumSection) -> Void
+
+    @FocusState private var isTitleFocused: Bool
 
     init(existingSection: MemoryAlbumSection? = nil, onSave: @escaping (MemoryAlbumSection) -> Void) {
         self.existingSection = existingSection
@@ -50,10 +54,15 @@ struct MemoryAlbumSectionCreateView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                header
+                // Context-aware header
+                sectionHeader
 
-                sectionTypeChips
+                // Hide type chips when editing or preconfigured to avoid switching context
+                if existingSection == nil {
+                    sectionTypeChips
+                }
 
+                // Only render the builder matching the current selected type
                 if selectedSectionType == .image {
                     imageSectionBuilder
                 } else {
@@ -65,8 +74,16 @@ struct MemoryAlbumSectionCreateView: View {
             .padding(MindMorySpacing.xl)
         }
         .background(MindMoryColors.background.ignoresSafeArea())
-        .navigationTitle("Add Section")
+        .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            // If opened with a preconfigured text section, focus the title input to speed up entry
+            if existingSection?.type == .text {
+                DispatchQueue.main.async {
+                    isTitleFocused = true
+                }
+            }
+        }
     }
 
     private var imageSectionBuilder: some View {
@@ -158,6 +175,7 @@ struct MemoryAlbumSectionCreateView: View {
                         .foregroundStyle(MindMoryColors.textSecondary)
 
                     TextField("Enter title", text: $textTitle)
+                        .focused($isTitleFocused)
                         .font(MindMoryTypography.bodyMedium)
                         .padding(MindMorySpacing.sm)
                         .background(MindMoryColors.surface)
@@ -244,6 +262,36 @@ struct MemoryAlbumSectionCreateView: View {
         )
     }
 
+    private var navigationTitle: String {
+        if let _ = existingSection {
+            return selectedSectionType == .image ? "Edit Image Section" : "Edit Text Section"
+        }
+
+        return selectedSectionType == .image ? "Add Image Section" : "Add Text Section"
+    }
+
+    private var sectionHeader: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            if selectedSectionType == .image {
+                Text("Choose an image layout")
+                    .font(MindMoryTypography.headingLarge)
+                    .foregroundStyle(MindMoryColors.textPrimary)
+
+                Text("Pick a layout and tap a preview to add an image section to your album.")
+                    .font(MindMoryTypography.bodySmall)
+                    .foregroundStyle(MindMoryColors.textSecondary)
+            } else {
+                Text("Add a text section")
+                    .font(MindMoryTypography.headingLarge)
+                    .foregroundStyle(MindMoryColors.textPrimary)
+
+                Text("Customize the title, description, and typography for this text block.")
+                    .font(MindMoryTypography.bodySmall)
+                    .foregroundStyle(MindMoryColors.textSecondary)
+            }
+        }
+    }
+
     private func controlRow<T: CaseIterable & Identifiable & Equatable & Hashable>(
         title: String,
         values: T.AllCases,
@@ -282,25 +330,7 @@ struct MemoryAlbumSectionCreateView: View {
         }
     }
 
-    private func labeledDivider(_ title: String) -> some View {
-        HStack(spacing: MindMorySpacing.sm) {
-            Rectangle()
-                .frame(height: 1)
-                .foregroundStyle(MindMoryColors.border)
-                .frame(maxWidth: .infinity)
-
-            Text(title)
-                .font(MindMoryTypography.caption)
-                .foregroundStyle(MindMoryColors.textSecondary)
-                .fixedSize()
-
-            Rectangle()
-                .frame(height: 1)
-                .foregroundStyle(MindMoryColors.border)
-                .frame(maxWidth: .infinity)
-        }
-        .frame(maxWidth: .infinity)
-    }
+    // divider labels moved into the bottom card info for clarity
 
     private var layoutChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -320,15 +350,43 @@ struct MemoryAlbumSectionCreateView: View {
 
     private var layoutOptions: some View {
         VStack(spacing: MindMorySpacing.lg) {
-            ForEach(Array(layoutVariants.enumerated()), id: \.element.id) { _, variant in
-                LabeledDivider(title: variant.title)
+            let displayVariants = layoutVariants.filter { variant in
+                // Only show primary variants or non-mirrored layouts
+                guard let mirror = variant.mirrorGroup else { return true }
+                return variant.variant == mirror.primaryVariant
+            }
+            
+            ForEach(Array(displayVariants.enumerated()), id: \.element.id) { _, variant in
+                // subtle divider between options
+                Rectangle()
+                    .frame(height: 1)
+                    .foregroundStyle(MindMoryColors.border)
+                    .opacity(0.25)
+                    .frame(maxWidth: .infinity)
 
-                Button {
-                    saveLayoutTemplate(variant: variant.variant)
-                } label: {
-                    MemoryAlbumSectionLayoutOptionView(template: variant)
+                let finalVariant = selectedMirrorVariants[variant.variant] ?? variant.variant
+                let previewTemplate = MemoryAlbumSectionLayoutCatalog.template(layoutCount: variant.layoutCount, variant: finalVariant)
+
+                VStack(spacing: MindMorySpacing.md) {
+                    OptionInfoBar(template: previewTemplate)
+
+                    // Label and mirror tabs at top
+                    OptionHeaderBar(
+                        template: previewTemplate,
+                        selectedMirror: Binding(
+                            get: { selectedMirrorVariants[variant.variant] ?? variant.variant },
+                            set: { selectedMirrorVariants[variant.variant] = $0 }
+                        )
+                    )
+
+                    // Image preview
+                    Button {
+                        saveLayoutTemplate(variant: finalVariant)
+                    } label: {
+                        MemoryAlbumSectionLayoutOptionView(template: previewTemplate)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -348,15 +406,299 @@ struct MemoryAlbumSectionCreateView: View {
     }
 }
 
-private struct MemoryAlbumSectionLayoutOptionView: View {
+    private struct MemoryAlbumSectionLayoutOptionView: View {
     let template: MemoryAlbumSectionLayoutTemplate
 
     var body: some View {
-        MemoryAlbumSectionLayoutRenderer(template: template) { _ in
-            MemoryAlbumSectionTemplatePlaceholder()
+        GeometryReader { proxy in
+            let containerWidth = proxy.size.width
+
+            MemoryAlbumSectionLayoutRenderer(template: template, content: { _ in
+                MemoryAlbumSectionTemplatePlaceholder()
+            }, availableWidth: containerWidth)
+            .frame(width: containerWidth, height: template.estimatedHeight(forWidth: containerWidth))
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+            // keep the preview clean: no per-cell debug badges or stacked icon chips
+            .frame(maxWidth: .infinity, alignment: .center)
+            .clipped()
         }
-        .frame(height: template.albumHeight)
-        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+        .frame(height: template.estimatedHeight(forWidth: {
+            // Prefer a UIScreen instance from the active window scene on newer OSes.
+            if #available(iOS 26.0, *) {
+                if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                    return scene.screen.bounds.width - (MindMorySpacing.xl * 2)
+                }
+                return 390 - (MindMorySpacing.xl * 2)
+            } else {
+                return UIScreen.main.bounds.width - (MindMorySpacing.xl * 2)
+            }
+        }()))
+    }
+}
+
+private struct OptionHeaderBar: View {
+    let template: MemoryAlbumSectionLayoutTemplate
+    @Binding var selectedMirror: Int
+
+    private var portraitCount: Int { template.frameShapes.filter { $0 == .portrait }.count }
+    private var landscapeCount: Int { template.frameShapes.filter { $0 == .landscape }.count }
+    private var squareCount: Int { template.frameShapes.filter { $0 == .square }.count }
+    private var flexibleCount: Int { template.frameShapes.filter { $0 == .flexible }.count }
+    private var columnCount: Int { template.gridColumns.count }
+    
+    private var mirrorVariant: MemoryAlbumSectionLayoutTemplate? {
+        guard let mirror = template.mirrorGroup, mirror.mirrorVariant != template.variant else { return nil }
+        return MemoryAlbumSectionLayoutCatalog.template(layoutCount: template.layoutCount, variant: mirror.mirrorVariant)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.md) {
+            // Mirror tabs if applicable
+            if let mirror = template.mirrorGroup {
+                HStack(spacing: MindMorySpacing.sm) {
+                    mirrorTabButton(
+                        isSelected: selectedMirror == template.variant,
+                        title: mirror.mirrorType == .vertical ? "Left" : "Top",
+                        icon: mirror.mirrorType == .vertical ? "arrow.left.and.right" : "arrow.up.and.down"
+                    ) {
+                        selectedMirror = template.variant
+                    }
+
+                    mirrorTabButton(
+                        isSelected: selectedMirror == mirror.mirrorVariant,
+                        title: mirror.mirrorType == .vertical ? "Right" : "Bottom",
+                        icon: mirror.mirrorType == .vertical ? "arrow.right.and.left" : "arrow.down.and.up"
+                    ) {
+                        selectedMirror = mirror.mirrorVariant
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func mirrorTabButton(isSelected: Bool, title: String, icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.caption)
+                Text(title)
+                    .font(MindMoryTypography.caption)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(10)
+            .background(isSelected ? MindMoryColors.primaryGreen : MindMoryColors.surface)
+            .foregroundStyle(isSelected ? MindMoryColors.surface : MindMoryColors.textPrimary)
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                    .stroke(MindMoryColors.border, lineWidth: isSelected ? 0 : 1)
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func capsulePill(icon: String, text: String, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundStyle(color)
+
+            Text(text)
+                .font(MindMoryTypography.caption)
+                .foregroundStyle(color)
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .background(color.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
+    }
+}
+
+private struct OptionInfoBar: View {
+    let template: MemoryAlbumSectionLayoutTemplate
+
+    private var portraitCount: Int { template.frameShapes.filter { $0 == .portrait }.count }
+    private var landscapeCount: Int { template.frameShapes.filter { $0 == .landscape }.count }
+    private var squareCount: Int { template.frameShapes.filter { $0 == .square }.count }
+    private var flexibleCount: Int { template.frameShapes.filter { $0 == .flexible }.count }
+    private var columnCount: Int { template.gridColumns.count }
+
+    private var layoutDescriptor: String {
+        if template.layoutCount == 1 {
+            return template.frameShapes.first?.label ?? "Single"
+        }
+
+        if columnCount == 1 {
+            return "Vertical"
+        }
+
+        if template.layoutCount == columnCount && template.variant == 0 {
+            return "Horizontal"
+        }
+
+        return "Mixed"
+    }
+
+    private var firstColumnShapes: [MemoryAlbumFrameShape] {
+        switch template.layoutCount {
+        case 1:
+            return [template.frameShapes[0]]
+        case 2:
+            switch template.variant {
+            case 1:
+                return template.frameShapes
+            default:
+                return [template.frameShapes[0]]
+            }
+        case 3:
+            switch template.variant {
+            case 1:
+                return [template.frameShapes[0], template.frameShapes[1]]
+            case 2:
+                return [template.frameShapes[0], template.frameShapes[2]]
+            case 3:
+                return [template.frameShapes[0], template.frameShapes[1]]
+            default:
+                return [template.frameShapes[0]]
+            }
+        case 4:
+            switch template.variant {
+            case 0:
+                return [template.frameShapes[0], template.frameShapes[2]]
+            case 1:
+                return [template.frameShapes[0]]
+            case 2:
+                return [template.frameShapes[0], template.frameShapes[1]]
+            case 3:
+                return [template.frameShapes[0], template.frameShapes[1]]
+            case 4:
+                return [template.frameShapes[0], template.frameShapes[1]]
+            default:
+                return [template.frameShapes[0]]
+            }
+        case 5:
+            switch template.variant {
+            case 0:
+                return [template.frameShapes[0], template.frameShapes[3]]
+            case 1:
+                return [template.frameShapes[0], template.frameShapes[1]]
+            case 2:
+                return [template.frameShapes[0]]
+            case 3:
+                return [template.frameShapes[0], template.frameShapes[2]]
+            default:
+                return [template.frameShapes[0], template.frameShapes[1]]
+            }
+        default:
+            return [template.frameShapes[0]]
+        }
+    }
+
+    private var firstColumnText: String? {
+        let count = firstColumnShapes.count
+        guard count > 0 else { return nil }
+
+        let shapeLabels = firstColumnShapes.map { $0.label.lowercased() }.joined(separator: " · ")
+        return "First column: \(count) image\(count == 1 ? "" : "s") — \(shapeLabels)"
+    }
+
+    private var descriptorColor: Color {
+        switch layoutDescriptor {
+        case "Vertical":
+            return MindMoryColors.neutral
+        case "Horizontal":
+            return MindMoryColors.primaryGreen
+        default:
+            return MindMoryColors.mutedIndigo
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            HStack(alignment: .top, spacing: MindMorySpacing.md) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(template.title)
+                        .font(MindMoryTypography.bodySmall)
+                        .foregroundStyle(MindMoryColors.primaryGreen)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .layoutPriority(1)
+
+                    Text(layoutDescriptor.uppercased())
+                        .font(MindMoryTypography.caption)
+                        .foregroundStyle(descriptorColor)
+                        .fontWeight(.semibold)
+                }
+
+                Spacer()
+
+                badgePill(icon: "photo.on.rectangle", text: "\(template.layoutCount) images", tint: MindMoryColors.infoSurface)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: MindMorySpacing.sm) {
+                    if columnCount > 1 {
+                        capsulePill(icon: "square.grid.2x2", text: "\(columnCount) cols", color: MindMoryColors.primaryGreen)
+                    }
+
+                    if portraitCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.portrait.iconName, text: "\(portraitCount)", color: MindMoryColors.primaryGreen) }
+                    if landscapeCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.landscape.iconName, text: "\(landscapeCount)", color: MindMoryColors.mutedIndigo) }
+                    if squareCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.square.iconName, text: "\(squareCount)", color: MindMoryColors.neutral) }
+                    if flexibleCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.flexible.iconName, text: "\(flexibleCount)", color: MindMoryColors.textSecondary) }
+                }
+                .padding(.vertical, MindMorySpacing.xs)
+            }
+
+            if let firstColumnText {
+                Text(firstColumnText)
+                    .font(MindMoryTypography.caption)
+                    .foregroundStyle(MindMoryColors.mutedIndigo)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2)
+            }
+        }
+        .padding(14)
+        .background(MindMoryColors.infoSurface)
+        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                .stroke(MindMoryColors.primaryGreen.opacity(0.18))
+        )
+    }
+
+    @ViewBuilder
+    private func badgePill(icon: String, text: String, tint: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundStyle(tint)
+
+            Text(text)
+                .font(MindMoryTypography.caption)
+                .foregroundStyle(tint)
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(tint.opacity(0.16))
+        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func capsulePill(icon: String, text: String, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundStyle(color)
+
+            Text(text)
+                .font(MindMoryTypography.caption)
+                .foregroundStyle(color)
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(color.opacity(0.16))
+        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
     }
 }
 
@@ -368,37 +710,11 @@ private struct MemoryAlbumSectionTemplatePlaceholder: View {
             placeholderIcon: "photo.on.rectangle.angled",
             placeholderText: "Layout preview"
         )
-        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                .stroke(MindMoryColors.border)
-        )
+        // Note: do not apply inner corner clipping here so adjacent cells render seamlessly
     }
 }
 
-private struct LabeledDivider: View {
-    let title: String
 
-    var body: some View {
-        HStack(spacing: MindMorySpacing.sm) {
-            Rectangle()
-                .frame(height: 1)
-                .foregroundStyle(MindMoryColors.border)
-                .frame(maxWidth: .infinity)
-
-            Text(title)
-                .font(MindMoryTypography.caption)
-                .foregroundStyle(MindMoryColors.textSecondary)
-                .fixedSize()
-
-            Rectangle()
-                .frame(height: 1)
-                .foregroundStyle(MindMoryColors.border)
-                .frame(maxWidth: .infinity)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
 
 extension MemoryAlbumTextBlockType: MemoryAlbumLabelable {}
 extension MemoryAlbumTextHorizontalAlignment: MemoryAlbumLabelable {}

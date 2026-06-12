@@ -23,7 +23,7 @@ struct AnimatedTextSectionView: View {
                 descriptionView
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: combinedAlignment)
+        .frame(maxWidth: .infinity, alignment: combinedAlignment)
         .fixedSize(horizontal: false, vertical: true)
     }
 

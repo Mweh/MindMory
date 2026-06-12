@@ -51,10 +51,10 @@ struct MemoryImagePlaceholderView: View {
                     placeholderContent
                 }
             }
-            .frame(width: proxy.size.width, height: proxy.size.height)
-            .clipped()
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .clipped()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity)
     }
 
     private func loadDebugImage(from url: URL) -> LoadedDebugImage? {
@@ -99,23 +99,24 @@ struct MemoryImagePlaceholderView: View {
 
     private var placeholderContent: some View {
         ZStack {
-            MindMoryColors.surface
+            MindMoryColors.placeholderSurface
 
             VStack(spacing: MindMorySpacing.sm) {
                 Image(systemName: placeholderIcon)
                     .font(.title)
-                    .foregroundStyle(MindMoryColors.textSecondary)
+                    .foregroundStyle(MindMoryColors.mutedIndigo)
 
                 if let placeholderText = placeholderText {
                     Text(placeholderText)
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.mutedIndigo)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, MindMorySpacing.md)
                 }
             }
             .padding(MindMorySpacing.lg)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
     }
 }

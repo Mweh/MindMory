@@ -71,7 +71,7 @@ enum PreviewData {
                 description: "The morning began with quiet nerves and ended with cheering, hugs, and the feeling that a new chapter had finally arrived.",
                 style: .default
             )),
-            MemoryAlbumSection(layoutCount: 1, layoutVariant: 3, photos: [graduatePortrait]),
+            MemoryAlbumSection(layoutCount: 1, layoutVariant: 0, photos: [graduatePortrait]),
             MemoryAlbumSection(textSection: MemoryAlbumTextSection(
                 templateVariant: 1,
                 blockType: .descriptionOnly,
@@ -82,7 +82,7 @@ enum PreviewData {
                 description: "Walking across the stage felt like a bridge between long nights of studying and the bright, uncertain road ahead.",
                 style: .default
             )),
-            MemoryAlbumSection(layoutCount: 2, layoutVariant: 10, photos: [capToss, stageCheers]),
+            MemoryAlbumSection(layoutCount: 2, layoutVariant: 0, photos: [capToss, stageCheers]),
             MemoryAlbumSection(textSection: MemoryAlbumTextSection(
                 templateVariant: 0,
                 blockType: .titleAndDescription,
@@ -115,7 +115,7 @@ enum PreviewData {
                 description: "The day ended with quiet conversation, warm congratulations, and a confident sense that the journey had only just begun.",
                 style: .default
             )),
-            MemoryAlbumSection(layoutCount: 5, layoutVariant: 12, photos: [finalCheers, capDetail, celebrationWide, diplomaShot, groupPhoto])
+            MemoryAlbumSection(layoutCount: 5, layoutVariant: 0, photos: [finalCheers, capDetail, celebrationWide, diplomaShot, groupPhoto])
         ]
     }()
 

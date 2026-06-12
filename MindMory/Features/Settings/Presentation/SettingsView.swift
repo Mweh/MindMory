@@ -20,45 +20,25 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                    heroSection
-                    notificationSection
-                    locationContextSection
-                    calendarContextSection
-                    reminderSettingSection
-                    privacySection
-                    #if DEBUG
-                    qaDebugSection
-                    #endif
-                }
-                .padding(.horizontal, MindMorySpacing.lg)
-                .padding(.vertical, MindMorySpacing.xl)
-            }
-            .background(backgroundView.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(for: SettingsDestination.self) { destination in
-                switch destination {
-                case .location:
-                    LocationSettingsDetailView(viewModel: viewModel)
-                case .schedule:
-                    ScheduleSettingsDetailView(viewModel: viewModel)
-                case .delivery:
-                    NotificationDeliverySettingsView(viewModel: viewModel)
-                case .message:
-                    MessageSettingsDetailView(viewModel: viewModel)
-                case .customize:
-                    CustomizePreferencesDetailView(viewModel: viewModel)
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                heroSection
+                notificationSection
+                locationContextSection
+                calendarContextSection
+                reminderSettingSection
+                privacySection
                 #if DEBUG
-                case .qaDebugTools:
-                    QADebugToolsView(viewModel: viewModel.makeQADebugToolsViewModel())
+                qaDebugSection
                 #endif
-                }
             }
-            .task {
-                await viewModel.refreshStatuses()
-            }
+            .padding(.horizontal, MindMorySpacing.lg)
+            .padding(.vertical, MindMorySpacing.xl)
+        }
+        .background(backgroundView.ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await viewModel.refreshStatuses()
         }
     }
 
@@ -162,7 +142,7 @@ struct SettingsView: View {
                         subtitle: ReminderSettingMode.customize.subtitle,
                         linkTitle: "Open customize preference settings",
                         isSelected: viewModel.preferences.reminderSettingMode == .customize,
-                        destination: .customize,
+                        destination: { CustomizePreferencesDetailView(viewModel: viewModel) },
                         selectAction: {
                             viewModel.preferences.reminderSettingMode = .customize
                         }
@@ -254,7 +234,7 @@ struct SettingsView: View {
                         subtitle: "Help MindMory understand which places matter most to you.",
                         summary: viewModel.preferences.locationSummary,
                         iconName: "map.fill",
-                        destination: .location
+                        destination: { LocationSettingsDetailView(viewModel: viewModel) }
                     )
                 } else {
                     HStack(alignment: .top, spacing: MindMorySpacing.sm) {
@@ -317,7 +297,7 @@ struct SettingsView: View {
                         subtitle: "Help MindMory focus on the events that matter most to you.",
                         summary: viewModel.preferences.scheduleSummary,
                         iconName: "calendar.badge.clock",
-                        destination: .schedule
+                        destination: { ScheduleSettingsDetailView(viewModel: viewModel) }
                     )
                 } else {
                     HStack(alignment: .top, spacing: MindMorySpacing.sm) {
@@ -363,7 +343,7 @@ struct SettingsView: View {
                         ? "Custom mode • \(viewModel.preferences.deliverySummary)"
                         : "Default app mode • \(viewModel.preferences.deliverySummary)",
                     iconName: "slider.horizontal.3",
-                    destination: .customize
+                    destination: { CustomizePreferencesDetailView(viewModel: viewModel) }
                 )
             }
         }
@@ -421,7 +401,7 @@ struct SettingsView: View {
                         subtitle: "Reset onboarding and test Home card photos.",
                         summary: "Debug mode enabled",
                         iconName: "wrench.and.screwdriver.fill",
-                        destination: .qaDebugTools
+                        destination: { QADebugToolsView(viewModel: viewModel.makeQADebugToolsViewModel()) }
                     )
                 }
             }
@@ -520,15 +500,15 @@ private struct SettingsStatusBadge: View {
     }
 }
 
-private struct SettingsNavigationRow: View {
+private struct SettingsNavigationRow<Destination: View>: View {
     let title: String
     let subtitle: String
     let summary: String
     let iconName: String
-    let destination: SettingsDestination
+    let destination: () -> Destination
 
     var body: some View {
-        NavigationLink(value: destination) {
+        NavigationLink(destination: destination()) {
             HStack(alignment: .top, spacing: MindMorySpacing.sm) {
                 ZStack {
                     RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
@@ -567,12 +547,12 @@ private struct SettingsNavigationRow: View {
     }
 }
 
-private struct SettingsRadioNavigationRow: View {
+private struct SettingsRadioNavigationRow<Destination: View>: View {
     let title: String
     let subtitle: String
     let linkTitle: String
     let isSelected: Bool
-    let destination: SettingsDestination
+    let destination: () -> Destination
     let selectAction: () -> Void
 
     var body: some View {
@@ -582,7 +562,7 @@ private struct SettingsRadioNavigationRow: View {
             isSelected: isSelected,
             action: selectAction
         ) {
-            NavigationLink(value: destination) {
+            NavigationLink(destination: destination()) {
                 Text(linkTitle)
                     .font(MindMoryTypography.caption)
                     .foregroundStyle(MindMoryColors.primaryGreen)

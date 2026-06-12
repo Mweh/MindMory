@@ -4,29 +4,27 @@ struct HomeView: View {
     @StateObject var viewModel: HomeViewModel
 
     var body: some View {
-        NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                    header
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                header
 
-                    HomeStatsGridView(
-                        cards: viewModel.statCards,
-                        selectedStat: viewModel.selectedStat,
-                        selectAction: viewModel.selectStat
-                    )
+                HomeStatsGridView(
+                    cards: viewModel.statCards,
+                    selectedStat: viewModel.selectedStat,
+                    selectAction: viewModel.selectStat
+                )
 
-                    if let memory = viewModel.focusedMemory {
-                        favoriteHeader
-                        homeCard(for: memory)
-                    }
+                if let memory = viewModel.focusedMemory {
+                    favoriteHeader
+                    homeCard(for: memory)
                 }
-                .padding(.horizontal, MindMorySpacing.xl)
-                .padding(.top, MindMorySpacing.xl)
-                .padding(.bottom, MindMorySpacing.xxl)
             }
-            .background(MindMoryColors.background.ignoresSafeArea())
-            .navigationBarHidden(true)
+            .padding(.horizontal, MindMorySpacing.xl)
+            .padding(.top, MindMorySpacing.xl)
+            .padding(.bottom, MindMorySpacing.xxl)
         }
+        .background(MindMoryColors.background.ignoresSafeArea())
+        .navigationBarHidden(true)
         .onAppear { viewModel.load() }
         .sheet(isPresented: $viewModel.isShowingSharePreview) {
             if let memory = viewModel.focusedMemory {

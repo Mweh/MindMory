@@ -131,7 +131,12 @@ enum MemoryAlbumSectionContent: Equatable, Codable {
         case .image:
             let layoutCount = try container.decode(Int.self, forKey: .layoutCount)
             let layoutVariant = try container.decode(Int.self, forKey: .layoutVariant)
-            let photos = try container.decode([AlbumPhoto?].self, forKey: .photos)
+            var photos = try container.decode([AlbumPhoto?].self, forKey: .photos)
+            if photos.count < layoutCount {
+                photos.append(contentsOf: Array(repeating: nil, count: layoutCount - photos.count))
+            } else if photos.count > layoutCount {
+                photos = Array(photos.prefix(layoutCount))
+            }
             self = .image(layoutCount: layoutCount, layoutVariant: layoutVariant, photos: photos)
         case .text:
             let textSection = try container.decode(MemoryAlbumTextSection.self, forKey: .textSection)
@@ -161,7 +166,13 @@ struct MemoryAlbumSection: Identifiable, Equatable, Codable {
 
     init(id: UUID = UUID(), layoutCount: Int, layoutVariant: Int = 0, photos: [AlbumPhoto?] = []) {
         self.id = id
-        self.content = .image(layoutCount: layoutCount, layoutVariant: layoutVariant, photos: photos)
+        var normalizedPhotos = photos
+        if normalizedPhotos.count < layoutCount {
+            normalizedPhotos.append(contentsOf: Array(repeating: nil, count: layoutCount - normalizedPhotos.count))
+        } else if normalizedPhotos.count > layoutCount {
+            normalizedPhotos = Array(normalizedPhotos.prefix(layoutCount))
+        }
+        self.content = .image(layoutCount: layoutCount, layoutVariant: layoutVariant, photos: normalizedPhotos)
     }
 
     init(id: UUID = UUID(), textSection: MemoryAlbumTextSection) {

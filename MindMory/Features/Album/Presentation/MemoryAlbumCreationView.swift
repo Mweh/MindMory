@@ -14,7 +14,8 @@ struct MemoryAlbumCreationView: View {
     @State private var selectedPickerSectionID: UUID?
     @State private var selectedPickerIndex: Int?
     @State private var isAddingSection = false
-    @State private var isShowingPreview = false
+    @State private var preconfiguredSection: MemoryAlbumSection? = nil
+    
     @State private var selectedSectionID: UUID?
     @State private var selectedTextTitle: String = ""
     @State private var selectedTextDescription: String = ""
@@ -31,7 +32,7 @@ struct MemoryAlbumCreationView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottomTrailing) {
             ScrollView {
                 VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                     if currentStep == .details {
@@ -45,7 +46,7 @@ struct MemoryAlbumCreationView: View {
                         selectPhotosStep
                     }
 
-                    if currentStep == .details {
+                    if currentStep == .selectPhotos {
                         footerButtons
                     }
                 }
@@ -54,28 +55,34 @@ struct MemoryAlbumCreationView: View {
             .onTapGesture {
                 draggingSectionID = nil
             }
+            // Floating add-section button when building sections
+            if currentStep == .selectPhotos {
+                floatingMenuButton
+                    .padding(.trailing, MindMorySpacing.xl)
+                    .padding(.bottom, MindMorySpacing.xl)
+            }
         }
         .navigationDestination(isPresented: $isAddingSection) {
-            MemoryAlbumSectionCreateView { section in
+            MemoryAlbumSectionCreateView(existingSection: preconfiguredSection) { section in
                 if let index = sectionInsertionIndex {
                     viewModel.insertSection(section, at: index)
                 } else {
                     viewModel.addSection(section)
                 }
+
+                // Select the newly added section so UI state updates accordingly
+                selectedSectionID = section.id
+                if case .image = section.content {
+                    selectedPickerIndex = 0
+                }
+
                 sectionInsertionIndex = nil
                 isAddingSection = false
+                preconfiguredSection = nil
             }
         }
-        .navigationDestination(isPresented: $isShowingPreview) {
-            MemoryAlbumPreviewView(
-                viewModel: viewModel,
-                onSave: viewModel.saveAlbum,
-                onCreate: { album in
-                    onCreate(album)
-                    dismiss()
-                }
-            )
-        }
+        
+
         .onChange(of: currentStep) { _, newStep in
             if newStep == .selectPhotos, selectedSectionID == nil {
                 selectedSectionID = viewModel.sections.first?.id
@@ -91,8 +98,25 @@ struct MemoryAlbumCreationView: View {
             syncSelectedTextSection()
         }
         .background(MindMoryColors.background.ignoresSafeArea())
-        .navigationTitle("Create Memory Album")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            // Leading back control: if on selectPhotos, go back to details; otherwise dismiss
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    if currentStep == .selectPhotos {
+                        currentStep = .details
+                        return
+                    }
+
+                    dismiss()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                }
+            }
+        }
         .sheet(isPresented: $isShowingTextEditor) {
             sectionTextEditorSheet
         }
@@ -214,7 +238,7 @@ struct MemoryAlbumCreationView: View {
                             image: viewModel.coverPhoto?.uiImage,
                             imageName: nil,
                             placeholderIcon: "photo.on.rectangle",
-                            placeholderText: viewModel.coverPhoto == nil ? "Tap to add cover photo" : "Tap to change cover photo"
+                            placeholderText: viewModel.coverPhoto.map { _ in "Tap to change cover photo" } ?? "Tap to add cover photo"
                         )
                         .frame(height: 180)
                         .frame(maxWidth: .infinity)
@@ -257,28 +281,56 @@ struct MemoryAlbumCreationView: View {
                     }
                 }
             }
+            PrimaryButton(title: primaryButtonTitle, action: primaryButtonAction)
+                .disabled(primaryButtonDisabled)
+                .frame(maxWidth: .infinity)
+                .padding(.top, MindMorySpacing.md)
         }
     }
 
     private var selectPhotosStep: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-            ForEach(viewModel.sections) { section in
-                draggableSection(section)
-            }
+            // Album header (cover + title + date) shown above the sections
+            AppCard {
+                VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                    Text(viewModel.albumName.isEmpty ? "Untitled memory" : viewModel.albumName)
+                        .font(MindMoryTypography.headingLarge)
+                        .foregroundStyle(MindMoryColors.textPrimary)
 
-            PrimaryButton(title: "Add Section") {
-                sectionInsertionIndex = nil
-                isAddingSection = true
-            }
-            .disabled(currentStep != .selectPhotos)
-        }
-        .toolbar {
-            if currentStep == .selectPhotos {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Preview") {
-                        isShowingPreview = true
+                    if let coverPhoto = viewModel.coverPhoto, let image = coverPhoto.uiImage {
+                        MemoryImagePlaceholderView(image: image, imageName: nil)
+                            .frame(height: 220)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+                    } else {
+                        MemoryImagePlaceholderView(image: nil, imageName: nil)
+                            .frame(height: 220)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                                    .stroke(MindMoryColors.border)
+                            )
+                    }
+
+                    HStack(spacing: MindMorySpacing.md) {
+                        VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
+                            Text(viewModel.albumDate.displayText)
+                                .font(MindMoryTypography.bodySmall)
+                                .foregroundStyle(MindMoryColors.textSecondary)
+
+                            Text("\(photoCount) photo(s)")
+                                .font(MindMoryTypography.bodySmall)
+                                .foregroundStyle(MindMoryColors.primaryGreen)
+                        }
+
+                        Spacer()
                     }
                 }
+            }
+
+            ForEach(viewModel.sections) { section in
+                draggableSection(section)
             }
         }
     }
@@ -391,24 +443,76 @@ struct MemoryAlbumCreationView: View {
         )
     }
 
-    private var footerButtons: some View {
-        HStack(spacing: MindMorySpacing.sm) {
-            if currentStep != .details {
-                Button {
-                    previousStep()
-                } label: {
-                    Text("Back")
-                        .font(MindMoryTypography.bodyMedium)
-                        .foregroundStyle(MindMoryColors.textPrimary)
-                        .padding(.vertical, MindMorySpacing.sm)
-                        .frame(maxWidth: .infinity)
-                        .background(MindMoryColors.surface)
-                        .cornerRadius(MindMoryRadius.large)
-                }
+    private var photoCount: Int {
+        viewModel.sections.reduce(0) { result, section in
+            guard case .image(_, _, let photos) = section.content else { return result }
+            return result + photos.compactMap { $0 }.count
+        } + (viewModel.coverPhoto != nil ? 1 : 0)
+    }
+
+    private var floatingActionButton: some View {
+        Button {
+            sectionInsertionIndex = nil
+            isAddingSection = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.title3.weight(.bold))
+                .foregroundColor(.white)
+                .frame(width: 56, height: 56)
+                .background(MindMoryColors.primaryGreen)
+                .clipShape(Circle())
+                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Add section")
+    }
+
+    private var floatingMenuButton: some View {
+        Menu {
+            Button(action: {
+                // Add image section (default single layout)
+                preconfiguredSection = MemoryAlbumSection(layoutCount: 1)
+                sectionInsertionIndex = nil
+                isAddingSection = true
+            }) {
+                Label("Add Image", systemImage: "photo.on.rectangle")
             }
 
+            Button(action: {
+                // Add text section
+                let defaultText = MemoryAlbumTextSection(
+                    templateVariant: 0,
+                    blockType: .titleAndDescription,
+                    horizontalAlignment: .leading,
+                    verticalAlignment: .top,
+                    isTitleFirst: true,
+                    title: "",
+                    description: "",
+                    style: MemoryAlbumTextStyle.default
+                )
+                preconfiguredSection = MemoryAlbumSection(textSection: defaultText)
+                sectionInsertionIndex = nil
+                isAddingSection = true
+            }) {
+                Label("Add Text", systemImage: "text.bubble")
+            }
+        } label: {
+            Image(systemName: "plus")
+                .font(.title3.weight(.bold))
+                .foregroundColor(.white)
+                .frame(width: 56, height: 56)
+                .background(MindMoryColors.primaryGreen)
+                .clipShape(Circle())
+                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var footerButtons: some View {
+        HStack(spacing: MindMorySpacing.sm) {
             PrimaryButton(title: primaryButtonTitle, action: primaryButtonAction)
                 .disabled(primaryButtonDisabled)
+                .frame(maxWidth: .infinity)
         }
     }
 
@@ -442,7 +546,7 @@ struct MemoryAlbumCreationView: View {
     private var primaryButtonDisabled: Bool {
         switch currentStep {
         case .details:
-            return viewModel.isSaveButtonDisabled
+            return false
         case .selectPhotos:
             return viewModel.sections.isEmpty || !viewModel.hasImageSections || viewModel.hasIncompleteSections
         }
@@ -570,140 +674,6 @@ struct MemoryAlbumCreationView: View {
             break
         case .selectPhotos:
             currentStep = .details
-        }
-    }
-}
-
-private struct MemoryAlbumPreviewView: View {
-    @ObservedObject var viewModel: MemoryAlbumCreationViewModel
-    let onSave: () -> Void
-    let onCreate: (Album) -> Void
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                previewHeader
-
-                if viewModel.sections.isEmpty {
-                    Text("No sections added yet.")
-                        .font(MindMoryTypography.bodyMedium)
-                        .foregroundStyle(MindMoryColors.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(MindMorySpacing.md)
-                        .background(MindMoryColors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
-                } else {
-                    VStack(spacing: MindMorySpacing.lg) {
-                        ForEach(viewModel.sections) { section in
-                            previewSectionCard(section)
-                        }
-                    }
-                }
-
-                PrimaryButton(title: "Simpan Album") {
-                    onSave()
-                }
-                .disabled(viewModel.sections.isEmpty || !viewModel.hasImageSections || viewModel.hasIncompleteSections || viewModel.isSaveButtonDisabled)
-            }
-            .padding(MindMorySpacing.xl)
-        }
-        .background(MindMoryColors.background.ignoresSafeArea())
-        .navigationTitle("Preview")
-        .navigationBarTitleDisplayMode(.inline)
-        .alert("Memory Album", isPresented: alertBinding) {
-            Button("OK", role: .cancel) {
-                handleAlertDismiss()
-            }
-        } message: {
-            Text(viewModel.alertMessage ?? "")
-        }
-    }
-
-    private var alertBinding: Binding<Bool> {
-        Binding(
-            get: { viewModel.alertMessage != nil },
-            set: { isPresented in
-                if !isPresented {
-                    viewModel.dismissAlert()
-                }
-            }
-        )
-    }
-
-    private func handleAlertDismiss() {
-        guard let album = viewModel.savedAlbum else {
-            viewModel.dismissAlert()
-            return
-        }
-
-        viewModel.dismissAlert()
-        onCreate(album)
-    }
-
-    private var previewHeader: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                Text(viewModel.albumName.isEmpty ? "Untitled memory" : viewModel.albumName)
-                    .font(MindMoryTypography.headingLarge)
-                    .foregroundStyle(MindMoryColors.textPrimary)
-
-                if let coverPhoto = viewModel.coverPhoto, let image = coverPhoto.uiImage {
-                    MemoryImagePlaceholderView(image: image, imageName: nil)
-                        .frame(height: 220)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
-                } else {
-                    MemoryImagePlaceholderView(image: nil, imageName: nil)
-                        .frame(height: 220)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                                .stroke(MindMoryColors.border)
-                        )
-                }
-
-                HStack(spacing: MindMorySpacing.md) {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-                        Text(viewModel.albumDate.displayText)
-                            .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.textSecondary)
-
-                        Text(previewPhotoSummary)
-                            .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.primaryGreen)
-                    }
-
-                    Spacer()
-                }
-            }
-        }
-    }
-
-    private var previewPhotoSummary: String {
-        let photoCount = viewModel.sections.reduce(0) { result, section in
-            guard case .image(_, _, let photos) = section.content else { return result }
-            return result + photos.compactMap { $0 }.count
-        } + (viewModel.coverPhoto != nil ? 1 : 0)
-
-        if photoCount == 0 {
-            return "No photos"
-        }
-
-        return "\(photoCount) photo\(photoCount == 1 ? "" : "s")"
-    }
-
-    private func imageForSectionCell(index: Int, section: MemoryAlbumSection) -> UIImage? {
-        guard case .image(_, _, let photos) = section.content else { return nil }
-        guard photos.indices.contains(index) else { return nil }
-        guard let photo = photos[index] else { return nil }
-        return photo.uiImage
-    }
-
-    @ViewBuilder
-    private func previewSectionCard(_ section: MemoryAlbumSection) -> some View {
-        MemoryAlbumSectionView(section: section, isPreview: true) { index, section in
-            AlbumSectionPhotoCell(image: imageForSectionCell(index: index, section: section))
         }
     }
 }

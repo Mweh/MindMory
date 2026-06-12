@@ -17,6 +17,6 @@ struct AlbumSectionPhotoCell: View {
                 .stroke(MindMoryColors.border)
         )
         .contentShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
     }
 }

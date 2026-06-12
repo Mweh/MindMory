@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 struct AlbumListView: View {
     @StateObject private var viewModel: AlbumListViewModel
@@ -14,27 +15,27 @@ struct AlbumListView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack(alignment: .bottomTrailing) {
-                content
-                    .padding(.horizontal, MindMorySpacing.xl)
-                    .padding(.top, MindMorySpacing.lg)
+        ZStack(alignment: .bottomTrailing) {
+            content
+                .padding(.horizontal, MindMorySpacing.xl)
+                .padding(.top, MindMorySpacing.lg)
 
-                floatingActionButton
-                    .padding(.trailing, MindMorySpacing.xl)
-                    .padding(.bottom, MindMorySpacing.xl)
-            }
-            .navigationDestination(isPresented: $isShowingCreateAlbum) {
-                MemoryAlbumCreationView(
-                    viewModel: MemoryAlbumCreationViewModel(albumRepository: albumRepository)
-                ) { album in
-                    viewModel.addAlbum(album)
-                }
-            }
-            .background(MindMoryColors.background.ignoresSafeArea())
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
+            floatingActionButton
+                .padding(.trailing, MindMorySpacing.xl)
+                .padding(.bottom, MindMorySpacing.xl)
+
+            // Use navigationDestination with isPresented to trigger navigation from a NavigationStack
         }
+        .navigationDestination(isPresented: $isShowingCreateAlbum) {
+            MemoryAlbumCreationView(
+                viewModel: MemoryAlbumCreationViewModel(albumRepository: albumRepository)
+            ) { album in
+                viewModel.addAlbum(album)
+            }
+        }
+        .background(MindMoryColors.background.ignoresSafeArea())
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             viewModel.configure(repository: albumRepository)
         }

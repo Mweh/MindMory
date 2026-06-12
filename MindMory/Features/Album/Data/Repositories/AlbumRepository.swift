@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 
+@MainActor
 protocol AlbumRepositoryProtocol {
     func fetchAlbums() -> [Album]
     func save(_ album: Album) throws
@@ -19,7 +20,7 @@ final class AlbumRepository: AlbumRepositoryProtocol {
         let fetchDescriptor = FetchDescriptor<AlbumEntity>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         let entities = (try? context.fetch(fetchDescriptor)) ?? []
         return entities.compactMap { entity in
-            try? entity.toDomain()
+            try? entity.toDomainMainActor()
         }
     }
 
@@ -56,7 +57,8 @@ final class AlbumEntity: Identifiable {
         self.payload = payload
     }
 
-    func toDomain() throws -> Album {
+    @MainActor
+    func toDomainMainActor() throws -> Album {
         try JSONDecoder().decode(Album.self, from: payload)
     }
 }
