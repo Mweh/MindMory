@@ -54,8 +54,15 @@ final class OnboardingViewModel: ObservableObject {
         guard !isProcessingPermission else {
             return
         }
-
-        state = .showingPage(index)
+        
+        if index > currentIndex {
+            Task {
+                await continueTapped()
+            }
+        } else {
+            state = .showingPage(index)
+        }
+        
     }
 
     func continueTapped() async {

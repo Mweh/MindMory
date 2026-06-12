@@ -21,8 +21,12 @@ struct HomeView: View {
                 .padding(.top, MindMorySpacing.xl)
                 .padding(.bottom, MindMorySpacing.xxl)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(MindMoryColors.background.ignoresSafeArea())
             .navigationBarHidden(true)
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
         }
         .onAppear { viewModel.load() }
         .sheet(isPresented: $viewModel.isShowingSharePreview) {
