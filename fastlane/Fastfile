@@ -10,21 +10,29 @@ platform :ios do
     )
 
     app_identifier = "com.fahmi.MindMory"
+
+    # 1) Pull down/create signing certs and provisioning profiles
+    match(
+      type: "appstore",
+      app_identifier: app_identifier
+    )
+
+    # 2) Bump build number from TestFlight
     build_number = latest_testflight_build_number(
       api_key: api_key,
       app_identifier: app_identifier
     ) + 1
 
-    increment_build_number(
-      build_number: build_number
-    )
+    increment_build_number(build_number: build_number)
 
+    # 3) Build and archive with automatic provisioning updates
     build_app(
       scheme: "MindMory",
       export_method: "app-store",
       xcargs: "-allowProvisioningUpdates"
     )
 
+    # 4) Upload to TestFlight
     upload_to_testflight(
       api_key: api_key,
       app_identifier: app_identifier,
@@ -32,4 +40,3 @@ platform :ios do
     )
   end
 end
-
