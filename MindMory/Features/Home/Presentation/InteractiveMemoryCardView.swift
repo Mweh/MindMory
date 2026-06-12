@@ -2,6 +2,7 @@ import SwiftUI
 
 struct InteractiveMemoryCardView: View {
     let memory: Memory
+    var assetLocalIdentifier: String? = nil
     var debugImageURL: URL? = nil
     @Binding var side: MemoryCardSide
     @Binding var captionText: String
@@ -19,7 +20,7 @@ struct InteractiveMemoryCardView: View {
 
     var body: some View {
         ZStack {
-            MemoryCardFrontView(memory: memory, debugImageURL: debugImageURL, photoParallax: photoParallax, contentParallax: contentParallax)
+            MemoryCardFrontView(memory: memory, assetLocalIdentifier: assetLocalIdentifier, debugImageURL: debugImageURL, photoParallax: photoParallax, contentParallax: contentParallax)
                 .opacity(isBackVisible ? 0 : 1)
                 .rotation3DEffect(.degrees(isBackVisible ? 180 : 0), axis: (x: 0, y: 1, z: 0), perspective: 0.7)
 

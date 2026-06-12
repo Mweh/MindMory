@@ -42,7 +42,8 @@ final class NativePermissionRepository: NSObject, PermissionRepositoryProtocol {
     }
 
     func requestLocationPermission() async -> PermissionStatus {
-        guard CLLocationManager.locationServicesEnabled() else {
+        let locationServicesEnabled = await Task.detached { CLLocationManager.locationServicesEnabled() }.value
+        guard locationServicesEnabled else {
             return .denied
         }
 

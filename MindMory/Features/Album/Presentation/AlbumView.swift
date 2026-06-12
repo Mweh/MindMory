@@ -1,72 +1,145 @@
 import SwiftUI
 
 struct AlbumView: View {
+    @StateObject private var viewModel: AlbumListViewModel
+    @State private var isShowingCreateAlbum = false
 
-    @StateObject var viewModel: AlbumViewModel
-
-    let container: DependencyContainer
+    init(viewModel: AlbumListViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+    }
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                headerSection
-                contentView
+            content
+                .padding(.horizontal, MindMorySpacing.xl)
+                .padding(.top, MindMorySpacing.lg)
+                .navigationDestination(isPresented: $isShowingCreateAlbum) {
+                    MemoryAlbumCreateView(viewModel: MemoryAlbumViewModel()) { album in
+                        viewModel.addAlbum(album)
+                    }
+                }
+                .background(MindMoryColors.background.ignoresSafeArea())
+                .navigationTitle("")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            isShowingCreateAlbum = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                    }
+                }
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if viewModel.albums.isEmpty {
+            emptyState
+        } else {
+            albumList
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: MindMorySpacing.xxxl) {
+            Spacer()
+
+            EmptyStateView(
+                title: "No albums yet",
+                message: "Create your first album to keep photo memories organized and easy to revisit."
+            )
+
+            PrimaryButton(title: "Create Album") {
+                isShowingCreateAlbum = true
             }
-            .padding(MindMorySpacing.xl)
-            .background(MindMoryColors.background.ignoresSafeArea())
-            .onAppear(perform: viewModel.load)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var albumList: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                headerSection
+                    .padding(.bottom, MindMorySpacing.lg)
+                
+                LazyVStack(spacing: MindMorySpacing.lg) {
+                    ForEach(viewModel.albums) { album in
+                        albumItem(for: album)
+                    }
+                }
+            }
+            .padding(.bottom, 120)
         }
     }
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-            Text("Album")
+            Text("Your albums")
                 .font(MindMoryTypography.displayLarge)
 
-            Text("Your memories, gathered in one calm place.")
+            Text("Review recently created albums and add more memories when you are ready.")
                 .font(MindMoryTypography.bodyMedium)
                 .foregroundStyle(MindMoryColors.textSecondary)
-
-            Button(action: viewModel.toggleFavoriteFilter) {
-                Label(
-                    viewModel.showingFavoritesOnly ? "Showing Favorites" : "Show Favorites",
-                    systemImage: "star.fill"
-                )
-                .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.primaryGreen)
-            }
-            .buttonStyle(.plain)
         }
     }
 
-    @ViewBuilder
-    private var contentView: some View {
-        switch viewModel.state {
-        case .loading:
-            LoadingStateView()
-                .frame(maxWidth: .infinity)
+    private func albumItem(for album: Album) -> some View {
+        NavigationLink(destination: AlbumDetailView(album: album)) {
+            VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+                if let image = album.coverPhoto?.uiImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 190)
+                        .frame(maxWidth: .infinity)
+                        .clipped()
+                        .cornerRadius(MindMoryRadius.large)
+                } else {
+                    RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                        .fill(MindMoryColors.surface)
+                        .frame(height: 190)
+                        .overlay(
+                            Image(systemName: "photo")
+                                .font(.title)
+                                .foregroundStyle(MindMoryColors.textSecondary)
+                        )
+                }
 
-        case .loaded(let memories):
-            AlbumMemoryGridView(
-                memories: memories,
-                container: container
+                VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
+                    Text(album.name)
+                        .font(MindMoryTypography.headingMedium)
+                        .foregroundStyle(MindMoryColors.textPrimary)
+
+                    HStack(spacing: MindMorySpacing.sm) {
+                        Text(album.albumDate.displayText)
+                            .font(MindMoryTypography.caption)
+                            .foregroundStyle(MindMoryColors.textSecondary)
+
+                        Spacer()
+
+                        Text(album.photos.isEmpty ? "No photos" : "\(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")")
+                            .font(MindMoryTypography.caption)
+                            .foregroundStyle(MindMoryColors.textSecondary)
+                    }
+                }
+                .padding(.top, MindMorySpacing.sm)
+            }
+            .padding(MindMorySpacing.lg)
+            .background(MindMoryColors.background)
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                    .stroke(MindMoryColors.border, lineWidth: 1)
             )
-
-        case .empty:
-            EmptyStateView(
-                title: "No memories yet",
-                message: "When a moment is kept, it will appear here."
-            )
-
-        case .error(let message):
-            ErrorStateView(message: message)
         }
+        .buttonStyle(.plain)
     }
 }
 
 #Preview {
-    AlbumView(
-        viewModel: DependencyContainer().makeAlbumViewModel(),
-        container: DependencyContainer()
-    )
+    AlbumView(viewModel: AlbumListViewModel(albums: PreviewData.sampleAlbums))
 }

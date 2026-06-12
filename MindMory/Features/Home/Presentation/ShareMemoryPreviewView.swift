@@ -76,7 +76,7 @@ struct ShareMemoryPreviewView: View {
             ) {
                 Text("Share Memory")
                     .font(MindMoryTypography.button)
-                    .foregroundStyle(MindMoryColors.deepGreen)
+                    .foregroundStyle(MindMoryColors.primaryGreen)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
                     .background(MindMoryColors.background)

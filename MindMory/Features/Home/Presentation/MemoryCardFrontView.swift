@@ -2,12 +2,13 @@ import SwiftUI
 
 struct MemoryCardFrontView: View {
     let memory: Memory
+    var assetLocalIdentifier: String? = nil
     var debugImageURL: URL? = nil
     let photoParallax: CGSize
     let contentParallax: CGSize
 
     var body: some View {
-        MemoryImagePlaceholderView(imageName: memory.imageName, debugImageURL: debugImageURL)
+        imageContent
             .offset(photoParallax)
             .frame(maxWidth: .infinity)
             .frame(height: 430)
@@ -16,6 +17,17 @@ struct MemoryCardFrontView: View {
             .background(frontBackground)
             .clipShape(cardShape)
             .overlay { cardShape.stroke(Color.white.opacity(0.78), lineWidth: 1) }
+    }
+
+    @ViewBuilder
+    private var imageContent: some View {
+        if debugImageURL != nil {
+            MemoryImagePlaceholderView(imageName: memory.imageName, debugImageURL: debugImageURL)
+        } else if let assetLocalIdentifier {
+            ContextualMemoryAssetImageView(assetLocalIdentifier: assetLocalIdentifier)
+        } else {
+            MemoryImagePlaceholderView(imageName: memory.imageName)
+        }
     }
 
     private func chip(_ title: String, systemImage: String) -> some View {

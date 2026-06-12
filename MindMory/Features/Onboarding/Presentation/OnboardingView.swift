@@ -107,8 +107,7 @@ struct OnboardingView: View {
                     Task {
                         await viewModel.continueTapped()
                     }
-                },
-                isLoading: viewModel.isProcessingPermission
+                }
             )
             .disabled(viewModel.isProcessingPermission)
             .padding(.horizontal, MindMorySpacing.xl)

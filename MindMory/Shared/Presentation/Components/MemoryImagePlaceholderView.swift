@@ -110,7 +110,7 @@ struct MemoryImagePlaceholderView: View {
                 .frame(width: 44, height: 44)
 
             Circle()
-                .fill(MindMoryColors.deepGreen.opacity(0.55))
+                .fill(MindMoryColors.primaryGreen.opacity(0.55))
                 .frame(width: 44, height: 44)
         }
     }

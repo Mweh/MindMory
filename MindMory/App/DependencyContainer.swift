@@ -1,22 +1,71 @@
 import SwiftUI
 import Combine
+import UserNotifications
 
+@MainActor
 final class DependencyContainer: ObservableObject {
+    let appRouter: AppRouter
+
     private let memoryRepository: MemoryRepositoryProtocol
     private let reminderRepository: ReminderRepositoryProtocol
     private let permissionRepository: PermissionRepositoryProtocol
     private let contextRepository: ContextRepositoryProtocol
+    private let locationRepository: LocationRepositoryProtocol
+    private let eventRepository: EventRepositoryProtocol
+    private let photoLibraryRepository: PhotoLibraryRepositoryProtocol
+    private let smartMemoryNotificationDelegate: SmartMemoryNotificationDelegate
+    private let smartMemoryNotificationStore: SmartMemoryNotificationCooldownStore
+    private let smartMemoryNotificationCoordinator: SmartMemoryNotificationCoordinator
+
+    convenience init() {
+        self.init(
+            memoryRepository: MockMemoryRepository(),
+            reminderRepository: MockReminderRepository(),
+            permissionRepository: NativePermissionRepository(),
+            contextRepository: MockContextRepository(),
+            locationRepository: CoreLocationRepository(),
+            eventRepository: EventKitRepository(),
+            photoLibraryRepository: PhotoLibraryRepository()
+        )
+    }
 
     init(
-        memoryRepository: MemoryRepositoryProtocol = MockMemoryRepository(),
-        reminderRepository: ReminderRepositoryProtocol = MockReminderRepository(),
-        permissionRepository: PermissionRepositoryProtocol = NativePermissionRepository(),
-        contextRepository: ContextRepositoryProtocol = MockContextRepository()
+        memoryRepository: MemoryRepositoryProtocol,
+        reminderRepository: ReminderRepositoryProtocol,
+        permissionRepository: PermissionRepositoryProtocol,
+        contextRepository: ContextRepositoryProtocol,
+        locationRepository: LocationRepositoryProtocol,
+        eventRepository: EventRepositoryProtocol,
+        photoLibraryRepository: PhotoLibraryRepositoryProtocol
     ) {
+        self.appRouter = AppRouter()
         self.memoryRepository = memoryRepository
         self.reminderRepository = reminderRepository
         self.permissionRepository = permissionRepository
         self.contextRepository = contextRepository
+        self.locationRepository = locationRepository
+        self.eventRepository = eventRepository
+        self.photoLibraryRepository = photoLibraryRepository
+        self.smartMemoryNotificationDelegate = SmartMemoryNotificationDelegate(appRouter: appRouter)
+        self.smartMemoryNotificationStore = SmartMemoryNotificationCooldownStore()
+        self.smartMemoryNotificationCoordinator = SmartMemoryNotificationCoordinator(
+            permissionRepository: permissionRepository,
+            contextRepository: contextRepository,
+            findContextualMemoryUseCase: Self.makeFindContextualMemoryUseCase(
+                locationRepository: locationRepository,
+                eventRepository: eventRepository,
+                photoLibraryRepository: photoLibraryRepository
+            ),
+            cooldownStore: smartMemoryNotificationStore
+        )
+    }
+
+    func configureNotificationHandling() {
+        UNUserNotificationCenter.current().delegate = smartMemoryNotificationDelegate
+    }
+
+    func startSmartMemoryNotifications() async {
+        await smartMemoryNotificationCoordinator.evaluateAndScheduleIfNeeded()
     }
 
     func makeOnboardingViewModel() -> OnboardingViewModel {
@@ -27,9 +76,65 @@ final class DependencyContainer: ObservableObject {
             requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: permissionRepository)
         )
     }
-    func makeHomeViewModel() -> HomeViewModel { HomeViewModel(memories: memoryRepository.fetchMemories()) }
-    func makeAlbumViewModel() -> AlbumViewModel { AlbumViewModel(getAlbumMemoriesUseCase: GetAlbumMemoriesUseCase(repository: memoryRepository), getFavoriteMemoriesUseCase: GetFavoriteMemoriesUseCase(repository: memoryRepository)) }
-    func makeMemoryDetailViewModel(memory: Memory) -> MemoryDetailViewModel { MemoryDetailViewModel(memory: memory, saveJournalEntryUseCase: SaveJournalEntryUseCase(repository: memoryRepository), toggleFavoriteMemoryUseCase: ToggleFavoriteMemoryUseCase(repository: memoryRepository), generateShareableMemoryUseCase: GenerateShareableMemoryUseCase()) }
-    func makeSettingsViewModel() -> SettingsViewModel { SettingsViewModel(permissionRepository: permissionRepository, requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: permissionRepository), requestLocationPermissionUseCase: RequestLocationPermissionUseCase(repository: permissionRepository), requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase(repository: permissionRepository), qaDebugSettingsRepository: QADebugSettingsRepository(), debugImageStorageService: DebugImageStorageService()) }
-    func makeContextualTriggersViewModel() -> ContextualTriggersViewModel { ContextualTriggersViewModel(repository: contextRepository) }
+
+    func makeHomeViewModel() -> HomeViewModel {
+        HomeViewModel(
+            memories: memoryRepository.fetchMemories(),
+            findContextualMemoryUseCase: Self.makeFindContextualMemoryUseCase(
+                locationRepository: locationRepository,
+                eventRepository: eventRepository,
+                photoLibraryRepository: photoLibraryRepository
+            ),
+            qaDebugSettingsRepository: QADebugSettingsRepository(),
+            debugImageStorageService: DebugImageStorageService()
+        )
+    }
+
+    func makeAlbumListViewModel() -> AlbumListViewModel {
+        AlbumListViewModel(albums: PreviewData.sampleAlbums)
+    }
+
+    func makeMemoryAlbumViewModel() -> MemoryAlbumViewModel {
+        MemoryAlbumViewModel(
+            loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase(),
+            createAlbumUseCase: CreateAlbumUseCase()
+        )
+    }
+
+    func makeMemoryDetailViewModel(memory: Memory) -> MemoryDetailViewModel {
+        MemoryDetailViewModel(
+            memory: memory,
+            saveJournalEntryUseCase: SaveJournalEntryUseCase(repository: memoryRepository),
+            toggleFavoriteMemoryUseCase: ToggleFavoriteMemoryUseCase(repository: memoryRepository),
+            generateShareableMemoryUseCase: GenerateShareableMemoryUseCase()
+        )
+    }
+
+    func makeSettingsViewModel() -> SettingsViewModel {
+        SettingsViewModel(
+            permissionRepository: permissionRepository,
+            requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: permissionRepository),
+            requestLocationPermissionUseCase: RequestLocationPermissionUseCase(repository: permissionRepository),
+            requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase(repository: permissionRepository),
+            qaDebugSettingsRepository: QADebugSettingsRepository(),
+            debugImageStorageService: DebugImageStorageService()
+        )
+    }
+
+    func makeContextualTriggersViewModel() -> ContextualTriggersViewModel {
+        ContextualTriggersViewModel(repository: contextRepository)
+    }
+
+    private static func makeFindContextualMemoryUseCase(
+        locationRepository: LocationRepositoryProtocol,
+        eventRepository: EventRepositoryProtocol,
+        photoLibraryRepository: PhotoLibraryRepositoryProtocol
+    ) -> FindContextualMemoryUseCase {
+        FindContextualMemoryUseCase(
+            getCurrentLocationUseCase: GetCurrentLocationUseCase(repository: locationRepository),
+            getCurrentEventUseCase: GetCurrentEventUseCase(repository: eventRepository),
+            fetchPhotoAssetsUseCase: FetchPhotoAssetsUseCase(repository: photoLibraryRepository),
+            rankCandidatesUseCase: RankContextualMemoryCandidatesUseCase()
+        )
+    }
 }

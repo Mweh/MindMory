@@ -27,7 +27,7 @@ struct ExpandableStatCardView: View {
                     cardShape.stroke(Color.white.opacity(isSelected ? 0.16 : 0.08), lineWidth: 1)
                 }
                 .shadow(
-                    color: MindMoryColors.deepGreen.opacity(isSelected ? 0.24 : 0.14),
+                    color: MindMoryColors.primaryGreen.opacity(isSelected ? 0.24 : 0.14),
                     radius: isSelected ? 20 : 10,
                     x: 0,
                     y: isSelected ? 14 : 7
@@ -144,7 +144,7 @@ struct ExpandableStatCardView: View {
 
     private var cardBackground: some View {
         LinearGradient(
-            colors: [MindMoryColors.deepGreen, MindMoryColors.primaryGreen, Color(hex: "#235B43")],
+            colors: [MindMoryColors.primaryGreen, MindMoryColors.primaryGreen, Color(hex: "#235B43")],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
