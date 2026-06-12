@@ -22,6 +22,7 @@ platform :ios do
 
     build_app(
       scheme: "MindMory",
+      configuration: "Release",
       export_method: "app-store",
       export_options: {
         signingStyle: "manual",
