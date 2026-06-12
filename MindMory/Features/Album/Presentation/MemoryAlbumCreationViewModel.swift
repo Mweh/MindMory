@@ -1,15 +1,16 @@
 import Combine
-import UIKit
+import Foundation
 
-final class MemoryAlbumViewModel: AlbumCreationViewModel {
+final class MemoryAlbumCreationViewModel: AlbumCreationViewModel {
     @Published private(set) var sections: [MemoryAlbumSection] = []
 
     init(
         sampleSections: [MemoryAlbumSection]? = nil,
         loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase = LoadAlbumPhotosUseCase(),
-        createAlbumUseCase: CreateAlbumUseCase = CreateAlbumUseCase()
+        createAlbumUseCase: CreateAlbumUseCase = CreateAlbumUseCase(),
+        albumRepository: AlbumRepositoryProtocol? = nil
     ) {
-        super.init(category: .memory, loadAlbumPhotosUseCase: loadAlbumPhotosUseCase, createAlbumUseCase: createAlbumUseCase)
+        super.init(category: .memory, loadAlbumPhotosUseCase: loadAlbumPhotosUseCase, createAlbumUseCase: createAlbumUseCase, albumRepository: albumRepository)
 
         if let sampleSections = sampleSections {
             sections = sampleSections
@@ -67,6 +68,33 @@ final class MemoryAlbumViewModel: AlbumCreationViewModel {
         )
     }
 
+    func updateSectionPhoto(from imageData: [Data], sectionId: UUID, index: Int) {
+        photoLoadingTask?.cancel()
+        photoLoadingTask = Task { [weak self] in
+            guard let self = self else { return }
+            let loadedPhotos = await self.loadAlbumPhotosUseCase.execute(from: imageData)
+            guard let photo = loadedPhotos.first else { return }
+
+            await MainActor.run {
+                self.updateSectionPhoto(sectionId: sectionId, index: index, photo: photo)
+            }
+        }
+    }
+
+    override func albumSections() -> [MemoryAlbumSection] {
+        sections
+    }
+
+    override func buildAlbumPhotos() -> [AlbumPhoto] {
+        var albumPhotos = super.buildAlbumPhotos()
+        let sectionPhotos = sections.reduce(into: [AlbumPhoto]()) { result, section in
+            guard case .image(_, _, let photos) = section.content else { return }
+            result.append(contentsOf: photos.compactMap { $0 })
+        }
+        albumPhotos.append(contentsOf: sectionPhotos)
+        return albumPhotos
+    }
+
     func moveSection(sourceId: UUID, destinationId: UUID) {
         guard sourceId != destinationId else { return }
         guard let sourceIndex = sections.firstIndex(where: { $0.id == sourceId }) else { return }
@@ -118,34 +146,5 @@ final class MemoryAlbumViewModel: AlbumCreationViewModel {
 
     var hasCompleteImageSections: Bool {
         hasImageSections && !hasIncompleteSections
-    }
-
-    override func saveAlbum() {
-        do {
-            var albumPhotos = [AlbumPhoto]()
-            if let coverPhoto = coverPhoto {
-                albumPhotos.append(coverPhoto)
-            }
-
-            let sectionPhotos = sections.reduce(into: [AlbumPhoto]()) { result, section in
-                guard case .image(_, _, let photos) = section.content else { return }
-                result.append(contentsOf: photos.compactMap { $0 })
-            }
-            albumPhotos.append(contentsOf: sectionPhotos)
-
-            let album = try createAlbumUseCase.execute(
-                name: albumName,
-                note: note,
-                photos: albumPhotos,
-                sections: sections,
-                albumDate: albumDate,
-                category: category
-            )
-
-            savedAlbum = album
-            presentAlert("\(album.name) is ready. Your album has been created.")
-        } catch {
-            presentAlert(error.localizedDescription)
-        }
     }
 }

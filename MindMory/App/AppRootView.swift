@@ -8,7 +8,9 @@ struct AppRootView: View {
     var body: some View {
         Group {
             if didCompleteOnboarding {
-                MainTabView(container: container, router: container.appRouter)
+                NavigationStack {
+                    MainTabView(container: container, router: container.appRouter)
+                }
             } else {
                 OnboardingView(viewModel: container.makeOnboardingViewModel()) { didCompleteOnboarding = true }
             }

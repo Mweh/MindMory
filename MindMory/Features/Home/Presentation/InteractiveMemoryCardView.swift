@@ -52,6 +52,7 @@ struct InteractiveMemoryCardView: View {
                     isDragging = false
                 }
                 if distance < 8 {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     flipAction()
                 }
             }

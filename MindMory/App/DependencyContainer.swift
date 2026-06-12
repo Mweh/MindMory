@@ -91,11 +91,11 @@ final class DependencyContainer: ObservableObject {
     }
 
     func makeAlbumListViewModel() -> AlbumListViewModel {
-        AlbumListViewModel(albums: PreviewData.sampleAlbums)
+        AlbumListViewModel()
     }
 
-    func makeMemoryAlbumViewModel() -> MemoryAlbumViewModel {
-        MemoryAlbumViewModel(
+    func makeMemoryAlbumCreationViewModel() -> MemoryAlbumCreationViewModel {
+        MemoryAlbumCreationViewModel(
             loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase(),
             createAlbumUseCase: CreateAlbumUseCase()
         )

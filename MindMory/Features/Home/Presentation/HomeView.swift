@@ -4,25 +4,27 @@ struct HomeView: View {
     @StateObject var viewModel: HomeViewModel
 
     var body: some View {
-        NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                    header
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                header
 
-                    HomeStatsGridView(
-                        cards: viewModel.statCards,
-                        selectedStat: viewModel.selectedStat,
-                        selectAction: viewModel.selectStat
-                    )
+                HomeStatsGridView(
+                    cards: viewModel.statCards,
+                    selectedStat: viewModel.selectedStat,
+                    selectAction: viewModel.selectStat
+                )
 
-                    contextualContent
-                }
-                .padding(.horizontal, MindMorySpacing.xl)
-                .padding(.top, MindMorySpacing.xl)
-                .padding(.bottom, MindMorySpacing.xxl)
+                contextualContent
             }
-            .background(MindMoryColors.background.ignoresSafeArea())
-            .navigationBarHidden(true)
+            .padding(.horizontal, MindMorySpacing.xl)
+            .padding(.top, MindMorySpacing.xl)
+            .padding(.bottom, MindMorySpacing.xxl)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .background(MindMoryColors.background.ignoresSafeArea())
+        .navigationBarHidden(true)
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
         .onAppear { viewModel.load() }
         .sheet(isPresented: $viewModel.isShowingSharePreview) {

@@ -14,9 +14,10 @@ class AlbumCreationViewModel: ObservableObject {
     @Published var albumDateEnd: Date = Date()
 
     let category: AlbumCategory
-    private let loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase
+    let loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase
     let createAlbumUseCase: CreateAlbumUseCase
-    private var photoLoadingTask: Task<Void, Never>?
+    private var albumRepository: AlbumRepositoryProtocol?
+    var photoLoadingTask: Task<Void, Never>?
 
     var isSaveButtonDisabled: Bool {
         guard coverPhoto != nil else { return true }
@@ -39,14 +40,33 @@ class AlbumCreationViewModel: ObservableObject {
         return "Album \(album.name) created with \(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")."
     }
 
+    func albumSections() -> [MemoryAlbumSection] {
+        []
+    }
+
+    func buildAlbumPhotos() -> [AlbumPhoto] {
+        var albumPhotos: [AlbumPhoto] = []
+        if let coverPhoto = coverPhoto {
+            albumPhotos.append(coverPhoto)
+        }
+        albumPhotos.append(contentsOf: photos)
+        return albumPhotos
+    }
+
     init(
         category: AlbumCategory,
         loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase = LoadAlbumPhotosUseCase(),
-        createAlbumUseCase: CreateAlbumUseCase = CreateAlbumUseCase()
+        createAlbumUseCase: CreateAlbumUseCase = CreateAlbumUseCase(),
+        albumRepository: AlbumRepositoryProtocol? = nil
     ) {
         self.category = category
         self.loadAlbumPhotosUseCase = loadAlbumPhotosUseCase
         self.createAlbumUseCase = createAlbumUseCase
+        self.albumRepository = albumRepository
+    }
+
+    func configure(repository: AlbumRepositoryProtocol) {
+        self.albumRepository = repository
     }
 
     func updateCoverPhoto(from imageData: [Data]) {
@@ -90,24 +110,32 @@ class AlbumCreationViewModel: ObservableObject {
     }
 
     func saveAlbum() {
-        do {
-            var albumPhotos = [AlbumPhoto]()
-            if let coverPhoto = coverPhoto {
-                albumPhotos.append(coverPhoto)
+        Task { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                let album = try self.createAlbumUseCase.execute(
+                    name: self.albumName,
+                    note: self.note,
+                    photos: self.buildAlbumPhotos(),
+                    sections: self.albumSections(),
+                    albumDate: self.albumDate,
+                    category: self.category
+                )
+
+                if let repository = self.albumRepository {
+                    try repository.save(album)
+                }
+
+                await MainActor.run {
+                    self.savedAlbum = album
+                    self.presentAlert("\(album.name) is ready. Your album has been created.")
+                }
+            } catch {
+                await MainActor.run {
+                    self.presentAlert(error.localizedDescription)
+                }
             }
-            albumPhotos.append(contentsOf: photos)
-
-            let album = try createAlbumUseCase.execute(
-                name: albumName,
-                note: note,
-                photos: albumPhotos,
-                category: category
-            )
-
-            savedAlbum = album
-            presentAlert("\(album.name) is ready. Your album has been created.")
-        } catch {
-            presentAlert(error.localizedDescription)
         }
     }
 

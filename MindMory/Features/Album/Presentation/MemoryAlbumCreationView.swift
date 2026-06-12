@@ -2,19 +2,20 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
-struct MemoryAlbumCreateView: View {
+struct MemoryAlbumCreationView: View {
     enum Step {
         case details
         case selectPhotos
     }
 
-    @StateObject private var viewModel: MemoryAlbumViewModel
+    @StateObject private var viewModel: MemoryAlbumCreationViewModel
     @State private var selectedCoverPhotoItem: PhotosPickerItem?
     @State private var selectedSectionPhotoItem: PhotosPickerItem?
     @State private var selectedPickerSectionID: UUID?
     @State private var selectedPickerIndex: Int?
     @State private var isAddingSection = false
-    @State private var isShowingPreview = false
+    @State private var preconfiguredSection: MemoryAlbumSection? = nil
+    
     @State private var selectedSectionID: UUID?
     @State private var selectedTextTitle: String = ""
     @State private var selectedTextDescription: String = ""
@@ -25,13 +26,13 @@ struct MemoryAlbumCreateView: View {
     let onCreate: (Album) -> Void
     @Environment(\.dismiss) private var dismiss
 
-    init(viewModel: MemoryAlbumViewModel, onCreate: @escaping (Album) -> Void) {
+    init(viewModel: MemoryAlbumCreationViewModel, onCreate: @escaping (Album) -> Void) {
         _viewModel = StateObject(wrappedValue: viewModel)
         self.onCreate = onCreate
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottomTrailing) {
             ScrollView {
                 VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                     if currentStep == .details {
@@ -45,7 +46,7 @@ struct MemoryAlbumCreateView: View {
                         selectPhotosStep
                     }
 
-                    if currentStep == .details {
+                    if currentStep == .selectPhotos {
                         footerButtons
                     }
                 }
@@ -54,28 +55,34 @@ struct MemoryAlbumCreateView: View {
             .onTapGesture {
                 draggingSectionID = nil
             }
+            // Floating add-section button when building sections
+            if currentStep == .selectPhotos {
+                floatingMenuButton
+                    .padding(.trailing, MindMorySpacing.xl)
+                    .padding(.bottom, MindMorySpacing.xl)
+            }
         }
         .navigationDestination(isPresented: $isAddingSection) {
-            MemoryAlbumSectionCreateView { section in
+            MemoryAlbumSectionCreateView(existingSection: preconfiguredSection) { section in
                 if let index = sectionInsertionIndex {
                     viewModel.insertSection(section, at: index)
                 } else {
                     viewModel.addSection(section)
                 }
+
+                // Select the newly added section so UI state updates accordingly
+                selectedSectionID = section.id
+                if case .image = section.content {
+                    selectedPickerIndex = 0
+                }
+
                 sectionInsertionIndex = nil
                 isAddingSection = false
+                preconfiguredSection = nil
             }
         }
-        .navigationDestination(isPresented: $isShowingPreview) {
-            MemoryAlbumPreviewView(
-                viewModel: viewModel,
-                onSave: viewModel.saveAlbum,
-                onCreate: { album in
-                    onCreate(album)
-                    dismiss()
-                }
-            )
-        }
+        
+
         .onChange(of: currentStep) { _, newStep in
             if newStep == .selectPhotos, selectedSectionID == nil {
                 selectedSectionID = viewModel.sections.first?.id
@@ -91,8 +98,25 @@ struct MemoryAlbumCreateView: View {
             syncSelectedTextSection()
         }
         .background(MindMoryColors.background.ignoresSafeArea())
-        .navigationTitle("Create Memory Album")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            // Leading back control: if on selectPhotos, go back to details; otherwise dismiss
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    if currentStep == .selectPhotos {
+                        currentStep = .details
+                        return
+                    }
+
+                    dismiss()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                }
+            }
+        }
         .sheet(isPresented: $isShowingTextEditor) {
             sectionTextEditorSheet
         }
@@ -126,17 +150,8 @@ struct MemoryAlbumCreateView: View {
                     return
                 }
 
-                let normalizedData: Data
-                if let image = UIImage(data: data), let compressedData = image.jpegData(compressionQuality: 0.82) {
-                    normalizedData = compressedData
-                } else {
-                    normalizedData = data
-                }
-
-                let photo = AlbumPhoto(id: UUID(), imageData: normalizedData)
-
                 await MainActor.run {
-                    viewModel.updateSectionPhoto(sectionId: sectionId, index: index, photo: photo)
+                    viewModel.updateSectionPhoto(from: [data], sectionId: sectionId, index: index)
                     selectedPickerSectionID = nil
                     selectedPickerIndex = nil
                 }
@@ -219,30 +234,19 @@ struct MemoryAlbumCreateView: View {
                         matching: .images,
                         photoLibrary: .shared()
                     ) {
-                        HStack {
-                            Image(systemName: "photo.fill.on.rectangle.fill")
-                            Text(viewModel.coverPhoto.map { _ in "Change cover photo" } ?? "Choose cover photo")
-                        }
-                        .font(MindMoryTypography.bodyMedium)
-                        .foregroundStyle(MindMoryColors.textPrimary)
-                        .padding(MindMorySpacing.md)
+                        MemoryImagePlaceholderView(
+                            image: viewModel.coverPhoto?.uiImage,
+                            imageName: nil,
+                            placeholderIcon: "photo.on.rectangle",
+                            placeholderText: viewModel.coverPhoto.map { _ in "Tap to change cover photo" } ?? "Tap to add cover photo"
+                        )
+                        .frame(height: 180)
                         .frame(maxWidth: .infinity)
-                        .background(MindMoryColors.surface)
                         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
                                 .stroke(MindMoryColors.border)
                         )
-                    }
-
-                    if let coverPhoto = viewModel.coverPhoto, let image = coverPhoto.uiImage {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(height: 180)
-                            .frame(maxWidth: .infinity)
-                            .clipped()
-                            .cornerRadius(MindMoryRadius.large)
                     }
                 }
             }
@@ -277,32 +281,56 @@ struct MemoryAlbumCreateView: View {
                     }
                 }
             }
+            PrimaryButton(title: primaryButtonTitle, action: primaryButtonAction)
+                .disabled(primaryButtonDisabled)
+                .frame(maxWidth: .infinity)
+                .padding(.top, MindMorySpacing.md)
         }
     }
 
     private var selectPhotosStep: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-            ForEach(viewModel.sections) { section in
-                draggableSection(section)
-            }
-            .animation(
-                .interactiveSpring(response: 0.4, dampingFraction: 0.82, blendDuration: 0.25),
-                value: viewModel.sections
-            )
+            // Album header (cover + title + date) shown above the sections
+            AppCard {
+                VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                    Text(viewModel.albumName.isEmpty ? "Untitled memory" : viewModel.albumName)
+                        .font(MindMoryTypography.headingLarge)
+                        .foregroundStyle(MindMoryColors.textPrimary)
 
-            PrimaryButton(title: "Add Section") {
-                sectionInsertionIndex = nil
-                isAddingSection = true
-            }
-            .disabled(currentStep != .selectPhotos)
-        }
-        .toolbar {
-            if currentStep == .selectPhotos {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Preview") {
-                        isShowingPreview = true
+                    if let coverPhoto = viewModel.coverPhoto, let image = coverPhoto.uiImage {
+                        MemoryImagePlaceholderView(image: image, imageName: nil)
+                            .frame(height: 220)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+                    } else {
+                        MemoryImagePlaceholderView(image: nil, imageName: nil)
+                            .frame(height: 220)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                                    .stroke(MindMoryColors.border)
+                            )
+                    }
+
+                    HStack(spacing: MindMorySpacing.md) {
+                        VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
+                            Text(viewModel.albumDate.displayText)
+                                .font(MindMoryTypography.bodySmall)
+                                .foregroundStyle(MindMoryColors.textSecondary)
+
+                            Text("\(photoCount) photo(s)")
+                                .font(MindMoryTypography.bodySmall)
+                                .foregroundStyle(MindMoryColors.primaryGreen)
+                        }
+
+                        Spacer()
                     }
                 }
+            }
+
+            ForEach(viewModel.sections) { section in
+                draggableSection(section)
             }
         }
     }
@@ -385,61 +413,16 @@ struct MemoryAlbumCreateView: View {
 
     @ViewBuilder
     private func sectionCard(_ section: MemoryAlbumSection) -> some View {
-        switch section.content {
-        case .image(let layoutCount, let layoutVariant, _):
-            let template = MemoryAlbumSectionLayoutCatalog.template(
-                layoutCount: layoutCount,
-                variant: layoutVariant
-            )
-
-            if template.isOverlayStyle {
-                overlappedImageSection(section, template: template, isPreview: false)
-                    .frame(height: template.albumHeight)
-            } else {
-                MemoryAlbumSectionLayoutRenderer(template: template) { photoIndex in
-                    sectionImageCell(at: photoIndex, in: section)
-                }
-                .frame(height: template.albumHeight)
+        MemoryAlbumSectionView(section: section, isPreview: false) { index, section in
+            PhotosPicker(
+                selection: bindingForSectionPhoto(sectionId: section.id, index: index),
+                matching: .images,
+                photoLibrary: .shared()
+            ) {
+                AlbumSectionPhotoCell(image: imageForSectionCell(index: index, section: section))
             }
-        case .text(let textSection):
-            MemoryAlbumTextSectionRenderView(textSection: textSection, isPreview: true)
+            .buttonStyle(.plain)
         }
-    }
-
-
-    @ViewBuilder
-    private func sectionImageCell(at index: Int, in section: MemoryAlbumSection) -> some View {
-        PhotosPicker(
-            selection: bindingForSectionPhoto(sectionId: section.id, index: index),
-            matching: .images,
-            photoLibrary: .shared()
-        ) {
-            let shape = RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-
-            ZStack {
-                Color.clear
-
-                if let image = imageForSectionCell(index: index, section: section) {
-                    GeometryReader { geometry in
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: geometry.size.width, height: geometry.size.height)
-                            .clipped()
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    Image(systemName: "photo")
-                        .font(.title2)
-                        .foregroundStyle(MindMoryColors.textSecondary)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .clipShape(shape)
-            .overlay(shape.stroke(MindMoryColors.border))
-            .contentShape(shape)
-        }
-        .buttonStyle(.plain)
     }
 
     private func imageForSectionCell(index: Int, section: MemoryAlbumSection) -> UIImage? {
@@ -460,89 +443,76 @@ struct MemoryAlbumCreateView: View {
         )
     }
 
-    @ViewBuilder
-    private func overlappedImageSection(_ section: MemoryAlbumSection, template: MemoryAlbumSectionLayoutTemplate, isPreview: Bool) -> some View {
-        GeometryReader { geometry in
-            let size = geometry.size
-            let widthFactor: CGFloat = template.layoutCount <= 3 ? 0.72 : 0.58
-            let cardWidth = size.width * widthFactor
-            let cardHeight = size.height * 0.82
-            let positions = overlayPositions(for: template.layoutCount, in: size)
-            let rotations = overlayRotations(for: template.layoutCount)
+    private var photoCount: Int {
+        viewModel.sections.reduce(0) { result, section in
+            guard case .image(_, _, let photos) = section.content else { return result }
+            return result + photos.compactMap { $0 }.count
+        } + (viewModel.coverPhoto != nil ? 1 : 0)
+    }
 
-            ZStack {
-                ForEach(0..<template.layoutCount, id: \.self) { index in
-                    let card = photoCell(at: index, in: section, isPreview: isPreview)
-                        .frame(width: cardWidth, height: cardHeight)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
-                        .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
-                        .rotationEffect(rotations[index])
-                        .offset(positions[index])
-                        .zIndex(Double(index))
+    private var floatingActionButton: some View {
+        Button {
+            sectionInsertionIndex = nil
+            isAddingSection = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.title3.weight(.bold))
+                .foregroundColor(.white)
+                .frame(width: 56, height: 56)
+                .background(MindMoryColors.primaryGreen)
+                .clipShape(Circle())
+                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Add section")
+    }
 
-                    card
-                }
+    private var floatingMenuButton: some View {
+        Menu {
+            Button(action: {
+                // Add image section (default single layout)
+                preconfiguredSection = MemoryAlbumSection(layoutCount: 1)
+                sectionInsertionIndex = nil
+                isAddingSection = true
+            }) {
+                Label("Add Image", systemImage: "photo.on.rectangle")
             }
-            .frame(width: size.width, height: size.height)
+
+            Button(action: {
+                // Add text section
+                let defaultText = MemoryAlbumTextSection(
+                    templateVariant: 0,
+                    blockType: .titleAndDescription,
+                    horizontalAlignment: .leading,
+                    verticalAlignment: .top,
+                    isTitleFirst: true,
+                    title: "",
+                    description: "",
+                    style: MemoryAlbumTextStyle.default
+                )
+                preconfiguredSection = MemoryAlbumSection(textSection: defaultText)
+                sectionInsertionIndex = nil
+                isAddingSection = true
+            }) {
+                Label("Add Text", systemImage: "text.bubble")
+            }
+        } label: {
+            Image(systemName: "plus")
+                .font(.title3.weight(.bold))
+                .foregroundColor(.white)
+                .frame(width: 56, height: 56)
+                .background(MindMoryColors.primaryGreen)
+                .clipShape(Circle())
+                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
         }
-    }
-
-    @ViewBuilder
-    private func photoCell(at index: Int, in section: MemoryAlbumSection, isPreview: Bool) -> some View {
-        sectionImageCell(at: index, in: section)
-    }
-
-    private func overlayRotations(for count: Int) -> [Angle] {
-        switch count {
-        case 2:
-            return [.degrees(-12), .degrees(10)]
-        case 3:
-            return [.degrees(-14), .degrees(6), .degrees(-8)]
-        case 4:
-            return [.degrees(-16), .degrees(8), .degrees(-6), .degrees(12)]
-        case 5:
-            return [.degrees(-16), .degrees(10), .degrees(-4), .degrees(8), .degrees(-10)]
-        default:
-            return Array(repeating: .degrees(0), count: count)
-        }
-    }
-
-    private func overlayPositions(for count: Int, in size: CGSize) -> [CGSize] {
-        let baseX = size.width * 0.12
-        let baseY = size.height * 0.05
-
-        switch count {
-        case 2:
-            return [CGSize(width: -baseX * 1.1, height: baseY * 1.4), CGSize(width: baseX * 1.2, height: -baseY)]
-        case 3:
-            return [CGSize(width: -baseX * 1.4, height: baseY * 1.3), CGSize(width: 0, height: -baseY * 1.5), CGSize(width: baseX * 1.6, height: baseY * 1.1)]
-        case 4:
-            return [CGSize(width: -baseX * 1.7, height: baseY * 1.2), CGSize(width: -baseX * 0.2, height: -baseY * 1.4), CGSize(width: baseX * 0.8, height: baseY * 0.8), CGSize(width: baseX * 1.8, height: baseY * 1.6)]
-        case 5:
-            return [CGSize(width: -baseX * 1.8, height: baseY * 1.4), CGSize(width: -baseX * 0.6, height: -baseY * 1.3), CGSize(width: 0, height: baseY * 0.1), CGSize(width: baseX * 1.1, height: baseY * 1.1), CGSize(width: baseX * 1.9, height: -baseY * 0.3)]
-        default:
-            return Array(repeating: .zero, count: count)
-        }
+        .buttonStyle(.plain)
     }
 
     private var footerButtons: some View {
         HStack(spacing: MindMorySpacing.sm) {
-            if currentStep != .details {
-                Button {
-                    previousStep()
-                } label: {
-                    Text("Back")
-                        .font(MindMoryTypography.bodyMedium)
-                        .foregroundStyle(MindMoryColors.textPrimary)
-                        .padding(.vertical, MindMorySpacing.sm)
-                        .frame(maxWidth: .infinity)
-                        .background(MindMoryColors.surface)
-                        .cornerRadius(MindMoryRadius.large)
-                }
-            }
-
             PrimaryButton(title: primaryButtonTitle, action: primaryButtonAction)
                 .disabled(primaryButtonDisabled)
+                .frame(maxWidth: .infinity)
         }
     }
 
@@ -576,7 +546,7 @@ struct MemoryAlbumCreateView: View {
     private var primaryButtonDisabled: Bool {
         switch currentStep {
         case .details:
-            return viewModel.isSaveButtonDisabled
+            return false
         case .selectPhotos:
             return viewModel.sections.isEmpty || !viewModel.hasImageSections || viewModel.hasIncompleteSections
         }
@@ -708,250 +678,10 @@ struct MemoryAlbumCreateView: View {
     }
 }
 
-private struct MemoryAlbumPreviewView: View {
-    @ObservedObject var viewModel: MemoryAlbumViewModel
-    let onSave: () -> Void
-    let onCreate: (Album) -> Void
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                previewHeader
-
-                if viewModel.sections.isEmpty {
-                    Text("No sections added yet.")
-                        .font(MindMoryTypography.bodyMedium)
-                        .foregroundStyle(MindMoryColors.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(MindMorySpacing.md)
-                        .background(MindMoryColors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
-                } else {
-                    VStack(spacing: MindMorySpacing.lg) {
-                        ForEach(viewModel.sections) { section in
-                            previewSectionCard(section)
-                        }
-                    }
-                }
-
-                PrimaryButton(title: "Simpan Album") {
-                    onSave()
-                }
-                .disabled(viewModel.sections.isEmpty || !viewModel.hasImageSections || viewModel.hasIncompleteSections || viewModel.isSaveButtonDisabled)
-            }
-            .padding(MindMorySpacing.xl)
-        }
-        .background(MindMoryColors.background.ignoresSafeArea())
-        .navigationTitle("Preview")
-        .navigationBarTitleDisplayMode(.inline)
-        .alert("Memory Album", isPresented: alertBinding) {
-            Button("OK", role: .cancel) {
-                handleAlertDismiss()
-            }
-        } message: {
-            Text(viewModel.alertMessage ?? "")
-        }
-    }
-
-    private var alertBinding: Binding<Bool> {
-        Binding(
-            get: { viewModel.alertMessage != nil },
-            set: { isPresented in
-                if !isPresented {
-                    viewModel.dismissAlert()
-                }
-            }
-        )
-    }
-
-    private func handleAlertDismiss() {
-        guard let album = viewModel.savedAlbum else {
-            viewModel.dismissAlert()
-            return
-        }
-
-        viewModel.dismissAlert()
-        onCreate(album)
-    }
-
-    private var previewHeader: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                Text(viewModel.albumName.isEmpty ? "Untitled memory" : viewModel.albumName)
-                    .font(MindMoryTypography.headingLarge)
-                    .foregroundStyle(MindMoryColors.textPrimary)
-
-                if let coverPhoto = viewModel.coverPhoto, let image = coverPhoto.uiImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 220)
-                        .frame(maxWidth: .infinity)
-                        .clipped()
-                        .cornerRadius(MindMoryRadius.large)
-                } else {
-                    RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                        .fill(MindMoryColors.surface)
-                        .frame(height: 220)
-                        .overlay(
-                            Image(systemName: "photo")
-                                .font(.largeTitle)
-                                .foregroundStyle(MindMoryColors.textSecondary)
-                        )
-                }
-
-                HStack(spacing: MindMorySpacing.md) {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-                        Text(viewModel.albumDate.displayText)
-                            .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.textSecondary)
-
-                        Text(previewPhotoSummary)
-                            .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.primaryGreen)
-                    }
-
-                    Spacer()
-                }
-            }
-        }
-    }
-
-    private var previewPhotoSummary: String {
-        let photoCount = viewModel.sections.reduce(0) { result, section in
-            guard case .image(_, _, let photos) = section.content else { return result }
-            return result + photos.compactMap { $0 }.count
-        } + (viewModel.coverPhoto != nil ? 1 : 0)
-
-        if photoCount == 0 {
-            return "No photos"
-        }
-
-        return "\(photoCount) photo\(photoCount == 1 ? "" : "s")"
-    }
-
-    @ViewBuilder
-    private func previewSectionCard(_ section: MemoryAlbumSection) -> some View {
-        switch section.content {
-        case .image(let layoutCount, let layoutVariant, _):
-            let template = MemoryAlbumSectionLayoutCatalog.template(layoutCount: layoutCount, variant: layoutVariant)
-
-            if template.isOverlayStyle {
-                overlappedImageSection(section, template: template, isPreview: true)
-                    .frame(height: template.albumHeight)
-            } else {
-                MemoryAlbumSectionLayoutRenderer(template: template) { photoIndex in
-                    previewImageCell(at: photoIndex, in: section)
-                }
-                .frame(height: template.albumHeight)
-            }
-        case .text(let textSection):
-            MemoryAlbumTextSectionRenderView(textSection: textSection, isPreview: false)
-                .frame(maxWidth: .infinity)
-        }
-    }
-
-    @ViewBuilder
-    private func previewImageCell(at index: Int, in section: MemoryAlbumSection) -> some View {
-        let shape = RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-
-        ZStack {
-            if let image = imageForSectionCell(index: index, section: section) {
-                GeometryReader { geometry in
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .clipped()
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                Image(systemName: "photo")
-                    .font(.title2)
-                    .foregroundStyle(MindMoryColors.textSecondary)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .clipShape(shape)
-    }
-
-    private func imageForSectionCell(index: Int, section: MemoryAlbumSection) -> UIImage? {
-        guard case .image(_, _, let photos) = section.content else { return nil }
-        guard photos.indices.contains(index) else { return nil }
-        guard let photo = photos[index] else { return nil }
-        return photo.uiImage
-    }
-
-    @ViewBuilder
-    private func overlappedImageSection(_ section: MemoryAlbumSection, template: MemoryAlbumSectionLayoutTemplate, isPreview: Bool) -> some View {
-        GeometryReader { geometry in
-            let size = geometry.size
-            let widthFactor: CGFloat = template.layoutCount <= 3 ? 0.72 : 0.58
-            let cardWidth = size.width * widthFactor
-            let cardHeight = size.height * 0.82
-            let positions = overlayPositions(for: template.layoutCount, in: size)
-            let rotations = overlayRotations(for: template.layoutCount)
-
-            ZStack {
-                ForEach(0..<template.layoutCount, id: \.self) { index in
-                    let card = photoCell(at: index, in: section, isPreview: isPreview)
-                        .frame(width: cardWidth, height: cardHeight)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
-                        .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
-                        .rotationEffect(rotations[index])
-                        .offset(positions[index])
-                        .zIndex(Double(index))
-
-                    card
-                }
-            }
-            .frame(width: size.width, height: size.height)
-        }
-    }
-
-    @ViewBuilder
-    private func photoCell(at index: Int, in section: MemoryAlbumSection, isPreview: Bool) -> some View {
-        previewImageCell(at: index, in: section)
-    }
-
-    private func overlayRotations(for count: Int) -> [Angle] {
-        switch count {
-        case 2:
-            return [.degrees(-12), .degrees(10)]
-        case 3:
-            return [.degrees(-14), .degrees(6), .degrees(-8)]
-        case 4:
-            return [.degrees(-16), .degrees(8), .degrees(-6), .degrees(12)]
-        case 5:
-            return [.degrees(-16), .degrees(10), .degrees(-4), .degrees(8), .degrees(-10)]
-        default:
-            return Array(repeating: .degrees(0), count: count)
-        }
-    }
-
-    private func overlayPositions(for count: Int, in size: CGSize) -> [CGSize] {
-        let baseX = size.width * 0.12
-        let baseY = size.height * 0.05
-
-        switch count {
-        case 2:
-            return [CGSize(width: -baseX * 1.1, height: baseY * 1.4), CGSize(width: baseX * 1.2, height: -baseY)]
-        case 3:
-            return [CGSize(width: -baseX * 1.4, height: baseY * 1.3), CGSize(width: 0, height: -baseY * 1.5), CGSize(width: baseX * 1.6, height: baseY * 1.1)]
-        case 4:
-            return [CGSize(width: -baseX * 1.7, height: baseY * 1.2), CGSize(width: -baseX * 0.2, height: -baseY * 1.4), CGSize(width: baseX * 0.8, height: baseY * 0.8), CGSize(width: baseX * 1.8, height: baseY * 1.6)]
-        case 5:
-            return [CGSize(width: -baseX * 1.8, height: baseY * 1.4), CGSize(width: -baseX * 0.6, height: -baseY * 1.3), CGSize(width: 0, height: baseY * 0.1), CGSize(width: baseX * 1.1, height: baseY * 1.1), CGSize(width: baseX * 1.9, height: -baseY * 0.3)]
-        default:
-            return Array(repeating: .zero, count: count)
-        }
-    }
-}
-
 #Preview("Graduation Album") {
     NavigationStack {
-        MemoryAlbumCreateView(
-            viewModel: MemoryAlbumViewModel(sampleSections: PreviewData.graduationAlbumSections)
+        MemoryAlbumCreationView(
+            viewModel: MemoryAlbumCreationViewModel(sampleSections: PreviewData.graduationAlbumSections)
         ) { _ in }
     }
 }

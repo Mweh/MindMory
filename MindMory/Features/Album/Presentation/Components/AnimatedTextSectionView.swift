@@ -1,16 +1,13 @@
 import SwiftUI
 
-struct MemoryAlbumTextSectionRenderView: View {
+typealias MemoryAlbumTextSectionRenderView = AnimatedTextSectionView
+
+struct AnimatedTextSectionView: View {
     let textSection: MemoryAlbumTextSection
     var isPreview: Bool = false
+    var delay: Double = 0
 
     var body: some View {
-        content
-            .frame(maxWidth: .infinity, alignment: combinedAlignment)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private var content: some View {
         VStack(alignment: stackHorizontalAlignment, spacing: MindMorySpacing.xs) {
             if textSection.blockType == .titleAndDescription {
                 if textSection.isTitleFirst {
@@ -26,7 +23,8 @@ struct MemoryAlbumTextSectionRenderView: View {
                 descriptionView
             }
         }
-        .frame(maxWidth: .infinity, alignment: frameHorizontalAlignment)
+        .frame(maxWidth: .infinity, alignment: combinedAlignment)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var titleView: some View {
@@ -104,7 +102,7 @@ struct MemoryAlbumTextSectionRenderView: View {
     }
 }
 
-extension MemoryAlbumTextWeight {
+private extension MemoryAlbumTextWeight {
     var fontWeight: Font.Weight {
         switch self {
         case .regular:

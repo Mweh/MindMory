@@ -11,7 +11,7 @@ struct FilterChip: View {
                 .font(MindMoryTypography.bodySmall)
                 .foregroundStyle(isSelected ? Color.white : MindMoryColors.textPrimary)
                 .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
+                .truncationMode(.tail)
                 .padding(.horizontal, MindMorySpacing.md)
                 .padding(.vertical, MindMorySpacing.sm)
                 .background(isSelected ? MindMoryColors.primaryGreen : MindMoryColors.surface)

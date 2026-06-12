@@ -1,12 +1,11 @@
-import SwiftUI
 import Foundation
 
-enum MemoryAlbumSectionType: String, Equatable {
+enum MemoryAlbumSectionType: String, Equatable, Codable {
     case image
     case text
 }
 
-enum MemoryAlbumTextBlockType: String, CaseIterable, Identifiable, Equatable {
+enum MemoryAlbumTextBlockType: String, CaseIterable, Identifiable, Equatable, Codable {
     case titleOnly
     case titleAndDescription
     case descriptionOnly
@@ -25,7 +24,7 @@ enum MemoryAlbumTextBlockType: String, CaseIterable, Identifiable, Equatable {
     }
 }
 
-enum MemoryAlbumTextHorizontalAlignment: String, CaseIterable, Identifiable, Equatable {
+enum MemoryAlbumTextHorizontalAlignment: String, CaseIterable, Identifiable, Equatable, Codable {
     case leading
     case center
     case trailing
@@ -37,7 +36,7 @@ enum MemoryAlbumTextHorizontalAlignment: String, CaseIterable, Identifiable, Equ
     }
 }
 
-enum MemoryAlbumTextVerticalAlignment: String, CaseIterable, Identifiable, Equatable {
+enum MemoryAlbumTextVerticalAlignment: String, CaseIterable, Identifiable, Equatable, Codable {
     case top
     case center
     case bottom
@@ -49,7 +48,7 @@ enum MemoryAlbumTextVerticalAlignment: String, CaseIterable, Identifiable, Equat
     }
 }
 
-enum MemoryAlbumTextWeight: String, CaseIterable, Identifiable, Equatable {
+enum MemoryAlbumTextWeight: String, CaseIterable, Identifiable, Equatable, Codable {
     case regular
     case medium
     case semibold
@@ -62,7 +61,7 @@ enum MemoryAlbumTextWeight: String, CaseIterable, Identifiable, Equatable {
     }
 }
 
-struct MemoryAlbumTextStyle: Equatable {
+struct MemoryAlbumTextStyle: Equatable, Codable {
     var titleSize: Double
     var descriptionSize: Double
     var titleWeight: MemoryAlbumTextWeight
@@ -76,7 +75,7 @@ struct MemoryAlbumTextStyle: Equatable {
     )
 }
 
-struct MemoryAlbumTextSection: Equatable {
+struct MemoryAlbumTextSection: Equatable, Codable {
     let templateVariant: Int
     let blockType: MemoryAlbumTextBlockType
     let horizontalAlignment: MemoryAlbumTextHorizontalAlignment
@@ -107,18 +106,73 @@ struct MemoryAlbumTextSection: Equatable {
     }
 }
 
-enum MemoryAlbumSectionContent: Equatable {
+enum MemoryAlbumSectionContent: Equatable, Codable {
     case image(layoutCount: Int, layoutVariant: Int, photos: [AlbumPhoto?])
     case text(MemoryAlbumTextSection)
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case layoutCount
+        case layoutVariant
+        case photos
+        case textSection
+    }
+
+    private enum ContentType: String, Codable {
+        case image
+        case text
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(ContentType.self, forKey: .type)
+
+        switch type {
+        case .image:
+            let layoutCount = try container.decode(Int.self, forKey: .layoutCount)
+            let layoutVariant = try container.decode(Int.self, forKey: .layoutVariant)
+            var photos = try container.decode([AlbumPhoto?].self, forKey: .photos)
+            if photos.count < layoutCount {
+                photos.append(contentsOf: Array(repeating: nil, count: layoutCount - photos.count))
+            } else if photos.count > layoutCount {
+                photos = Array(photos.prefix(layoutCount))
+            }
+            self = .image(layoutCount: layoutCount, layoutVariant: layoutVariant, photos: photos)
+        case .text:
+            let textSection = try container.decode(MemoryAlbumTextSection.self, forKey: .textSection)
+            self = .text(textSection)
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        switch self {
+        case .image(let layoutCount, let layoutVariant, let photos):
+            try container.encode(ContentType.image, forKey: .type)
+            try container.encode(layoutCount, forKey: .layoutCount)
+            try container.encode(layoutVariant, forKey: .layoutVariant)
+            try container.encode(photos, forKey: .photos)
+        case .text(let textSection):
+            try container.encode(ContentType.text, forKey: .type)
+            try container.encode(textSection, forKey: .textSection)
+        }
+    }
 }
 
-struct MemoryAlbumSection: Identifiable, Equatable {
+struct MemoryAlbumSection: Identifiable, Equatable, Codable {
     let id: UUID
     let content: MemoryAlbumSectionContent
 
     init(id: UUID = UUID(), layoutCount: Int, layoutVariant: Int = 0, photos: [AlbumPhoto?] = []) {
         self.id = id
-        self.content = .image(layoutCount: layoutCount, layoutVariant: layoutVariant, photos: photos)
+        var normalizedPhotos = photos
+        if normalizedPhotos.count < layoutCount {
+            normalizedPhotos.append(contentsOf: Array(repeating: nil, count: layoutCount - normalizedPhotos.count))
+        } else if normalizedPhotos.count > layoutCount {
+            normalizedPhotos = Array(normalizedPhotos.prefix(layoutCount))
+        }
+        self.content = .image(layoutCount: layoutCount, layoutVariant: layoutVariant, photos: normalizedPhotos)
     }
 
     init(id: UUID = UUID(), textSection: MemoryAlbumTextSection) {

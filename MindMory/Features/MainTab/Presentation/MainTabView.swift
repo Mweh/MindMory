@@ -57,7 +57,7 @@ struct MainTabView: View {
                 }
                 .tag(MainTab.home)
 
-            AlbumView(viewModel: container.makeAlbumListViewModel())
+            AlbumListView(viewModel: container.makeAlbumListViewModel())
                 .tabItem {
                     Label(
                         MainTab.album.title,
