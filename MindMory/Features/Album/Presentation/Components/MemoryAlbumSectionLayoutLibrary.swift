@@ -28,7 +28,7 @@ enum MemoryAlbumFrameShape: String, CaseIterable, Codable, Equatable {
     }
 }
 
-enum MirrorType {
+enum MirrorType: Equatable {
     case none
     case vertical  // left-right mirror (column flip)
     case horizontal  // top-bottom mirror (row flip)
@@ -63,6 +63,16 @@ struct MemoryAlbumSectionLayoutTemplate: Identifiable, Equatable {
             self.frameShapes = Array(repeating: .square, count: layoutCount)
         }
         self.mirrorGroup = mirrorGroup
+    }
+
+    static func == (lhs: MemoryAlbumSectionLayoutTemplate, rhs: MemoryAlbumSectionLayoutTemplate) -> Bool {
+        lhs.id == rhs.id
+            && lhs.layoutCount == rhs.layoutCount
+            && lhs.variant == rhs.variant
+            && lhs.title == rhs.title
+            && lhs.albumHeight == rhs.albumHeight
+            && lhs.frameShapes == rhs.frameShapes
+            && lhs.mirrorGroup == rhs.mirrorGroup
     }
 
     func estimatedHeight(forWidth width: CGFloat, spacing: CGFloat = MindMorySpacing.sm) -> CGFloat {
