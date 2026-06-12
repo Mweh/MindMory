@@ -4,20 +4,21 @@ platform :ios do
   desc "Upload build to TestFlight"
   lane :beta do
     api_key = app_store_connect_api_key(
-      key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
-      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
-      key_content: ENV["APP_STORE_CONNECT_API_KEY"]
+      key_id: ENV.fetch("APP_STORE_CONNECT_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_ISSUER_ID"),
+      key_content: ENV.fetch("APP_STORE_CONNECT_API_KEY"),
+      is_key_content_base64: false
     )
 
     app_identifier = "com.fahmi.MindMory"
 
-    # 1) Pull down/create signing certs and provisioning profiles
     match(
       type: "appstore",
-      app_identifier: app_identifier
+      app_identifier: app_identifier,
+      api_key: api_key,
+      readonly: true
     )
 
-    # 2) Bump build number from TestFlight
     build_number = latest_testflight_build_number(
       api_key: api_key,
       app_identifier: app_identifier
@@ -25,14 +26,12 @@ platform :ios do
 
     increment_build_number(build_number: build_number)
 
-    # 3) Build and archive with automatic provisioning updates
     build_app(
       scheme: "MindMory",
       export_method: "app-store",
       xcargs: "-allowProvisioningUpdates"
     )
 
-    # 4) Upload to TestFlight
     upload_to_testflight(
       api_key: api_key,
       app_identifier: app_identifier,
