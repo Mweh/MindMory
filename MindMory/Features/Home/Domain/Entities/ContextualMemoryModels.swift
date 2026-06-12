@@ -65,6 +65,8 @@ struct ContextualMemoryCandidate: Identifiable, Equatable {
     let locationName: String?
     let isFavorite: Bool
     var score: Int
+    var distanceMeters: Double?
+    var notificationConfidenceScore: Int
     var matchedReasons: [ContextualMemoryMatchReason]
 }
 
@@ -79,6 +81,8 @@ struct ContextualMemory: Identifiable, Equatable {
     let tags: [String]
     let context: ContextualMemoryContext
     let score: Int
+    let distanceMeters: Double?
+    let notificationConfidenceScore: Int
 
     var asMemory: Memory {
         Memory(

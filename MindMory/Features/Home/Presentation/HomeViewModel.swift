@@ -205,7 +205,9 @@ final class HomeViewModel: ObservableObject {
             journalText: routedMemory.journalText,
             tags: routedMemory.tags,
             context: ContextualMemoryContext(now: Date(), currentLocation: nil, currentEvent: nil),
-            score: 0
+            score: 0,
+            distanceMeters: nil,
+            notificationConfidenceScore: 0
         ))
         homeCardState = .normal
         state = .positive(

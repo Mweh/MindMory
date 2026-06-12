@@ -7,6 +7,8 @@ final class SmartMemoryNotificationCoordinator {
     private let findContextualMemoryUseCase: FindContextualMemoryUseCase
     private let cooldownStore: SmartMemoryNotificationCooldownStore
     private let notificationCenter: UNUserNotificationCenter
+    private let maximumNotificationDistance: Double = 500
+    private let minimumNotificationConfidenceScore = 70
     private var isScheduling = false
 
     init(
@@ -34,6 +36,7 @@ final class SmartMemoryNotificationCoordinator {
 
         let result = await findContextualMemoryUseCase.execute()
         guard case .loaded(let contextualMemory) = result else { return }
+        guard shouldNotify(for: contextualMemory) else { return }
 
         let contextKey = makeContextKey(for: contextualMemory)
         guard cooldownStore.canNotify(
@@ -49,6 +52,20 @@ final class SmartMemoryNotificationCoordinator {
         )
 
         await scheduleNotification(payload: payload, contextualMemory: contextualMemory)
+    }
+
+    private func shouldNotify(for contextualMemory: ContextualMemory) -> Bool {
+        guard let event = contextualMemory.context.currentEvent,
+              event.isHappening(at: contextualMemory.context.now) else {
+            return false
+        }
+
+        guard let distanceMeters = contextualMemory.distanceMeters,
+              distanceMeters <= maximumNotificationDistance else {
+            return false
+        }
+
+        return contextualMemory.notificationConfidenceScore >= minimumNotificationConfidenceScore
     }
 
     private func scheduleNotification(payload: SmartMemoryNotificationPayload, contextualMemory: ContextualMemory) async {

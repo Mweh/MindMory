@@ -31,6 +31,7 @@ struct RankContextualMemoryCandidatesUseCase {
 
         if let location = context.currentLocation, let candidateLocation = candidate.location {
             let distance = location.distance(from: candidateLocation)
+            scoredCandidate.distanceMeters = distance
             switch distance {
             case 0..<100:
                 score += 500
@@ -61,8 +62,31 @@ struct RankContextualMemoryCandidatesUseCase {
         }
 
         scoredCandidate.score = score
+        scoredCandidate.notificationConfidenceScore = notificationConfidenceScore(
+            candidate: scoredCandidate,
+            context: context
+        )
         scoredCandidate.matchedReasons = reasons
         return scoredCandidate
+    }
+
+    private func notificationConfidenceScore(candidate: ContextualMemoryCandidate, context: ContextualMemoryContext) -> Int {
+        var score = 0
+
+        if let event = context.currentEvent, event.isHappening(at: context.now) {
+            score += 50
+        }
+
+        if let distance = candidate.distanceMeters, distance <= 500 {
+            score += 40
+        }
+
+        if let candidateDate = candidate.creationDate,
+           Calendar.current.component(.weekday, from: candidateDate) == Calendar.current.component(.weekday, from: context.now) {
+            score += 10
+        }
+
+        return score
     }
 
     private func isCandidateRelatedToEvent(_ candidate: ContextualMemoryCandidate, event: CurrentEventContext, now: Date) -> Bool {

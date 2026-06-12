@@ -60,7 +60,9 @@ struct FindContextualMemoryUseCase {
             journalText: nil,
             tags: candidate.matchedReasons.map(\.title),
             context: context,
-            score: candidate.score
+            score: candidate.score,
+            distanceMeters: candidate.distanceMeters,
+            notificationConfidenceScore: candidate.notificationConfidenceScore
         )
     }
 

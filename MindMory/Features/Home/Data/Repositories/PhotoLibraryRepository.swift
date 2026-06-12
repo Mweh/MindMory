@@ -43,6 +43,8 @@ final class PhotoLibraryRepository: PhotoLibraryRepositoryProtocol {
                 locationName: nil,
                 isFavorite: asset.isFavorite,
                 score: 0,
+                distanceMeters: nil,
+                notificationConfidenceScore: 0,
                 matchedReasons: []
             ))
         }
