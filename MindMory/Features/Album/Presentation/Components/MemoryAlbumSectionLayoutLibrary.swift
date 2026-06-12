@@ -337,14 +337,10 @@ struct MemoryAlbumSectionLayoutRenderer<Content: View>: View {
 
     var body: some View {
         let screenWidth: CGFloat = {
-            if #available(iOS 26.0, *) {
-                if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                    return scene.screen.bounds.width
-                }
-                return 390
-            } else {
-                return UIScreen.main.bounds.width
+            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                return scene.screen.bounds.width
             }
+            return UIScreen.main.bounds.width
         }()
 
         let width = availableWidth ?? (screenWidth - (MindMorySpacing.xl * 2))
