@@ -8,23 +8,23 @@ struct ContextualMemoryEmptyStateView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.md) {
             Image(systemName: systemImage)
-                .font(.system(size: 28, weight: .semibold, design: .rounded))
-                .foregroundStyle(MindMoryColors.primaryGreen)
+                .font(MindMoryTypography.titleLarge)
+                .foregroundStyle(MindMoryColors.Surface.primary)
 
             VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
                 Text(title)
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundStyle(MindMoryColors.textPrimary)
+                    .font(MindMoryTypography.titleLarge)
+                    .foregroundStyle(MindMoryColors.Content.primary)
 
                 Text(subtitle)
-                    .font(.system(size: 15, weight: .regular, design: .rounded))
-                    .foregroundStyle(MindMoryColors.textSecondary)
+                    .font(MindMoryTypography.bodySmall)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(MindMorySpacing.lg)
-        .background(MindMoryColors.surface)
+        .background(MindMoryColors.Surface.surface)
         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)

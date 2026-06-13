@@ -10,11 +10,11 @@ struct AlbumSectionPhotoCell: View {
             placeholderIcon: "photo.on.rectangle",
             placeholderText: image == nil ? "Tap to add photo" : nil
         )
-        .background(MindMoryColors.surface)
+        .background(MindMoryColors.Surface.surface)
         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                .stroke(MindMoryColors.border)
+                .stroke(MindMoryColors.Border.subtle)
         )
         .contentShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
         .frame(maxWidth: .infinity)

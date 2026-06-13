@@ -97,7 +97,7 @@ struct MemoryAlbumCreationView: View {
             }
             syncSelectedTextSection()
         }
-        .background(MindMoryColors.background.ignoresSafeArea())
+        .background(MindMoryColors.Surface.background.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
         .toolbar {
             // Leading back control: if on selectPhotos, go back to details; otherwise dismiss
@@ -191,96 +191,25 @@ struct MemoryAlbumCreationView: View {
     private var stepHeader: some View {
         HStack(spacing: MindMorySpacing.sm) {
             Text(stepTitle)
-                .font(MindMoryTypography.headingLarge)
-                .foregroundStyle(MindMoryColors.textPrimary)
+                .font(MindMoryTypography.titleLarge)
+                .foregroundStyle(MindMoryColors.Content.primary)
 
             Spacer()
 
             Text(stepSubtitle)
                 .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .foregroundStyle(MindMoryColors.Content.secondary)
                 .multilineTextAlignment(.trailing)
         }
     }
 
     private var detailsStep: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-            AppCard {
-                VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-                    Text("Memory title")
-                        .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textPrimary)
+            AlbumDetailsFormCardView(viewModel: viewModel, selectedCoverPhotoItem: $selectedCoverPhotoItem)
 
-                    TextField("Enter memory title", text: $viewModel.albumName)
-                        .font(MindMoryTypography.bodyMedium)
-                        .padding(MindMorySpacing.md)
-                        .background(MindMoryColors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                                .stroke(MindMoryColors.border)
-                        )
-                }
-            }
+            AlbumCoverCardView(viewModel: viewModel, selectedCoverPhotoItem: $selectedCoverPhotoItem)
 
-            AppCard {
-                VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-                    Text("Cover photo")
-                        .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textPrimary)
-
-                    PhotosPicker(
-                        selection: $selectedCoverPhotoItem,
-                        matching: .images,
-                        photoLibrary: .shared()
-                    ) {
-                        MemoryImagePlaceholderView(
-                            image: viewModel.coverPhoto?.uiImage,
-                            imageName: nil,
-                            placeholderIcon: "photo.on.rectangle",
-                            placeholderText: viewModel.coverPhoto.map { _ in "Tap to change cover photo" } ?? "Tap to add cover photo"
-                        )
-                        .frame(height: 180)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                                .stroke(MindMoryColors.border)
-                        )
-                    }
-                }
-            }
-
-            AppCard {
-                VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-                    Text("Album date")
-                        .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textPrimary)
-
-                    Picker("Album date type", selection: $viewModel.isDateRange) {
-                        Text("Single day").tag(false)
-                        Text("Range").tag(true)
-                    }
-                    .pickerStyle(.segmented)
-
-                    DatePicker(
-                        "Start date",
-                        selection: $viewModel.albumDateStart,
-                        displayedComponents: .date
-                    )
-                    .datePickerStyle(.compact)
-
-                    if viewModel.isDateRange {
-                        DatePicker(
-                            "End date",
-                            selection: $viewModel.albumDateEnd,
-                            in: viewModel.albumDateStart...,
-                            displayedComponents: .date
-                        )
-                        .datePickerStyle(.compact)
-                    }
-                }
-            }
+            AlbumDateCardView(viewModel: viewModel)
             PrimaryButton(title: primaryButtonTitle, action: primaryButtonAction)
                 .disabled(primaryButtonDisabled)
                 .frame(maxWidth: .infinity)
@@ -291,43 +220,12 @@ struct MemoryAlbumCreationView: View {
     private var selectPhotosStep: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
             // Album header (cover + title + date) shown above the sections
-            AppCard {
-                VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                    Text(viewModel.albumName.isEmpty ? "Untitled memory" : viewModel.albumName)
-                        .font(MindMoryTypography.headingLarge)
-                        .foregroundStyle(MindMoryColors.textPrimary)
-
-                    if let coverPhoto = viewModel.coverPhoto, let image = coverPhoto.uiImage {
-                        MemoryImagePlaceholderView(image: image, imageName: nil)
-                            .frame(height: 220)
-                            .frame(maxWidth: .infinity)
-                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
-                    } else {
-                        MemoryImagePlaceholderView(image: nil, imageName: nil)
-                            .frame(height: 220)
-                            .frame(maxWidth: .infinity)
-                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                                    .stroke(MindMoryColors.border)
-                            )
-                    }
-
-                    HStack(spacing: MindMorySpacing.md) {
-                        VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-                            Text(viewModel.albumDate.displayText)
-                                .font(MindMoryTypography.bodySmall)
-                                .foregroundStyle(MindMoryColors.textSecondary)
-
-                            Text("\(photoCount) photo(s)")
-                                .font(MindMoryTypography.bodySmall)
-                                .foregroundStyle(MindMoryColors.primaryGreen)
-                        }
-
-                        Spacer()
-                    }
-                }
-            }
+            AlbumHeaderCardView(
+                name: viewModel.albumName.isEmpty ? "Untitled memory" : viewModel.albumName,
+                coverPhoto: viewModel.coverPhoto?.uiImage,
+                albumDateText: viewModel.albumDate.displayText,
+                photoCountText: "\(photoCount) photo(s)"
+            )
 
             ForEach(viewModel.sections) { section in
                 draggableSection(section)
@@ -365,11 +263,11 @@ struct MemoryAlbumCreationView: View {
                         }
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        Image(systemName: "ellipsis.circle")
+                        .font(MindMoryTypography.labelSmall)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
                         .padding(MindMorySpacing.sm)
-                        .background(MindMoryColors.surface)
+                        .background(MindMoryColors.Surface.surface)
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -382,7 +280,7 @@ struct MemoryAlbumCreationView: View {
                 Group {
                     if draggingSectionID == section.id {
                         RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                            .stroke(MindMoryColors.primaryGreen.opacity(0.6), style: StrokeStyle(lineWidth: 3, dash: [6]))
+                            .stroke(MindMoryColors.Surface.primary.opacity(0.6), style: StrokeStyle(lineWidth: 3, dash: [6]))
                     }
                 }
             )
@@ -456,10 +354,10 @@ struct MemoryAlbumCreationView: View {
             isAddingSection = true
         } label: {
             Image(systemName: "plus")
-                .font(.title3.weight(.bold))
+                .font(MindMoryTypography.labelLarge)
                 .foregroundColor(.white)
                 .frame(width: 56, height: 56)
-                .background(MindMoryColors.primaryGreen)
+                .background(MindMoryColors.Surface.primary)
                 .clipShape(Circle())
                 .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
         }
@@ -498,10 +396,10 @@ struct MemoryAlbumCreationView: View {
             }
         } label: {
             Image(systemName: "plus")
-                .font(.title3.weight(.bold))
+                .font(MindMoryTypography.labelLarge)
                 .foregroundColor(.white)
                 .frame(width: 56, height: 56)
-                .background(MindMoryColors.primaryGreen)
+                .background(MindMoryColors.Surface.primary)
                 .clipShape(Circle())
                 .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
         }
@@ -613,33 +511,33 @@ struct MemoryAlbumCreationView: View {
                     VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
                         Text("Title")
                             .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.textSecondary)
+                            .foregroundStyle(MindMoryColors.Content.secondary)
 
                         TextField("Enter title", text: $selectedTextTitle)
                             .font(MindMoryTypography.bodyMedium)
                             .padding(MindMorySpacing.sm)
-                            .background(MindMoryColors.surface)
+                            .background(MindMoryColors.Surface.surface)
                             .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
                             .overlay(
                                 RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                                    .stroke(MindMoryColors.border)
+                                    .stroke(MindMoryColors.Border.subtle)
                             )
                     }
 
                     VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
                         Text("Description")
                             .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.textSecondary)
+                            .foregroundStyle(MindMoryColors.Content.secondary)
 
                         TextField("Enter description", text: $selectedTextDescription, axis: .vertical)
                             .lineLimit(2...4)
                             .font(MindMoryTypography.bodyMedium)
                             .padding(MindMorySpacing.sm)
-                            .background(MindMoryColors.surface)
+                            .background(MindMoryColors.Surface.surface)
                             .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
                             .overlay(
                                 RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                                    .stroke(MindMoryColors.border)
+                                    .stroke(MindMoryColors.Border.subtle)
                             )
                     }
 

@@ -6,8 +6,8 @@ struct SecondaryButton: View {
 
     var body: some View {
         Button(title, action: action)
-            .font(MindMoryTypography.button)
-            .foregroundStyle(MindMoryColors.primaryGreen)
+            .font(MindMoryTypography.labelMedium)
+            .foregroundStyle(MindMoryColors.Surface.primary)
             .frame(maxWidth: .infinity)
             .padding(.vertical, MindMorySpacing.md)
             .buttonStyle(.plain)

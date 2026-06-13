@@ -33,7 +33,7 @@ struct AlbumListView: View {
                 viewModel.addAlbum(album)
             }
         }
-        .background(MindMoryColors.background.ignoresSafeArea())
+        .background(MindMoryColors.Surface.background.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -55,12 +55,12 @@ struct AlbumListView: View {
             isShowingCreateAlbum = true
         } label: {
             Image(systemName: "plus")
-                .font(.title3.weight(.bold))
-                .foregroundColor(.white)
+                .font(MindMoryTypography.labelLarge)
+                .foregroundColor(MindMoryColors.Content.inverse)
                 .frame(width: 56, height: 56)
-                .background(MindMoryColors.primaryGreen)
+                .background(MindMoryColors.Surface.primary)
                 .clipShape(Circle())
-                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                .shadow(color: MindMoryColors.Content.primary.opacity(0.2), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Create album")
@@ -103,11 +103,11 @@ struct AlbumListView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
             Text("Your albums")
-                .font(MindMoryTypography.displayLarge)
+                .font(MindMoryTypography.headline)
 
             Text("Review recently created albums and add more memories when you are ready.")
                 .font(MindMoryTypography.bodyMedium)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .foregroundStyle(MindMoryColors.Content.secondary)
         }
     }
 
@@ -126,35 +126,35 @@ struct AlbumListView: View {
                         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                                .stroke(MindMoryColors.border)
+                                .stroke(MindMoryColors.Border.subtle)
                         )
                 }
 
                 VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
                     Text(album.name)
-                        .font(MindMoryTypography.headingMedium)
-                        .foregroundStyle(MindMoryColors.textPrimary)
+                        .font(MindMoryTypography.titleMedium)
+                        .foregroundStyle(MindMoryColors.Content.primary)
 
                     HStack(spacing: MindMorySpacing.sm) {
                         Text(album.albumDate.displayText)
-                            .font(MindMoryTypography.caption)
-                            .foregroundStyle(MindMoryColors.textSecondary)
+                            .font(MindMoryTypography.bodySmall)
+                            .foregroundStyle(MindMoryColors.Content.secondary)
 
                         Spacer()
 
                         Text(album.photos.isEmpty ? "No photos" : "\(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")")
-                            .font(MindMoryTypography.caption)
-                            .foregroundStyle(MindMoryColors.textSecondary)
+                            .font(MindMoryTypography.bodySmall)
+                            .foregroundStyle(MindMoryColors.Content.secondary)
                     }
                 }
                 .padding(.top, MindMorySpacing.sm)
             }
-            .padding(MindMorySpacing.lg)
-            .background(MindMoryColors.background)
+                .padding(MindMorySpacing.lg)
+                .background(MindMoryColors.Surface.background)
             .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                    .stroke(MindMoryColors.border, lineWidth: 1)
+                    .stroke(MindMoryColors.Border.subtle, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)

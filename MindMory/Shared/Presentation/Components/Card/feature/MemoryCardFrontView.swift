@@ -31,21 +31,34 @@ struct MemoryCardFrontView: View {
     }
 
     private func chip(_ title: String, systemImage: String) -> some View {
-        Label(title, systemImage: systemImage)
-            .font(MindMoryTypography.caption)
-            .foregroundStyle(MindMoryColors.primaryGreen)
-            .padding(.horizontal, MindMorySpacing.sm)
-            .padding(.vertical, MindMorySpacing.xs)
-            .background(MindMoryColors.surface.opacity(0.92))
-            .clipShape(Capsule(style: .continuous))
+        FilterChip(title: title, systemImage: systemImage, isSelected: false) {}
+            .font(MindMoryTypography.bodySmall)
+            .foregroundStyle(MindMoryColors.Surface.primary)
             .lineLimit(1)
+            .padding(.vertical, 0)
     }
 
     private var frontBackground: some View {
-        LinearGradient(colors: [Color.white, MindMoryColors.background, MindMoryColors.surface.opacity(0.78)], startPoint: .topLeading, endPoint: .bottomTrailing)
+        LinearGradient(colors: [Color.white, MindMoryColors.Surface.background, MindMoryColors.Surface.surface.opacity(0.78)], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 
     private var cardShape: RoundedRectangle {
         RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous)
     }
+}
+
+#if DEBUG
+struct MemoryCardFrontView_Previews: PreviewProvider {
+    static var previews: some View {
+        MemoryCardFrontView(memory: PreviewData.aromaMemory, photoParallax: .zero, contentParallax: .zero)
+            .padding()
+            .previewLayout(.sizeThatFits)
+    }
+}
+#endif
+
+#Preview {
+    MemoryCardFrontView(memory: PreviewData.aromaMemory, photoParallax: .zero, contentParallax: .zero)
+        .padding()
+        .background(MindMoryColors.Surface.background)
 }

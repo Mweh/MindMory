@@ -19,7 +19,7 @@ struct PrimaryButton: View {
             .disabled(true)
     }
     .padding()
-    .background(MindMoryColors.background)
+    .background(MindMoryColors.Surface.background)
 }
 
 private struct MindMoryPrimaryButtonStyle: ButtonStyle {
@@ -38,11 +38,11 @@ private struct MindMoryPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         let pressDepth = (configuration.isPressed && isEnabled) ? Metrics.pressTravel : 0
         
-        // Disabled state colors using neutral color
-        let shadowColor: Color = isEnabled ? MindMoryColors.primaryGreen : MindMoryColors.neutral.opacity(0.4)
-        let fillColor: Color = isEnabled ? MindMoryColors.background : MindMoryColors.neutral.opacity(0.12)
-        let borderColor: Color = isEnabled ? MindMoryColors.primaryGreen : MindMoryColors.neutral.opacity(0.25)
-        let textColor: Color = isEnabled ? MindMoryColors.primaryGreen : MindMoryColors.neutral.opacity(0.6)
+        // Disabled state colors using semantic tokens
+        let shadowColor: Color = isEnabled ? MindMoryColors.Surface.primary : MindMoryColors.Content.disabled.opacity(0.4)
+        let fillColor: Color = isEnabled ? MindMoryColors.Surface.background : MindMoryColors.Content.disabled.opacity(0.12)
+        let borderColor: Color = isEnabled ? MindMoryColors.Surface.primary : MindMoryColors.Content.disabled.opacity(0.25)
+        let textColor: Color = isEnabled ? MindMoryColors.Surface.primary : MindMoryColors.Content.disabled.opacity(0.6)
         
         return Color.clear
             .frame(maxWidth: .infinity)
@@ -62,7 +62,7 @@ private struct MindMoryPrimaryButtonStyle: ButtonStyle {
                     borderColor: borderColor
                 ) {
                     configuration.label
-                        .font(MindMoryTypography.button)
+                        .font(MindMoryTypography.labelLarge)
                         .foregroundStyle(textColor)
                         .lineLimit(1)
                         .minimumScaleFactor(0.9)

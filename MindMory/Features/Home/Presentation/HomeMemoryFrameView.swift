@@ -21,17 +21,17 @@ struct HomeMemoryFrameView: View {
         VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
             if let locationName = memory.locationName {
                 Label(locationName, systemImage: "mappin.circle")
-                    .font(MindMoryTypography.caption)
-                    .foregroundStyle(MindMoryColors.textSecondary)
+                    .font(MindMoryTypography.bodySmall)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
             }
 
             Text(memory.dateText)
-                .font(MindMoryTypography.caption)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .font(MindMoryTypography.bodySmall)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
 
             Text(memory.subtitle)
                 .font(compact ? MindMoryTypography.bodySmall : MindMoryTypography.bodyLarge)
-                .foregroundStyle(MindMoryColors.textPrimary)
+                .foregroundStyle(MindMoryColors.Content.primary)
                 .lineSpacing(3)
         }
     }

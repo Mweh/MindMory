@@ -24,10 +24,10 @@ struct ExpandableStatCardView: View {
                 .frame(width: proxy.size.width, height: proxy.size.height)
                 .clipShape(cardShape)
                 .overlay {
-                    cardShape.stroke(Color.white.opacity(isSelected ? 0.16 : 0.08), lineWidth: 1)
+                    cardShape.stroke(MindMoryColors.Content.inverse.opacity(isSelected ? 0.16 : 0.08), lineWidth: 1)
                 }
                 .shadow(
-                    color: MindMoryColors.primaryGreen.opacity(isSelected ? 0.24 : 0.14),
+                    color: MindMoryColors.Surface.primary.opacity(isSelected ? 0.24 : 0.14),
                     radius: isSelected ? 20 : 10,
                     x: 0,
                     y: isSelected ? 14 : 7
@@ -39,21 +39,21 @@ struct ExpandableStatCardView: View {
 
     private var compactContent: some View {
         VStack(alignment: .center, spacing: 6) {
-            Text(card.title)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.white.opacity(0.92))
+                Text(card.title)
+                .font(MindMoryTypography.titleSmall)
+                .foregroundStyle(MindMoryColors.Content.inverse.opacity(0.92))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
-            Text(card.primaryValue)
-                .font(.system(size: 30, weight: .regular, design: .serif))
-                .foregroundStyle(Color.white.opacity(0.95))
+                Text(card.primaryValue)
+                .font(MindMoryTypography.titleLarge)
+                .foregroundStyle(MindMoryColors.Content.inverse.opacity(0.95))
                 .lineLimit(1)
                 .minimumScaleFactor(0.55)
 
-            Text(card.secondaryValue)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.white.opacity(0.9))
+                Text(card.secondaryValue)
+                .font(MindMoryTypography.labelSmall)
+                .foregroundStyle(MindMoryColors.Content.inverse.opacity(0.9))
                 .lineLimit(1)
                 .minimumScaleFactor(0.65)
         }
@@ -73,18 +73,18 @@ struct ExpandableStatCardView: View {
     private var standardExpandedContent: some View {
         VStack(spacing: 6) {
             Text(card.title)
-                .font(.system(size: 24, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.white.opacity(0.96))
+                .font(MindMoryTypography.titleMedium)
+                .foregroundStyle(MindMoryColors.Content.inverse.opacity(0.96))
 
             Text(expandedPrimaryValue)
-                .font(.system(size: 62, weight: .regular, design: .serif))
-                .foregroundStyle(Color.white.opacity(0.96))
+                .font(MindMoryTypography.display)
+                .foregroundStyle(MindMoryColors.Content.inverse.opacity(0.96))
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
 
             Text(card.secondaryValue)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.white.opacity(0.92))
+                .font(MindMoryTypography.titleMedium)
+                .foregroundStyle(MindMoryColors.Content.inverse.opacity(0.92))
 
             HStack(spacing: MindMorySpacing.xl) {
                 detailColumn(number: "12", label: "This Month")
@@ -99,24 +99,24 @@ struct ExpandableStatCardView: View {
     private var visitedExpandedContent: some View {
         VStack(spacing: MindMorySpacing.lg) {
             Text("Visited Places")
-                .font(.system(size: 24, weight: .semibold, design: .rounded))
-                .foregroundStyle(Color.white.opacity(0.96))
+                .font(MindMoryTypography.titleMedium)
+                .foregroundStyle(MindMoryColors.Content.inverse.opacity(0.96))
 
             HStack(spacing: MindMorySpacing.xs) {
                 Image(systemName: "location.north.fill")
                 Text("Academy")
                     .fontWeight(.bold)
             }
-            .font(.system(size: 24, weight: .semibold, design: .rounded))
-            .foregroundStyle(Color.white.opacity(0.96))
+            .font(MindMoryTypography.titleMedium)
+            .foregroundStyle(MindMoryColors.Content.inverse.opacity(0.96))
             .padding(.horizontal, MindMorySpacing.lg)
             .padding(.vertical, MindMorySpacing.xs)
-            .background(Color.white.opacity(0.32))
+            .background(MindMoryColors.Content.inverse.opacity(0.32))
             .clipShape(Capsule(style: .continuous))
 
             Text("2 times")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.white.opacity(0.96))
+                .font(MindMoryTypography.titleMedium)
+                .foregroundStyle(MindMoryColors.Content.inverse.opacity(0.96))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -135,16 +135,16 @@ struct ExpandableStatCardView: View {
     private func detailColumn(number: String, label: String) -> some View {
         VStack(spacing: 2) {
             Text(number)
-                .font(.system(size: 30, weight: .regular, design: .rounded))
+                .font(MindMoryTypography.titleLarge)
             Text(label)
-                .font(.system(size: 12, weight: .regular, design: .rounded))
+                .font(MindMoryTypography.bodySmall)
         }
-        .foregroundStyle(Color.white.opacity(0.92))
+        .foregroundStyle(MindMoryColors.Content.inverse.opacity(0.92))
     }
 
     private var cardBackground: some View {
         LinearGradient(
-            colors: [MindMoryColors.primaryGreen, MindMoryColors.primaryGreen, Color(hex: "#235B43")],
+            colors: [MindMoryColors.Surface.primary, MindMoryColors.Surface.primary, MindMoryColors.Surface.primary],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -153,4 +153,21 @@ struct ExpandableStatCardView: View {
     private var cardShape: RoundedRectangle {
         RoundedRectangle(cornerRadius: 22, style: .continuous)
     }
+}
+
+#if DEBUG
+struct ExpandableStatCardView_Previews: PreviewProvider {
+    static var previews: some View {
+        ExpandableStatCardView(card: HomeStatCardModel(stat: .captured, title: "Stats", primaryValue: "42", secondaryValue: "units", monthlyDetail: "12", yearlyDetail: "20"), isSelected: false, action: {})
+            .padding()
+            .previewLayout(.sizeThatFits)
+    }
+}
+#endif
+
+#Preview {
+    ExpandableStatCardView(card: HomeStatCardModel(stat: .captured, title: "Stats", primaryValue: "42", secondaryValue: "units", monthlyDetail: "12", yearlyDetail: "20"), isSelected: false, action: {})
+        .frame(width: 300, height: 180)
+        .padding()
+        .background(MindMoryColors.Surface.background)
 }

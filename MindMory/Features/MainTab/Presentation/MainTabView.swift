@@ -77,8 +77,8 @@ struct MainTabView: View {
             }
             .tag(MainTab.settings)
         }
-        .tint(MindMoryColors.primaryGreen)
-        .background(MindMoryColors.background)
+        .tint(MindMoryColors.Surface.primary)
+        .background(MindMoryColors.Surface.background)
         .onReceive(router.$routedAssetLocalIdentifier.compactMap { $0 }) { assetLocalIdentifier in
             homeViewModel.showContextualAsset(localIdentifier: assetLocalIdentifier)
             _ = router.consumeRoutedAssetLocalIdentifier()

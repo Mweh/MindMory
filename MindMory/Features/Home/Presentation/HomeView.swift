@@ -21,7 +21,7 @@ struct HomeView: View {
             .padding(.bottom, MindMorySpacing.xxl)
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(MindMoryColors.background.ignoresSafeArea())
+        .background(MindMoryColors.Surface.background.ignoresSafeArea())
         .navigationBarHidden(true)
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
@@ -103,13 +103,13 @@ struct HomeView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
             Text(viewModel.headerCopy.title)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundStyle(MindMoryColors.textPrimary)
+                .font(MindMoryTypography.headline)
+                .foregroundStyle(MindMoryColors.Content.primary)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(viewModel.headerCopy.subtitle)
-                .font(.system(size: 16, weight: .regular, design: .rounded))
-                .foregroundStyle(MindMoryColors.primaryGreen)
+                .font(MindMoryTypography.bodyMedium)
+                .foregroundStyle(MindMoryColors.Content.link)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -117,12 +117,12 @@ struct HomeView: View {
     private var favoriteHeader: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("A memory from this moment.")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundStyle(MindMoryColors.primaryGreen)
+                .font(MindMoryTypography.titleMedium)
+                .foregroundStyle(MindMoryColors.Content.link)
 
             Text("Look at this picture... and tap to flip it!")
-                .font(.system(size: 12, weight: .regular, design: .rounded))
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .font(MindMoryTypography.bodySmall)
+                .foregroundStyle(MindMoryColors.Content.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -130,14 +130,14 @@ struct HomeView: View {
     private var loadingCard: some View {
         HStack(spacing: MindMorySpacing.sm) {
             ProgressView()
-                .tint(MindMoryColors.primaryGreen)
+                .tint(MindMoryColors.Surface.primary)
             Text("Finding a memory connected to this moment…")
-                .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .font(MindMoryTypography.bodyMedium)
+                .foregroundStyle(MindMoryColors.Content.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(MindMorySpacing.md)
-        .background(MindMoryColors.surface)
+        .background(MindMoryColors.Surface.surface)
         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
     }
 }

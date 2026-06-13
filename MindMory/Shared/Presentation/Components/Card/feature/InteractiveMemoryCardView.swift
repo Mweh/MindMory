@@ -63,6 +63,18 @@ struct InteractiveMemoryCardView: View {
     }
 }
 
+#if DEBUG
+struct InteractiveMemoryCardView_Previews: PreviewProvider {
+    static var previews: some View {
+        InteractiveMemoryCardView(memory: PreviewData.aromaMemory, assetLocalIdentifier: nil, debugImageURL: nil, side: .constant(.front), captionText: .constant(""), flipAction: {}, shareAction: {})
+            .padding()
+            .previewLayout(.sizeThatFits)
+    }
+}
+#endif
+
+// Simple interactive preview
+// Inline #Preview removed to avoid inline @State preview macro warning. Use the existing PreviewProvider above.
 private extension Comparable {
     func clamped(to limits: ClosedRange<Self>) -> Self {
         min(max(self, limits.lowerBound), limits.upperBound)

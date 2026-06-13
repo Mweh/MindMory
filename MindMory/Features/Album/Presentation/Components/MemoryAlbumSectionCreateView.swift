@@ -73,7 +73,7 @@ struct MemoryAlbumSectionCreateView: View {
             }
             .padding(MindMorySpacing.xl)
         }
-        .background(MindMoryColors.background.ignoresSafeArea())
+        .background(MindMoryColors.Surface.background.ignoresSafeArea())
         .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -90,9 +90,9 @@ struct MemoryAlbumSectionCreateView: View {
         VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
             layoutChips
 
-            Text("Pick a layout for your image section. Choose from horizontal, vertical, and mixed arrangements to match your story.")
+                Text("Pick a layout for your image section. Choose from horizontal, vertical, and mixed arrangements to match your story.")
                 .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .foregroundStyle(MindMoryColors.Content.secondary)
 
             layoutOptions
         }
@@ -102,7 +102,7 @@ struct MemoryAlbumSectionCreateView: View {
         VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
             Text("Customize text section")
                 .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.textPrimary)
+                .foregroundStyle(MindMoryColors.Content.primary)
 
             textTypeControls
             typographyControls
@@ -110,7 +110,7 @@ struct MemoryAlbumSectionCreateView: View {
             VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
                 Text("Preview")
                     .font(MindMoryTypography.bodySmall)
-                    .foregroundStyle(MindMoryColors.textPrimary)
+                    .foregroundStyle(MindMoryColors.Content.primary)
 
                 MemoryAlbumTextSectionRenderView(textSection: configuredTextSection, isPreview: true)
                     .frame(height: 180)
@@ -130,11 +130,11 @@ struct MemoryAlbumSectionCreateView: View {
     private var sectionTypeChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: MindMorySpacing.sm) {
-                FilterChip(title: "Image", isSelected: selectedSectionType == .image) {
+                FilterChip(title: "Image", systemImage: nil, isSelected: selectedSectionType == .image) {
                     selectedSectionType = .image
                 }
 
-                FilterChip(title: "Text", isSelected: selectedSectionType == .text) {
+                FilterChip(title: "Text", systemImage: nil, isSelected: selectedSectionType == .text) {
                     selectedSectionType = .text
                 }
             }
@@ -158,11 +158,10 @@ struct MemoryAlbumSectionCreateView: View {
 
             if textBlockType == .titleAndDescription {
                 HStack(spacing: MindMorySpacing.sm) {
-                    FilterChip(title: "Title first", isSelected: textIsTitleFirst) {
+                    FilterChip(title: "Title first", systemImage: nil, isSelected: textIsTitleFirst) {
                         textIsTitleFirst = true
                     }
-
-                    FilterChip(title: "Description first", isSelected: !textIsTitleFirst) {
+                    FilterChip(title: "Description first", systemImage: nil, isSelected: !textIsTitleFirst) {
                         textIsTitleFirst = false
                     }
                 }
@@ -172,17 +171,17 @@ struct MemoryAlbumSectionCreateView: View {
                 VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
                     Text("Title")
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
 
                     TextField("Enter title", text: $textTitle)
                         .focused($isTitleFocused)
                         .font(MindMoryTypography.bodyMedium)
                         .padding(MindMorySpacing.sm)
-                        .background(MindMoryColors.surface)
+                        .background(MindMoryColors.Surface.surface)
                         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                                .stroke(MindMoryColors.border)
+                                .stroke(MindMoryColors.Border.subtle)
                         )
                 }
             }
@@ -191,17 +190,17 @@ struct MemoryAlbumSectionCreateView: View {
                 VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
                     Text("Description")
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
 
                     TextField("Enter description", text: $textDescription, axis: .vertical)
                         .lineLimit(2...4)
                         .font(MindMoryTypography.bodyMedium)
                         .padding(MindMorySpacing.sm)
-                        .background(MindMoryColors.surface)
+                        .background(MindMoryColors.Surface.surface)
                         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                                .stroke(MindMoryColors.border)
+                                .stroke(MindMoryColors.Border.subtle)
                         )
                 }
             }
@@ -212,13 +211,13 @@ struct MemoryAlbumSectionCreateView: View {
         VStack(alignment: .leading, spacing: MindMorySpacing.md) {
             Text("Typography")
                 .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.textPrimary)
+                .foregroundStyle(MindMoryColors.Content.primary)
 
             if textBlockType != .descriptionOnly {
                 VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
                     Text("Title size: \(Int(titleSize))")
-                        .font(MindMoryTypography.caption)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .font(MindMoryTypography.bodySmall)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
 
                     Slider(value: $titleSize, in: 18...44, step: 1)
 
@@ -231,8 +230,8 @@ struct MemoryAlbumSectionCreateView: View {
             if textBlockType != .titleOnly {
                 VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
                     Text("Description size: \(Int(descriptionSize))")
-                        .font(MindMoryTypography.caption)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .font(MindMoryTypography.bodySmall)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
 
                     Slider(value: $descriptionSize, in: 12...28, step: 1)
 
@@ -274,20 +273,20 @@ struct MemoryAlbumSectionCreateView: View {
         VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
             if selectedSectionType == .image {
                 Text("Choose an image layout")
-                    .font(MindMoryTypography.headingLarge)
-                    .foregroundStyle(MindMoryColors.textPrimary)
+                    .font(MindMoryTypography.titleLarge)
+                    .foregroundStyle(MindMoryColors.Content.primary)
 
                 Text("Pick a layout and tap a preview to add an image section to your album.")
                     .font(MindMoryTypography.bodySmall)
-                    .foregroundStyle(MindMoryColors.textSecondary)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
             } else {
                 Text("Add a text section")
-                    .font(MindMoryTypography.headingLarge)
-                    .foregroundStyle(MindMoryColors.textPrimary)
+                    .font(MindMoryTypography.titleLarge)
+                    .foregroundStyle(MindMoryColors.Content.primary)
 
                 Text("Customize the title, description, and typography for this text block.")
                     .font(MindMoryTypography.bodySmall)
-                    .foregroundStyle(MindMoryColors.textSecondary)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
             }
         }
     }
@@ -300,14 +299,15 @@ struct MemoryAlbumSectionCreateView: View {
     ) -> some View where T: MemoryAlbumLabelable {
         VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
             Text(title)
-                .font(MindMoryTypography.caption)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .font(MindMoryTypography.bodySmall)
+                .foregroundStyle(MindMoryColors.Content.secondary)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: MindMorySpacing.sm) {
                     ForEach(Array(values), id: \.self) { value in
                         FilterChip(
                             title: value.label,
+                            systemImage: nil,
                             isSelected: selected == value
                         ) {
                             onSelect(value)
@@ -321,12 +321,12 @@ struct MemoryAlbumSectionCreateView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
             Text("Choose a section layout")
-                .font(MindMoryTypography.headingLarge)
-                .foregroundStyle(MindMoryColors.textPrimary)
+                .font(MindMoryTypography.titleLarge)
+                .foregroundStyle(MindMoryColors.Content.primary)
 
             Text("Select image or text section. Text sections are fully customizable through content, alignment, and typography controls.")
                 .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .foregroundStyle(MindMoryColors.Content.secondary)
         }
     }
 
@@ -338,6 +338,7 @@ struct MemoryAlbumSectionCreateView: View {
                 ForEach(1...5, id: \.self) { count in
                     FilterChip(
                         title: "\(count)",
+                        systemImage: nil,
                         isSelected: selectedLayoutCount == count
                     ) {
                         selectedLayoutCount = count
@@ -360,7 +361,7 @@ struct MemoryAlbumSectionCreateView: View {
                 // subtle divider between options
                 Rectangle()
                     .frame(height: 1)
-                    .foregroundStyle(MindMoryColors.border)
+                    .foregroundStyle(MindMoryColors.Border.subtle)
                     .opacity(0.25)
                     .frame(maxWidth: .infinity)
 
@@ -481,19 +482,19 @@ private struct OptionHeaderBar: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.caption)
+                    .font(MindMoryTypography.labelSmall)
                 Text(title)
-                    .font(MindMoryTypography.caption)
+                    .font(MindMoryTypography.labelSmall)
             }
             .frame(maxWidth: .infinity)
             .padding(10)
-            .background(isSelected ? MindMoryColors.primaryGreen : MindMoryColors.surface)
-            .foregroundStyle(isSelected ? MindMoryColors.surface : MindMoryColors.textPrimary)
-            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                    .stroke(MindMoryColors.border, lineWidth: isSelected ? 0 : 1)
-            )
+                .background(isSelected ? MindMoryColors.Surface.primary : MindMoryColors.Surface.surface)
+                .foregroundStyle(isSelected ? MindMoryColors.Content.inverse : MindMoryColors.Content.primary)
+                .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                        .stroke(MindMoryColors.Border.subtle, lineWidth: isSelected ? 0 : 1)
+                )
         }
     }
 
@@ -501,11 +502,11 @@ private struct OptionHeaderBar: View {
     private func capsulePill(icon: String, text: String, color: Color) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.caption2)
+                .font(MindMoryTypography.labelSmall)
                 .foregroundStyle(color)
 
             Text(text)
-                .font(MindMoryTypography.caption)
+                .font(MindMoryTypography.labelSmall)
                 .foregroundStyle(color)
         }
         .padding(.vertical, 6)
@@ -606,11 +607,11 @@ private struct OptionInfoBar: View {
     private var descriptorColor: Color {
         switch layoutDescriptor {
         case "Vertical":
-            return MindMoryColors.neutral
+            return MindMoryColors.Content.secondary
         case "Horizontal":
-            return MindMoryColors.primaryGreen
+            return MindMoryColors.Content.link
         default:
-            return MindMoryColors.mutedIndigo
+            return MindMoryColors.Content.tertiary
         }
     }
 
@@ -620,50 +621,49 @@ private struct OptionInfoBar: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(template.title)
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.primaryGreen)
+                        .foregroundStyle(MindMoryColors.Content.link)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                         .layoutPriority(1)
 
                     Text(layoutDescriptor.uppercased())
-                        .font(MindMoryTypography.caption)
+                        .font(MindMoryTypography.labelSmall)
                         .foregroundStyle(descriptorColor)
-                        .fontWeight(.semibold)
                 }
 
                 Spacer()
 
-                badgePill(icon: "photo.on.rectangle", text: "\(template.layoutCount) images", tint: MindMoryColors.infoSurface)
+                badgePill(icon: "photo.on.rectangle", text: "\(template.layoutCount) images", tint: MindMoryColors.Content.tertiary)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: MindMorySpacing.sm) {
                     if columnCount > 1 {
-                        capsulePill(icon: "square.grid.2x2", text: "\(columnCount) cols", color: MindMoryColors.primaryGreen)
+                        capsulePill(icon: "square.grid.2x2", text: "\(columnCount) cols", color: MindMoryColors.Content.link)
                     }
 
-                    if portraitCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.portrait.iconName, text: "\(portraitCount)", color: MindMoryColors.primaryGreen) }
-                    if landscapeCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.landscape.iconName, text: "\(landscapeCount)", color: MindMoryColors.mutedIndigo) }
-                    if squareCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.square.iconName, text: "\(squareCount)", color: MindMoryColors.neutral) }
-                    if flexibleCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.flexible.iconName, text: "\(flexibleCount)", color: MindMoryColors.textSecondary) }
+                    if portraitCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.portrait.iconName, text: "\(portraitCount)", color: MindMoryColors.Content.link) }
+                    if landscapeCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.landscape.iconName, text: "\(landscapeCount)", color: MindMoryColors.Content.tertiary) }
+                    if squareCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.square.iconName, text: "\(squareCount)", color: MindMoryColors.Content.secondary) }
+                    if flexibleCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.flexible.iconName, text: "\(flexibleCount)", color: MindMoryColors.Content.secondary) }
                 }
                 .padding(.vertical, MindMorySpacing.xs)
             }
 
             if let firstColumnText {
                 Text(firstColumnText)
-                    .font(MindMoryTypography.caption)
-                    .foregroundStyle(MindMoryColors.mutedIndigo)
+                    .font(MindMoryTypography.labelSmall)
+                    .foregroundStyle(MindMoryColors.Content.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
                     .lineLimit(2)
             }
         }
         .padding(14)
-        .background(MindMoryColors.infoSurface)
+        .background(MindMoryColors.Surface.surface)
         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                .stroke(MindMoryColors.primaryGreen.opacity(0.18))
+                .stroke(MindMoryColors.Surface.primary.opacity(0.18))
         )
     }
 
@@ -671,11 +671,11 @@ private struct OptionInfoBar: View {
     private func badgePill(icon: String, text: String, tint: Color) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.caption2)
+                .font(MindMoryTypography.labelSmall)
                 .foregroundStyle(tint)
 
             Text(text)
-                .font(MindMoryTypography.caption)
+                .font(MindMoryTypography.labelSmall)
                 .foregroundStyle(tint)
         }
         .padding(.vertical, 6)
@@ -692,7 +692,7 @@ private struct OptionInfoBar: View {
                 .foregroundStyle(color)
 
             Text(text)
-                .font(MindMoryTypography.caption)
+                .font(MindMoryTypography.labelSmall)
                 .foregroundStyle(color)
         }
         .padding(.vertical, 6)

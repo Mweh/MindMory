@@ -30,12 +30,12 @@ struct ShareMemoryPreviewView: View {
                 VStack(spacing: MindMorySpacing.lg) {
                     VStack(spacing: MindMorySpacing.xs) {
                         Text("Photo + Caption + Memory")
-                            .font(MindMoryTypography.headingLarge)
-                            .foregroundStyle(MindMoryColors.textPrimary)
+                            .font(MindMoryTypography.headline)
+                            .foregroundStyle(MindMoryColors.Content.primary)
 
                         Text("Your photo card and note are ready to share.")
                             .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.textSecondary)
+                            .foregroundStyle(MindMoryColors.Content.secondary)
                     }
                     .multilineTextAlignment(.center)
 
@@ -44,20 +44,20 @@ struct ShareMemoryPreviewView: View {
                     if let renderError {
                         Text(renderError)
                             .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.error)
+                            .foregroundStyle(MindMoryColors.Feedback.error)
                     }
 
                     shareControl
                 }
                 .padding(MindMorySpacing.xl)
             }
-            .background(MindMoryColors.background.ignoresSafeArea())
+            .background(MindMoryColors.Surface.background.ignoresSafeArea())
             .navigationTitle("Share Memory")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done", action: dismissAction)
-                        .foregroundStyle(MindMoryColors.primaryGreen)
+                        .foregroundStyle(MindMoryColors.Content.link)
                 }
             }
         }
@@ -75,21 +75,21 @@ struct ShareMemoryPreviewView: View {
                 )
             ) {
                 Text("Share Memory")
-                    .font(MindMoryTypography.button)
-                    .foregroundStyle(MindMoryColors.primaryGreen)
+                    .font(MindMoryTypography.labelLarge)
+                    .foregroundStyle(MindMoryColors.Surface.primary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
-                    .background(MindMoryColors.background)
+                    .background(MindMoryColors.Surface.background)
                     .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                            .stroke(MindMoryColors.primaryGreen, lineWidth: 1)
+                            .stroke(MindMoryColors.Surface.primary, lineWidth: 1)
                     }
             }
-        } else {
+            } else {
             ProgressView("Preparing image…")
                 .font(MindMoryTypography.bodyMedium)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .foregroundStyle(MindMoryColors.Content.secondary)
         }
     }
 

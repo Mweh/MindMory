@@ -17,3 +17,9 @@ struct CardHighlightOverlay: View {
         .allowsHitTesting(false)
     }
 }
+
+#Preview {
+    CardHighlightOverlay(dragOffset: .init(width: 10, height: 8), isDragging: true)
+        .frame(width: 300, height: 300)
+        .background(MindMoryColors.Surface.background)
+}

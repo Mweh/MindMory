@@ -14,14 +14,14 @@ struct MemoryCardBackView: View {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 HStack(alignment: .top) {
                     Text("Take yourself back.")
-                        .font(MindMoryTypography.headingLarge)
-                        .foregroundStyle(MindMoryColors.textPrimary)
+                        .font(MindMoryTypography.titleMedium)
+                        .foregroundStyle(MindMoryColors.Content.primary)
 
                     Spacer()
 
                     Image(systemName: memory.isFavorite ? "star.fill" : "star")
-                        .font(.title3)
-                        .foregroundStyle(MindMoryColors.primaryGreen)
+                        .font(MindMoryTypography.labelMedium)
+                        .foregroundStyle(MindMoryColors.Surface.primary)
                 }
 
                 VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
@@ -29,14 +29,14 @@ struct MemoryCardBackView: View {
                         if captionText.isEmpty {
                             Text("Write a little note about this photo.")
                                 .font(MindMoryTypography.bodyMedium)
-                                .foregroundStyle(MindMoryColors.textSecondary.opacity(0.65))
+                                    .foregroundStyle(MindMoryColors.Content.secondary.opacity(0.65))
                                 .padding(.top, 8)
                                 .padding(.leading, 5)
                         }
 
                         TextEditor(text: $captionText)
                             .font(MindMoryTypography.bodyMedium)
-                            .foregroundStyle(MindMoryColors.textPrimary)
+                            .foregroundStyle(MindMoryColors.Content.primary)
                             .lineSpacing(4)
                             .scrollContentBackground(.hidden)
                             .background(Color.clear)
@@ -44,7 +44,7 @@ struct MemoryCardBackView: View {
                     }
 
                     Divider()
-                        .overlay(MindMoryColors.primaryGreen.opacity(0.26))
+                        .overlay(MindMoryColors.Surface.primary.opacity(0.26))
                 }
 
                 Spacer(minLength: MindMorySpacing.md)
@@ -56,17 +56,17 @@ struct MemoryCardBackView: View {
                             Text(locationName)
                         }
                     }
-                    .font(MindMoryTypography.caption)
-                    .foregroundStyle(MindMoryColors.textSecondary)
+                    .font(MindMoryTypography.bodySmall)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
 
                     Spacer()
 
                     Button(action: shareAction) {
                         Image(systemName: "square.and.arrow.up")
-                            .font(.title3)
-                            .foregroundStyle(MindMoryColors.primaryGreen)
+                            .font(MindMoryTypography.labelMedium)
+                            .foregroundStyle(MindMoryColors.Surface.primary)
                             .frame(width: 48, height: 48)
-                            .background(Color.white.opacity(0.72))
+                            .background(MindMoryColors.Content.inverse.opacity(0.72))
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
@@ -77,28 +77,44 @@ struct MemoryCardBackView: View {
         .frame(maxWidth: .infinity, minHeight: 510, alignment: .topLeading)
         .background(backBackground)
         .clipShape(cardShape)
-        .overlay { cardShape.stroke(MindMoryColors.border.opacity(0.7), lineWidth: 1) }
+        .overlay { cardShape.stroke(MindMoryColors.Border.subtle.opacity(0.7), lineWidth: 1) }
     }
 
     private var botanicalDecoration: some View {
         VStack(spacing: -6) {
             Image(systemName: "leaf.fill")
-                .font(.system(size: 54))
+                .font(MindMoryTypography.display)
                 .rotationEffect(.degrees(-18))
             Image(systemName: "leaf.fill")
-                .font(.system(size: 36))
+                .font(MindMoryTypography.titleLarge)
                 .rotationEffect(.degrees(26))
                 .offset(x: -18)
         }
-        .foregroundStyle(MindMoryColors.primaryGreen.opacity(0.10))
+        .foregroundStyle(MindMoryColors.Surface.primary.opacity(0.10))
         .allowsHitTesting(false)
     }
 
     private var backBackground: some View {
-        LinearGradient(colors: [Color(hex: "#F6F2E4"), Color(hex: "#EAF1E9"), Color(hex: "#FFF7E6")], startPoint: .topLeading, endPoint: .bottomTrailing)
+        LinearGradient(
+            colors: [MindMoryColors.Surface.surface, MindMoryColors.Surface.background, MindMoryColors.Surface.surface],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 
     private var cardShape: RoundedRectangle {
         RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous)
     }
 }
+
+#if DEBUG
+struct MemoryCardBackView_Previews: PreviewProvider {
+    static var previews: some View {
+        MemoryCardBackView(memory: PreviewData.aromaMemory, captionText: .constant("Sample caption"), shareAction: {})
+            .padding()
+            .previewLayout(.sizeThatFits)
+    }
+}
+#endif
+
+// Inline #Preview removed to avoid inline @State preview macro warning. Use the existing PreviewProvider above.

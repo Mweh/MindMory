@@ -5,22 +5,12 @@ struct ContextualTriggersView: View {
     @ObservedObject var viewModel: ContextualTriggersViewModel
 
     var body: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                titleSection
-                triggerTogglesSection
-                wordingPreferenceSection
-                saveButton
-            }
-            .toggleStyle(
-                SwitchToggleStyle(tint: MindMoryColors.primaryGreen)
-            )
-        }
+        SettingsNotificationTriggersCard(viewModel: viewModel)
     }
 
     private var titleSection: some View {
         Text("Contextual Triggers")
-            .font(MindMoryTypography.headingMedium)
+            .font(MindMoryTypography.titleMedium)
     }
 
     private var triggerTogglesSection: some View {
@@ -55,17 +45,17 @@ struct ContextualTriggersView: View {
     private var wordingPreferenceSection: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
             Text("Notification wording preference")
-                .font(MindMoryTypography.caption)
+                .font(MindMoryTypography.bodySmall)
 
             Text(viewModel.settings.notificationWordingPreference)
                 .font(MindMoryTypography.bodyMedium)
-                .foregroundStyle(MindMoryColors.primaryGreen)
+                .foregroundStyle(MindMoryColors.Surface.primary)
         }
     }
 
     private var saveButton: some View {
         Button("Save trigger preferences", action: viewModel.save)
-            .font(MindMoryTypography.bodyMedium)
-            .foregroundStyle(MindMoryColors.primaryGreen)
+            .font(MindMoryTypography.labelLarge)
+            .foregroundStyle(MindMoryColors.Surface.primary)
     }
 }

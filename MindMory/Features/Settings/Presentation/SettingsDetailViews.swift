@@ -5,7 +5,7 @@ private func settingsDetailPage<Content: View>(@ViewBuilder content: () -> Conte
         content()
             .padding(.horizontal, MindMorySpacing.lg)
     }
-    .background(MindMoryColors.background.ignoresSafeArea())
+    .background(MindMoryColors.Surface.background.ignoresSafeArea())
 }
 
 struct LocationSettingsDetailView: View {
@@ -28,56 +28,15 @@ struct LocationSettingsDetailView: View {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
                     Text("Point of interest filter")
-                        .font(MindMoryTypography.headingMedium)
-                        .foregroundStyle(MindMoryColors.textPrimary)
+                        .font(MindMoryTypography.titleMedium)
+                        .foregroundStyle(MindMoryColors.Content.primary)
 
                     Text("When enabled, location reminders will use the POI categories you select.")
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
                 }
 
-                AppCard {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                        HStack {
-                            Text(selectedCategoryCountText)
-                                .font(MindMoryTypography.bodyMedium)
-                                .foregroundStyle(MindMoryColors.textPrimary)
-
-                            Spacer()
-
-                            if !viewModel.preferences.location.selectedCategories.isEmpty {
-                                SettingsSecondaryPillButton(
-                                    title: "Clear",
-                                    action: viewModel.clearLocationCategories
-                                )
-                            }
-                        }
-
-                        Divider()
-                            .overlay(MindMoryColors.border)
-
-                        LazyVGrid(columns: columns, spacing: MindMorySpacing.sm) {
-                            ForEach(PointOfInterestCategory.allCases) { category in
-                                SettingsSelectableTile(
-                                    title: category.title,
-                                    isSelected: viewModel.preferences.location.selectedCategories.contains(category),
-                                    action: {
-                                        viewModel.toggleLocationCategory(category)
-                                    }
-                                )
-                            }
-                        }
-
-                        if viewModel.preferences.location.selectedCategories.isEmpty {
-                            Text("Select at least one category to keep location-based reminders active.")
-                                .font(MindMoryTypography.bodySmall)
-                                .foregroundStyle(MindMoryColors.error)
-                        }
-
-                        Divider()
-                            .overlay(MindMoryColors.border)
-                    }
-                }
+                SettingsPOIFilterCardView(viewModel: viewModel)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -93,60 +52,15 @@ struct ScheduleSettingsDetailView: View {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
                     Text("Schedule filter")
-                        .font(MindMoryTypography.headingMedium)
-                        .foregroundStyle(MindMoryColors.textPrimary)
+                        .font(MindMoryTypography.titleMedium)
+                        .foregroundStyle(MindMoryColors.Content.primary)
 
                     Text("Choose the calendar event types and rules that should trigger reminders.")
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
                 }
 
-                AppCard {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                        HStack {
-                            Text(selectedScheduleCountText)
-                                .font(MindMoryTypography.bodyMedium)
-                                .foregroundStyle(MindMoryColors.textPrimary)
-
-                            Spacer()
-
-                            if !viewModel.preferences.schedule.selectedCategories.isEmpty {
-                                SettingsSecondaryPillButton(
-                                    title: "Clear",
-                                    action: viewModel.clearScheduleCategories
-                                )
-                            }
-                        }
-
-                        Divider()
-                            .overlay(MindMoryColors.border)
-
-                        ForEach(CalendarContextCategory.allCases) { category in
-                            SettingsSelectableRow(
-                                title: category.title,
-                                subtitle: category.description,
-                                isSelected: viewModel.preferences.schedule.selectedCategories.contains(category),
-                                action: {
-                                    viewModel.toggleScheduleCategory(category)
-                                }
-                            )
-
-                            if category.id != CalendarContextCategory.allCases.last?.id {
-                                Divider()
-                                    .overlay(MindMoryColors.border)
-                            }
-                        }
-
-                        if viewModel.preferences.schedule.selectedCategories.isEmpty {
-                            Text("Select at least one calendar trigger if you want schedule reminders to stay active.")
-                                .font(MindMoryTypography.bodySmall)
-                                .foregroundStyle(MindMoryColors.error)
-                        }
-
-                        Divider()
-                            .overlay(MindMoryColors.border)
-                    }
-                }
+                SettingsScheduleFilterCardView(viewModel: viewModel)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -167,167 +81,40 @@ struct CustomizePreferencesDetailView: View {
             VStack(alignment: .leading, spacing: MindMorySpacing.md) {
                 VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
                     Text("Location reminder control")
-                        .font(MindMoryTypography.headingMedium)
+                        .font(MindMoryTypography.titleMedium)
 
                     Text("Choose how location reminders trigger when you arrive or stay.")
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
                 }
 
-                AppCard {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                        ForEach(LocationNotificationTiming.allCases) { option in
-                            RadioSelectionRow(
-                            title: option.title,
-                            subtitle: option.subtitle,
-                            isSelected: selectedNotificationTiming == option,
-                            action: {
-                                setNotificationTiming(option)
-                            }
-                        )
-
-                            if option.id != LocationNotificationTiming.allCases.last?.id {
-                                Divider()
-                                    .overlay(MindMoryColors.border)
-                            }
-                        }
-
-                        Divider()
-                            .overlay(MindMoryColors.border)
-
-                        SettingsMenuPicker(
-                            title: "Repeat visits",
-                            selectionTitle: viewModel.preferences.location.cooldown.title
-                        ) {
-                            Picker("Repeat visits", selection: $viewModel.preferences.location.cooldown) {
-                                ForEach(LocationVisitCooldown.allCases) { option in
-                                    Text(option.title).tag(option)
-                                }
-                            }
-                        }
-
-                        Toggle("Mention the place name", isOn: $viewModel.preferences.message.includesPlaceName)
-                            .font(MindMoryTypography.bodyLarge)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-                            .toggleStyle(SwitchToggleStyle(tint: MindMoryColors.primaryGreen))
-                    }
-                }
+                SettingsCustomizeLocationControlCardView(viewModel: viewModel)
 
                 VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
                     Text("Calendar reminder control")
-                        .font(MindMoryTypography.headingMedium)
+                        .font(MindMoryTypography.titleMedium)
 
                     Text("Adjust when calendar reminders should appear and what events to include.")
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
                 }
                 .padding(.bottom, MindMorySpacing.xs)
 
-                AppCard {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                        SettingsMenuPicker(
-                            title: "Reminder timing",
-                            selectionTitle: viewModel.preferences.schedule.leadTime.title
-                        ) {
-                            Picker("Reminder timing", selection: $viewModel.preferences.schedule.leadTime) {
-                                ForEach(ScheduleLeadTime.allCases) { option in
-                                    Text(option.title).tag(option)
-                                }
-                            }
-                        }
-
-                        Toggle("Include all-day events", isOn: $viewModel.preferences.schedule.includesAllDayEvents)
-                            .font(MindMoryTypography.bodyLarge)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-                            .toggleStyle(SwitchToggleStyle(tint: MindMoryColors.primaryGreen))
-
-                        Toggle("Include busy calendar blocks", isOn: $viewModel.preferences.schedule.includesBusyCalendarBlocks)
-                            .font(MindMoryTypography.bodyLarge)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-                            .toggleStyle(SwitchToggleStyle(tint: MindMoryColors.primaryGreen))
-
-                        Toggle("Mention the event title", isOn: $viewModel.preferences.message.includesEventTitle)
-                            .font(MindMoryTypography.bodyLarge)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-                            .toggleStyle(SwitchToggleStyle(tint: MindMoryColors.primaryGreen))
-                    }
-                    .disabled(!viewModel.preferences.schedule.usesCalendarContext)
-                    .opacity(viewModel.preferences.schedule.usesCalendarContext ? 1 : 0.6)
-                }
+                SettingsCustomizeCalendarControlCardView(viewModel: viewModel)
 
                 VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
                     Text("Notification control")
-                        .font(MindMoryTypography.headingMedium)
-                        .foregroundStyle(MindMoryColors.textPrimary)
+                        .font(MindMoryTypography.titleMedium)
+                        .foregroundStyle(MindMoryColors.Content.primary)
 
                     Text("Choose how location reminders trigger when you arrive or stay.")
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
                 }
 
-                AppCard {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                        SettingsMenuPicker(
-                            title: "Repeat interval",
-                            selectionTitle: viewModel.preferences.delivery.repeatInterval.title
-                        ) {
-                            Picker("Repeat interval", selection: $viewModel.preferences.delivery.repeatInterval) {
-                                ForEach(ReminderRepeatInterval.allCases) { option in
-                                    Text(option.title).tag(option)
-                                }
-                            }
-                        }
-                        .opacity(viewModel.preferences.delivery.mode == .oneTime ? 0.45 : 1)
-                        .disabled(viewModel.preferences.delivery.mode == .oneTime)
+                SettingsNotificationControlCardView(viewModel: viewModel)
 
-                        SettingsMenuPicker(
-                            title: "Daily reminder cap",
-                            selectionTitle: viewModel.preferences.delivery.dailyLimit.title
-                        ) {
-                            Picker("Daily reminder cap", selection: $viewModel.preferences.delivery.dailyLimit) {
-                                ForEach(DailyReminderLimit.allCases) { option in
-                                    Text(option.title).tag(option)
-                                }
-                            }
-                        }
-
-                        SettingsMenuPicker(
-                            title: "Sound",
-                            selectionTitle: viewModel.preferences.delivery.soundStyle.title
-                        ) {
-                            Picker("Sound", selection: $viewModel.preferences.delivery.soundStyle) {
-                                ForEach(ReminderSoundStyle.allCases) { option in
-                                    Text(option.title).tag(option)
-                                }
-                            }
-                        }
-
-                        Toggle("Respect Focus mode", isOn: $viewModel.preferences.delivery.respectsFocusMode)
-                            .font(MindMoryTypography.bodyLarge)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-                            .toggleStyle(SwitchToggleStyle(tint: MindMoryColors.primaryGreen))
-                    }
-                }
-
-                AppCard {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                        ForEach(ReminderMessageTone.allCases) { tone in
-                            RadioSelectionRow(
-                                title: tone.title,
-                                subtitle: tone.example,
-                                isSelected: viewModel.preferences.message.tone == tone,
-                                action: {
-                                    viewModel.preferences.message.tone = tone
-                                }
-                            )
-
-                            if tone.id != ReminderMessageTone.allCases.last?.id {
-                                Divider()
-                                    .overlay(MindMoryColors.border)
-                            }
-                        }
-                    }
-                }
+                SettingsMessageToneCardView(viewModel: viewModel)
 
             }
         }
@@ -358,93 +145,9 @@ struct NotificationDeliverySettingsView: View {
                     subtitle: "Decide how often reminders can appear, how long the app waits before repeating, and whether sounds or focus-mode rules should shape the experience."
                 )
 
-                AppCard {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                        Text("Reminder cadence")
-                            .font(MindMoryTypography.headingMedium)
-                            .foregroundStyle(MindMoryColors.textPrimary)
+                SettingsReminderCadenceCardView(viewModel: viewModel)
 
-                        ForEach(NotificationDeliveryMode.allCases) { option in
-                            RadioSelectionRow(
-                            title: option.title,
-                            subtitle: option.description,
-                            isSelected: viewModel.preferences.delivery.mode == option,
-                            action: {
-                                viewModel.preferences.delivery.mode = option
-                            }
-                        )
-
-                            if option.id != NotificationDeliveryMode.allCases.last?.id {
-                                Divider()
-                                    .overlay(MindMoryColors.border)
-                            }
-                        }
-                    }
-                }
-
-                AppCard {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                        Text("Limits & delivery details")
-                            .font(MindMoryTypography.headingMedium)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-
-                        SettingsMenuPicker(
-                            title: "Repeat interval",
-                            selectionTitle: viewModel.preferences.delivery.repeatInterval.title
-                        ) {
-                            Picker("Repeat interval", selection: $viewModel.preferences.delivery.repeatInterval) {
-                                ForEach(ReminderRepeatInterval.allCases) { option in
-                                    Text(option.title).tag(option)
-                                }
-                            }
-                        }
-                        .opacity(viewModel.preferences.delivery.mode == .oneTime ? 0.45 : 1)
-                        .disabled(viewModel.preferences.delivery.mode == .oneTime)
-
-                        SettingsMenuPicker(
-                            title: "Daily reminder cap",
-                            selectionTitle: viewModel.preferences.delivery.dailyLimit.title
-                        ) {
-                            Picker("Daily reminder cap", selection: $viewModel.preferences.delivery.dailyLimit) {
-                                ForEach(DailyReminderLimit.allCases) { option in
-                                    Text(option.title).tag(option)
-                                }
-                            }
-                        }
-
-                        SettingsMenuPicker(
-                            title: "Preferred window",
-                            selectionTitle: viewModel.preferences.delivery.preferredWindow.title
-                        ) {
-                            Picker("Preferred window", selection: $viewModel.preferences.delivery.preferredWindow) {
-                                ForEach(PreferredDeliveryWindow.allCases) { option in
-                                    Text(option.title).tag(option)
-                                }
-                            }
-                        }
-
-                        SettingsMenuPicker(
-                            title: "Sound",
-                            selectionTitle: viewModel.preferences.delivery.soundStyle.title
-                        ) {
-                            Picker("Sound", selection: $viewModel.preferences.delivery.soundStyle) {
-                                ForEach(ReminderSoundStyle.allCases) { option in
-                                    Text(option.title).tag(option)
-                                }
-                            }
-                        }
-
-                        Toggle("Show message preview text", isOn: $viewModel.preferences.delivery.showsPreviewText)
-                            .font(MindMoryTypography.bodyLarge)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-                            .toggleStyle(SwitchToggleStyle(tint: MindMoryColors.primaryGreen))
-
-                        Toggle("Respect Focus mode", isOn: $viewModel.preferences.delivery.respectsFocusMode)
-                            .font(MindMoryTypography.bodyLarge)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-                            .toggleStyle(SwitchToggleStyle(tint: MindMoryColors.primaryGreen))
-                    }
-                }
+                SettingsNotificationControlCardView(viewModel: viewModel)
             }
         }
         .navigationTitle("Delivery behavior")
@@ -463,66 +166,11 @@ struct MessageSettingsDetailView: View {
                     subtitle: "Personalize how a reminder sounds and how much context it shows, while still letting MindMory stay adaptive in the background."
                 )
 
-                AppCard {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                        Text("Tone")
-                            .font(MindMoryTypography.headingMedium)
-                            .foregroundStyle(MindMoryColors.textPrimary)
+                SettingsMessageToneCardView(viewModel: viewModel)
 
-                        ForEach(ReminderMessageTone.allCases) { tone in
-                            RadioSelectionRow(
-                                title: tone.title,
-                                subtitle: tone.example,
-                                isSelected: viewModel.preferences.message.tone == tone,
-                                action: {
-                                    viewModel.preferences.message.tone = tone
-                                }
-                            )
+                SettingsMessageContextCardView(viewModel: viewModel)
 
-                            if tone.id != ReminderMessageTone.allCases.last?.id {
-                                Divider()
-                                    .overlay(MindMoryColors.border)
-                            }
-                        }
-                    }
-                }
-
-                AppCard {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                        Text("Included context")
-                            .font(MindMoryTypography.headingMedium)
-
-                        Toggle("Mention the place name when available", isOn: $viewModel.preferences.message.includesPlaceName)
-                            .font(MindMoryTypography.bodyLarge)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-                            .toggleStyle(SwitchToggleStyle(tint: MindMoryColors.primaryGreen))
-
-                        Toggle("Mention the event title when available", isOn: $viewModel.preferences.message.includesEventTitle)
-                            .font(MindMoryTypography.bodyLarge)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-                            .toggleStyle(SwitchToggleStyle(tint: MindMoryColors.primaryGreen))
-
-                        Toggle("Explain why the reminder appeared", isOn: $viewModel.preferences.message.explainsTriggerReason)
-                            .font(MindMoryTypography.bodyLarge)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-                            .toggleStyle(SwitchToggleStyle(tint: MindMoryColors.primaryGreen))
-                    }
-                }
-
-                AppCard {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-                        Text("Preview")
-                            .font(MindMoryTypography.headingMedium)
-
-                        Text(viewModel.sampleNotificationTitle)
-                            .font(MindMoryTypography.caption)
-                            .foregroundStyle(MindMoryColors.textSecondary)
-
-                        Text(viewModel.sampleNotificationBody)
-                            .font(MindMoryTypography.bodyLarge)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-                    }
-                }
+                SettingsMessagePreviewCardView(viewModel: viewModel)
             }
         }
         .navigationTitle("Message style")
@@ -530,24 +178,24 @@ struct MessageSettingsDetailView: View {
     }
 }
 
-private struct SettingsDetailHeader: View {
+struct SettingsDetailHeader: View {
     let title: String
     let subtitle: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
             Text(title)
-                .font(MindMoryTypography.headingLarge)
-                .foregroundStyle(MindMoryColors.textPrimary)
+                .font(MindMoryTypography.titleLarge)
+                .foregroundStyle(MindMoryColors.Content.primary)
 
             Text(subtitle)
                 .font(MindMoryTypography.bodyMedium)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .foregroundStyle(MindMoryColors.Content.secondary)
         }
     }
 }
 
-private struct SettingsSelectableTile: View {
+struct SettingsSelectableTile: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
@@ -556,26 +204,26 @@ private struct SettingsSelectableTile: View {
         Button(action: action) {
             VStack(alignment: .center, spacing: MindMorySpacing.xs) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(isSelected ? MindMoryColors.background : MindMoryColors.primaryGreen)
+                    .font(MindMoryTypography.labelSmall)
+                    .foregroundStyle(isSelected ? MindMoryColors.Content.inverse : MindMoryColors.Content.link)
 
                 Text(title)
                     .font(MindMoryTypography.bodyMedium)
-                    .foregroundStyle(isSelected ? MindMoryColors.background : MindMoryColors.textPrimary)
+                    .foregroundStyle(isSelected ? MindMoryColors.Content.inverse : MindMoryColors.Content.primary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
             .frame(maxWidth: .infinity, minHeight: 90, alignment: .center)
             .padding(.vertical, MindMorySpacing.sm)
             .padding(.horizontal, MindMorySpacing.md)
-            .background(isSelected ? MindMoryColors.primaryGreen : MindMoryColors.surface)
+            .background(isSelected ? MindMoryColors.Surface.primary : MindMoryColors.Surface.surface)
             .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 }
 
-private struct SettingsSelectableRow: View {
+struct SettingsSelectableRow: View {
     let title: String
     let subtitle: String
     let isSelected: Bool
@@ -587,18 +235,18 @@ private struct SettingsSelectableRow: View {
                 VStack(alignment: .leading, spacing: MindMorySpacing.xxs) {
                     Text(title)
                         .font(MindMoryTypography.bodyMedium)
-                        .foregroundStyle(MindMoryColors.textPrimary)
+                        .foregroundStyle(MindMoryColors.Content.primary)
 
                     Text(subtitle)
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
                 }
 
                 Spacer(minLength: MindMorySpacing.md)
 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(isSelected ? MindMoryColors.primaryGreen : MindMoryColors.border)
+                    .font(MindMoryTypography.labelSmall)
+                    .foregroundStyle(isSelected ? MindMoryColors.Content.link : MindMoryColors.Border.subtle)
             }
         }
         .buttonStyle(.plain)
@@ -606,7 +254,7 @@ private struct SettingsSelectableRow: View {
 }
 
 
-private struct SettingsMenuPicker<PickerContent: View>: View {
+struct SettingsMenuPicker<PickerContent: View>: View {
     let title: String
     let selectionTitle: String
     @ViewBuilder let pickerContent: () -> PickerContent
@@ -626,11 +274,11 @@ private struct SettingsMenuPicker<PickerContent: View>: View {
             VStack(alignment: .leading, spacing: MindMorySpacing.xxs) {
                 Text(title)
                     .font(MindMoryTypography.bodyMedium)
-                    .foregroundStyle(MindMoryColors.textPrimary)
+                    .foregroundStyle(MindMoryColors.Content.primary)
 
                 Text(selectionTitle)
                     .font(MindMoryTypography.bodySmall)
-                    .foregroundStyle(MindMoryColors.textSecondary)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
             }
 
             Spacer(minLength: MindMorySpacing.md)
@@ -642,17 +290,17 @@ private struct SettingsMenuPicker<PickerContent: View>: View {
     }
 }
 
-private struct SettingsSecondaryPillButton: View {
+struct SettingsSecondaryPillButton: View {
     let title: String
     let action: () -> Void
 
     var body: some View {
         Button(title, action: action)
-            .font(MindMoryTypography.caption)
-            .foregroundStyle(MindMoryColors.primaryGreen)
+            .font(MindMoryTypography.labelSmall)
+            .foregroundStyle(MindMoryColors.Content.link)
             .padding(.horizontal, MindMorySpacing.sm)
             .padding(.vertical, MindMorySpacing.xs)
-            .background(MindMoryColors.surface)
+            .background(MindMoryColors.Surface.surface)
             .clipShape(Capsule())
             .buttonStyle(.plain)
     }
