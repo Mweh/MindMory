@@ -16,7 +16,7 @@ struct MemoryDetailView: View {
             }
             .padding(MindMorySpacing.xl)
         }
-        .background(MindMoryColors.background.ignoresSafeArea())
+        .background(MindMoryColors.Surface.background.ignoresSafeArea())
     }
 
     private var heroImage: some View {
@@ -31,11 +31,11 @@ struct MemoryDetailView: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
                 Text(viewModel.memory.title)
-                    .font(MindMoryTypography.headingLarge)
+                    .font(MindMoryTypography.titleLarge)
 
                 Text(viewModel.memory.dateText)
                     .font(MindMoryTypography.bodySmall)
-                    .foregroundStyle(MindMoryColors.textSecondary)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
 
                 locationLabel
             }
@@ -51,22 +51,22 @@ struct MemoryDetailView: View {
         if let locationName = viewModel.memory.locationName {
             Label(locationName, systemImage: "mappin.circle")
                 .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.primaryGreen)
+                .foregroundStyle(MindMoryColors.Surface.primary)
         }
     }
 
     private var favoriteButton: some View {
         Button(action: viewModel.toggleFavorite) {
-            Image(systemName: viewModel.memory.isFavorite ? "star.fill" : "star")
-                .font(.title2)
-                .foregroundStyle(MindMoryColors.primaryGreen)
-        }
+        Image(systemName: viewModel.memory.isFavorite ? "star.fill" : "star")
+        .font(MindMoryTypography.labelLarge)
+        .foregroundStyle(MindMoryColors.Surface.primary)
+    }
     }
 
     private var subtitleSection: some View {
         Text(viewModel.memory.subtitle)
             .font(MindMoryTypography.bodyLarge)
-            .foregroundStyle(MindMoryColors.textPrimary)
+            .foregroundStyle(MindMoryColors.Content.primary)
     }
 
     private var journalSection: some View {

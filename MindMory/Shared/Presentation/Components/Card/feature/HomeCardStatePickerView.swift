@@ -13,6 +13,16 @@ struct HomeCardStatePickerView: View {
     }
 }
 
+#if DEBUG
+struct HomeCardStatePickerView_Previews: PreviewProvider {
+    static var previews: some View {
+        HomeCardStatePickerView(selectedState: .constant(.normal))
+            .padding()
+            .previewLayout(.sizeThatFits)
+    }
+}
+#endif
+
 #Preview {
     @Previewable @State var selectedState: HomeCardState = .normal
     Form { HomeCardStatePickerView(selectedState: $selectedState) }

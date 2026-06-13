@@ -6,13 +6,14 @@ struct ContextualMemoryAssetImageView: View {
 
     @State private var image: UIImage?
     @State private var requestID: PHImageRequestID?
+    @Environment(\.displayScale) private var displayScale
 
     var body: some View {
-        ZStack {
-            MemoryImagePlaceholderView(imageName: "")
+        GeometryReader { proxy in
+            ZStack {
+                MemoryImagePlaceholderView(imageName: "")
 
-            if let image {
-                GeometryReader { proxy in
+                if let image {
                     Image(uiImage: image)
                         .resizable()
                         .scaledToFill()
@@ -20,18 +21,18 @@ struct ContextualMemoryAssetImageView: View {
                         .clipped()
                 }
             }
-        }
-        .task(id: assetLocalIdentifier) {
-            requestImage()
-        }
-        .onDisappear {
-            if let requestID {
-                PHImageManager.default().cancelImageRequest(requestID)
+            .task {
+                requestImage(for: proxy.size, scale: displayScale)
+            }
+            .onDisappear {
+                if let requestID {
+                    PHImageManager.default().cancelImageRequest(requestID)
+                }
             }
         }
     }
 
-    private func requestImage() {
+    private func requestImage(for size: CGSize, scale: CGFloat) {
         if let requestID {
             PHImageManager.default().cancelImageRequest(requestID)
         }
@@ -42,8 +43,7 @@ struct ContextualMemoryAssetImageView: View {
             return
         }
 
-        let scale = UIScreen.main.scale
-        let targetSize = CGSize(width: UIScreen.main.bounds.width * scale, height: 430 * scale)
+        let targetSize = CGSize(width: size.width * scale, height: min(size.height, 430) * scale)
         let options = PHImageRequestOptions()
         options.deliveryMode = .opportunistic
         options.resizeMode = .fast

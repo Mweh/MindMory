@@ -15,7 +15,7 @@ struct AppRootView: View {
                 OnboardingView(viewModel: container.makeOnboardingViewModel()) { didCompleteOnboarding = true }
             }
         }
-        .background(MindMoryColors.background)
+        .background(MindMoryColors.Surface.background)
         .task {
             container.configureNotificationHandling()
             if didCompleteOnboarding {

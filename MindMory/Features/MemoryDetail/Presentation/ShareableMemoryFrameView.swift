@@ -7,11 +7,11 @@ struct ShareableMemoryFrameView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.md) {
             Text(shareableMemory.title)
-                .font(MindMoryTypography.headingLarge)
+                .font(MindMoryTypography.titleMedium)
 
             Text(shareableMemory.dateText)
                 .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .foregroundStyle(MindMoryColors.Content.secondary)
 
             Text(shareableMemory.message)
                 .font(MindMoryTypography.bodyLarge)
@@ -20,18 +20,18 @@ struct ShareableMemoryFrameView: View {
             locationLabel
 
             Text("MindMory")
-                .font(MindMoryTypography.caption)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .font(MindMoryTypography.bodySmall)
+                .foregroundStyle(MindMoryColors.Content.secondary)
         }
         .padding(MindMorySpacing.xl)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MindMoryColors.background)
+        .background(MindMoryColors.Surface.background)
         .clipShape(
             RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge)
         )
         .overlay {
             RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge)
-                .stroke(MindMoryColors.border)
+                .stroke(MindMoryColors.Border.subtle)
         }
         .shadow(
             color: MindMoryShadow.cardColor,
@@ -44,8 +44,8 @@ struct ShareableMemoryFrameView: View {
     private var locationLabel: some View {
         if let locationName = shareableMemory.locationName {
             Label(locationName, systemImage: "mappin.circle")
-                .font(MindMoryTypography.caption)
-                .foregroundStyle(MindMoryColors.primaryGreen)
+                .font(MindMoryTypography.bodySmall)
+                .foregroundStyle(MindMoryColors.Content.link)
         }
     }
 }
@@ -57,5 +57,5 @@ struct ShareableMemoryFrameView: View {
         )
     )
     .padding()
-    .background(MindMoryColors.surface)
+    .background(MindMoryColors.Surface.surface)
 }

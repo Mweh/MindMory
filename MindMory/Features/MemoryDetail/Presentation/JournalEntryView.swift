@@ -10,19 +10,19 @@ struct JournalEntryView: View {
         AppCard {
             VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
                 Text("Journal")
-                    .font(MindMoryTypography.headingMedium)
+                    .font(MindMoryTypography.titleMedium)
 
                 TextEditor(text: $text)
                     .frame(minHeight: 110)
                     .scrollContentBackground(.hidden)
-                    .background(MindMoryColors.surface)
+                    .background(MindMoryColors.Surface.surface)
                     .clipShape(
                         RoundedRectangle(cornerRadius: MindMoryRadius.medium)
                     )
 
                 Button("Save reflection", action: saveAction)
-                    .font(MindMoryTypography.bodyMedium)
-                    .foregroundStyle(MindMoryColors.primaryGreen)
+                    .font(MindMoryTypography.labelLarge)
+                    .foregroundStyle(MindMoryColors.Surface.primary)
             }
         }
     }

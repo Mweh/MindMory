@@ -4,6 +4,6 @@ struct LoadingStateView: View {
 
     var body: some View {
         ProgressView()
-            .tint(MindMoryColors.primaryGreen)
+            .tint(MindMoryColors.Surface.primary)
     }
 }

@@ -7,7 +7,7 @@ struct ShareableMemoryExportView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [MindMoryColors.background, Color(hex: "#F2E7D1")], startPoint: .topLeading, endPoint: .bottomTrailing)
+            LinearGradient(colors: [MindMoryColors.Surface.background, MindMoryColors.Surface.surface], startPoint: .topLeading, endPoint: .bottomTrailing)
 
             StackedShareCardView(memory: memory, captionText: captionText, debugImageURL: debugImageURL, exportMode: true)
                 .padding(70)

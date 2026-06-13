@@ -99,17 +99,17 @@ struct MemoryImagePlaceholderView: View {
 
     private var placeholderContent: some View {
         ZStack {
-            MindMoryColors.placeholderSurface
+            MindMoryColors.Surface.surface
 
             VStack(spacing: MindMorySpacing.sm) {
                 Image(systemName: placeholderIcon)
-                    .font(.title)
-                    .foregroundStyle(MindMoryColors.mutedIndigo)
+                    .font(MindMoryTypography.display)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
 
                 if let placeholderText = placeholderText {
                     Text(placeholderText)
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.mutedIndigo)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, MindMorySpacing.md)
                 }

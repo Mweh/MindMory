@@ -51,7 +51,7 @@ struct QADebugToolsView: View {
             if let statusMessage = viewModel.statusMessage {
                 Section {
                     Text(statusMessage)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
                 }
             }
         }

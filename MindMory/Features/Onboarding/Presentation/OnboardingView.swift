@@ -12,7 +12,7 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            MindMoryColors.background
+            MindMoryColors.Surface.background
                 .ignoresSafeArea()
 
             onboardingLeafBackground
@@ -161,7 +161,7 @@ private struct PageDots: View {
     }
 
     private func dotColor(for index: Int) -> Color {
-        index == selectedIndex ? MindMoryColors.primaryGreen : MindMoryColors.border
+        index == selectedIndex ? MindMoryColors.Surface.primary : MindMoryColors.Border.subtle
     }
 }
 

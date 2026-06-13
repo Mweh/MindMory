@@ -9,18 +9,34 @@ struct WidgetPreviewCardView: View {
                         .font(MindMoryTypography.bodyMedium)
                         .bold()
                     Text("3 Moments this week")
-                        .font(MindMoryTypography.headingMedium)
+                        .font(MindMoryTypography.titleMedium)
                     Text("Aroma Coffee")
-                        .font(MindMoryTypography.caption)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .font(MindMoryTypography.bodySmall)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
                     Text("Great conversations are worth remembering.")
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
                 }
                 Spacer()
                 IconBadgeView(systemName: "sparkles")
             }
         }
-        .background(MindMoryColors.surface)
+        .background(MindMoryColors.Surface.surface)
     }
+}
+
+#if DEBUG
+struct WidgetPreviewCardView_Previews: PreviewProvider {
+    static var previews: some View {
+        WidgetPreviewCardView()
+            .padding()
+            .previewLayout(.sizeThatFits)
+    }
+}
+#endif
+
+#Preview {
+    WidgetPreviewCardView()
+        .padding()
+        .background(MindMoryColors.Surface.background)
 }

@@ -10,12 +10,12 @@ struct EmptyStateView: View {
             IconBadgeView(systemName: "sparkles")
 
             Text(title)
-                .font(MindMoryTypography.headingMedium)
-                .foregroundStyle(MindMoryColors.textPrimary)
+                .font(MindMoryTypography.display)
+                .foregroundStyle(MindMoryColors.Content.primary)
 
             Text(message)
                 .font(MindMoryTypography.bodyMedium)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .foregroundStyle(MindMoryColors.Content.secondary)
                 .multilineTextAlignment(.center)
         }
         .padding(MindMorySpacing.xl)

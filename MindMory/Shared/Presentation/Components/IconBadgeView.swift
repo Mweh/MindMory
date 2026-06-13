@@ -4,10 +4,10 @@ struct IconBadgeView: View {
     let systemName: String
     var body: some View {
         Image(systemName: systemName)
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(MindMoryColors.primaryGreen)
+            .font(MindMoryTypography.labelSmall)
+            .foregroundStyle(MindMoryColors.Surface.primary)
             .frame(width: 36, height: 36)
-            .background(MindMoryColors.surface)
+            .background(MindMoryColors.Surface.surface)
             .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
     }
 }

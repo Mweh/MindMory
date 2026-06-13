@@ -33,8 +33,8 @@ struct OnboardingPageView: View {
 
     private var titleText: some View {
         Text(page.title)
-            .font(MindMoryTypography.headingLarge)
-            .foregroundStyle(MindMoryColors.textPrimary)
+            .font(MindMoryTypography.display)
+            .foregroundStyle(MindMoryColors.Content.primary)
             .multilineTextAlignment(.center)
             .lineSpacing(4)
             .padding(.horizontal, MindMorySpacing.xl)
@@ -46,5 +46,5 @@ struct OnboardingPageView: View {
         page: OnboardingPageCatalog.pages[2],
         index: 2
     )
-    .background(MindMoryColors.background)
+    .background(MindMoryColors.Surface.background)
 }

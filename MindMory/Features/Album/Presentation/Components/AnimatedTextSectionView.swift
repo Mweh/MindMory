@@ -29,8 +29,8 @@ struct AnimatedTextSectionView: View {
 
     private var titleView: some View {
         Text(textSection.title)
-            .font(.system(size: textSection.style.titleSize, weight: textSection.style.titleWeight.fontWeight, design: .serif))
-            .foregroundStyle(MindMoryColors.textPrimary)
+            .font(MindMoryTypography.titleLarge)
+            .foregroundStyle(MindMoryColors.Content.primary)
             .multilineTextAlignment(multilineAlignment)
             .frame(maxWidth: .infinity, alignment: frameHorizontalAlignment)
             .lineLimit(isPreview ? 2 : nil)
@@ -38,8 +38,8 @@ struct AnimatedTextSectionView: View {
 
     private var descriptionView: some View {
         Text(textSection.description)
-            .font(.system(size: textSection.style.descriptionSize, weight: textSection.style.descriptionWeight.fontWeight, design: .default))
-            .foregroundStyle(MindMoryColors.textSecondary)
+            .font(MindMoryTypography.bodyMedium)
+            .foregroundStyle(MindMoryColors.Content.secondary)
             .multilineTextAlignment(multilineAlignment)
             .frame(maxWidth: .infinity, alignment: frameHorizontalAlignment)
             .lineLimit(isPreview ? 3 : nil)

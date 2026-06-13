@@ -10,5 +10,5 @@ struct WidgetPreview: View {
 #Preview {
     WidgetPreview()
         .padding()
-        .background(MindMoryColors.background)
+        .background(MindMoryColors.Surface.background)
 }

@@ -44,16 +44,16 @@ struct SettingsView: View {
 
     private var backgroundView: some View {
         ZStack {
-            MindMoryColors.background
+            MindMoryColors.Surface.background
 
             Circle()
-                .fill(MindMoryColors.surfaceStrong.opacity(0.9))
+                .fill(MindMoryColors.Surface.elevated.opacity(0.9))
                 .frame(width: 240, height: 240)
                 .blur(radius: 6)
                 .offset(x: 170, y: -260)
 
             Circle()
-                .fill(MindMoryColors.surface.opacity(0.95))
+                .fill(MindMoryColors.Surface.surface.opacity(0.95))
                 .frame(width: 220, height: 220)
                 .offset(x: -150, y: 360)
         }
@@ -65,9 +65,9 @@ struct SettingsView: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            MindMoryColors.surfaceStrong,
-                            MindMoryColors.surface,
-                            MindMoryColors.background
+                            MindMoryColors.Surface.elevated,
+                            MindMoryColors.Surface.surface,
+                            MindMoryColors.Surface.background
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -75,12 +75,12 @@ struct SettingsView: View {
                 )
 
             Circle()
-                .fill(MindMoryColors.primaryGreen.opacity(0.12))
+                .fill(MindMoryColors.Surface.primary.opacity(0.12))
                 .frame(width: 180, height: 180)
                 .offset(x: 120, y: -56)
 
             Circle()
-                .fill(MindMoryColors.mutedIndigo.opacity(0.10))
+                .fill(MindMoryColors.Content.secondary.opacity(0.10))
                 .frame(width: 120, height: 120)
                 .offset(x: 238, y: 18)
 
@@ -92,12 +92,12 @@ struct SettingsView: View {
 
                 VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
                     Text("Settings")
-                        .font(MindMoryTypography.displayLarge)
-                        .foregroundStyle(MindMoryColors.textPrimary)
+                        .font(MindMoryTypography.headline)
+                        .foregroundStyle(MindMoryColors.Content.primary)
 
                     Text("A few small adjustments can help MindMory deliver better reminders and make it easier to preserve the moments you'd otherwise forget.")
                         .font(MindMoryTypography.bodyMedium)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
                 }
             }
             .padding(MindMorySpacing.xl)
@@ -106,7 +106,7 @@ struct SettingsView: View {
         .frame(minHeight: 220)
         .overlay(
             RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous)
-                .stroke(MindMoryColors.border, lineWidth: 1)
+                .stroke(MindMoryColors.Border.subtle, lineWidth: 1)
         )
         .shadow(color: MindMoryShadow.cardColor, radius: MindMoryShadow.softRadius, x: 0, y: MindMoryShadow.softY)
     }
@@ -114,309 +114,52 @@ struct SettingsView: View {
     private var reminderSettingSection: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
             VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-                Text("Reminder setting")
-                    .font(MindMoryTypography.headingMedium)
-                    .foregroundStyle(MindMoryColors.textPrimary)
+                        Text("Reminder setting")
+                    .font(MindMoryTypography.titleMedium)
+                    .foregroundStyle(MindMoryColors.Content.primary)
 
                 Text("Choose whether to use the app default reminder mode or customize your own preference settings.")
                     .font(MindMoryTypography.bodySmall)
-                    .foregroundStyle(MindMoryColors.textSecondary)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
             }
-
-            AppCard {
-                VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                    RadioSelectionRow(
-                        title: ReminderSettingMode.appDefault.title,
-                        subtitle: ReminderSettingMode.appDefault.subtitle,
-                        isSelected: viewModel.preferences.reminderSettingMode == .appDefault,
-                        action: {
-                            viewModel.preferences.reminderSettingMode = .appDefault
-                        }
-                    )
-
-                    Divider()
-                        .overlay(MindMoryColors.border)
-
-                    SettingsRadioNavigationRow(
-                        title: ReminderSettingMode.customize.title,
-                        subtitle: ReminderSettingMode.customize.subtitle,
-                        linkTitle: "Open customize preference settings",
-                        isSelected: viewModel.preferences.reminderSettingMode == .customize,
-                        destination: { CustomizePreferencesDetailView(viewModel: viewModel) },
-                        selectAction: {
-                            viewModel.preferences.reminderSettingMode = .customize
-                        }
-                    )
-                }
-            }
+            SettingsReminderSettingCardView(viewModel: viewModel)
         }
     }
 
     private var notificationSection: some View {
-        let status = viewModel.status(for: .notifications)
-
-        return AppCard {
-            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                HStack(alignment: .top, spacing: MindMorySpacing.sm) {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.xxs) {
-                        Text("Notification access")
-                            .font(MindMoryTypography.headingMedium)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-
-                        Text("Allow reminders to arrive on your device.")
-                            .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.textSecondary)
-                    }
-
-                    Spacer()
-
-                    SettingsStatusBadge(
-                        title: label(for: status),
-                        tint: tint(for: status)
-                    )
-                }
-
-                if status != .granted {
-                    Button(action: {
-                        handlePermissionAction(for: .notifications)
-                    }) {
-                        HStack(spacing: MindMorySpacing.xs) {
-                            if viewModel.requestingArea == .notifications {
-                                ProgressView()
-                                    .tint(MindMoryColors.background)
-                            }
-
-                            Text(viewModel.actionTitle(for: .notifications))
-                                .font(MindMoryTypography.bodyMedium)
-                        }
-                        .foregroundStyle(MindMoryColors.background)
-                        .padding(.horizontal, MindMorySpacing.md)
-                        .padding(.vertical, MindMorySpacing.sm)
-                        .background(MindMoryColors.primaryGreen)
-                        .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(viewModel.requestingArea == .notifications)
-                }
-            }
-        }
+        SettingsNotificationCardView(viewModel: viewModel)
     }
 
     private var locationContextSection: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                HStack(alignment: .center, spacing: MindMorySpacing.sm) {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.xxs) {
-                        Text("Location reminder")
-                            .font(MindMoryTypography.headingMedium)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-
-                        Text("Let your location guide your reminders.")
-                            .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.textSecondary)
-                    }
-
-                    Spacer()
-
-                    Toggle(isOn: $viewModel.preferences.location.usesLocationContext) {
-                        EmptyView()
-                    }
-                    .labelsHidden()
-                    .toggleStyle(SwitchToggleStyle(tint: MindMoryColors.primaryGreen))
-                }
-
-                Divider()
-                    .overlay(MindMoryColors.border)
-
-                if viewModel.preferences.location.usesLocationContext {
-                    SettingsNavigationRow(
-                        title: "Select point of interest",
-                        subtitle: "Help MindMory understand which places matter most to you.",
-                        summary: viewModel.preferences.locationSummary,
-                        iconName: "map.fill",
-                        destination: { LocationSettingsDetailView(viewModel: viewModel) }
-                    )
-                } else {
-                    HStack(alignment: .top, spacing: MindMorySpacing.sm) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                                .fill(MindMoryColors.surfaceStrong)
-                                .frame(width: 42, height: 42)
-
-                            Image(systemName: "bell.slash.fill")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(MindMoryColors.textSecondary)
-                        }
-
-                        VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-                            Text("Location reminders are off")
-                                .font(MindMoryTypography.bodyLarge)
-                                .foregroundStyle(MindMoryColors.textPrimary)
-
-                            Text("The app will not deliver any location-based reminders until this is turned on.")
-                                .font(MindMoryTypography.bodySmall)
-                                .foregroundStyle(MindMoryColors.textSecondary)
-                        }
-
-                        Spacer()
-                    }
-                }
-            }
-        }
+        SettingsLocationCardView(viewModel: viewModel)
     }
 
     private var calendarContextSection: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                HStack(alignment: .center, spacing: MindMorySpacing.sm) {
-                    VStack(alignment: .leading, spacing: MindMorySpacing.xxs) {
-                        Text("Schedule reminder")
-                            .font(MindMoryTypography.headingMedium)
-                            .foregroundStyle(MindMoryColors.textPrimary)
-
-                        Text("Receive photo reminders around the events that matter to you.")
-                            .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.textSecondary)
-                    }
-
-                    Spacer()
-
-                    Toggle(isOn: $viewModel.preferences.schedule.usesCalendarContext) {
-                        EmptyView()
-                    }
-                    .labelsHidden()
-                    .toggleStyle(SwitchToggleStyle(tint: MindMoryColors.primaryGreen))
-                }
-
-                Divider()
-                    .overlay(MindMoryColors.border)
-
-                if viewModel.preferences.schedule.usesCalendarContext {
-                    SettingsNavigationRow(
-                        title: "Select event reminders",
-                        subtitle: "Help MindMory focus on the events that matter most to you.",
-                        summary: viewModel.preferences.scheduleSummary,
-                        iconName: "calendar.badge.clock",
-                        destination: { ScheduleSettingsDetailView(viewModel: viewModel) }
-                    )
-                } else {
-                    HStack(alignment: .top, spacing: MindMorySpacing.sm) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                                .fill(MindMoryColors.surfaceStrong)
-                                .frame(width: 42, height: 42)
-
-                            Image(systemName: "bell.slash.fill")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(MindMoryColors.textSecondary)
-                        }
-
-                        VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-                            Text("Calendar reminders are off")
-                                .font(MindMoryTypography.bodyLarge)
-                                .foregroundStyle(MindMoryColors.textPrimary)
-
-                            Text("The app will not deliver any calendar-based reminders until this is turned on.")
-                                .font(MindMoryTypography.bodySmall)
-                                .foregroundStyle(MindMoryColors.textSecondary)
-                        }
-
-                        Spacer()
-                    }
-                }
-            }
-        }
+        SettingsCalendarCardView(viewModel: viewModel)
     }
 
     private var deliverySection: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                sectionTitle(
-                    title: "Delivery & personalization",
-                    subtitle: "Adjust when and how reminders arrive."
-                )
-
-                SettingsNavigationRow(
-                    title: "Customize preference setting",
-                    subtitle: "Set delivery behavior and message style together.",
-                    summary: viewModel.preferences.reminderSettingMode == .customize
-                        ? "Custom mode • \(viewModel.preferences.deliverySummary)"
-                        : "Default app mode • \(viewModel.preferences.deliverySummary)",
-                    iconName: "slider.horizontal.3",
-                    destination: { CustomizePreferencesDetailView(viewModel: viewModel) }
-                )
-            }
-        }
+        SettingsDeliveryCardView(viewModel: viewModel)
     }
 
     private var privacySection: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                sectionTitle(
-                    title: "Privacy & behavior notes",
-                    subtitle: "These settings show real permissions and reminder preferences."
-                )
-
-                SettingsBulletRow(
-                    iconName: "checkmark.shield.fill",
-                    text: "If a permission is denied, that trigger source is paused until the user re-enables it."
-                )
-                SettingsBulletRow(
-                    iconName: "mappin.and.ellipse",
-                    text: "Location preferences only affect POI categories, not sample places."
-                )
-                SettingsBulletRow(
-                    iconName: "calendar.badge.exclamationmark",
-                    text: "Calendar preferences use real events, not dummy schedules."
-                )
-            }
-        }
+        SettingsPrivacyCardView()
     }
 
     #if DEBUG
     private var qaDebugSection: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                sectionTitle(
-                    title: "QA Debug",
-                    subtitle: "Debug/testing only. Hidden from Release builds."
-                )
-
-                Toggle(
-                    "Enable QA Debug Mode",
-                    isOn: Binding(
-                        get: { viewModel.qaDebugModeEnabled },
-                        set: { viewModel.qaDebugModeEnabled = $0 }
-                    )
-                )
-                .font(MindMoryTypography.bodyLarge)
-                .tint(MindMoryColors.primaryGreen)
-
-                if viewModel.qaDebugModeEnabled {
-                    Divider()
-                        .overlay(MindMoryColors.border)
-
-                    SettingsNavigationRow(
-                        title: "Open QA Debug Tools",
-                        subtitle: "Reset onboarding and test Home card photos.",
-                        summary: "Debug mode enabled",
-                        iconName: "wrench.and.screwdriver.fill",
-                        destination: { QADebugToolsView(viewModel: viewModel.makeQADebugToolsViewModel()) }
-                    )
-                }
-            }
-        }
+        SettingsQACardView(viewModel: viewModel)
     }
     #endif
 
     private func sectionTitle(title: String, subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.xxs) {
             Text(title)
-                .font(MindMoryTypography.headingMedium)
+                .font(MindMoryTypography.titleMedium)
 
             Text(subtitle)
                 .font(MindMoryTypography.bodyMedium)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .foregroundStyle(MindMoryColors.Content.secondary)
         }
     }
 
@@ -457,41 +200,41 @@ struct SettingsView: View {
     private func tint(for status: PermissionStatus) -> Color {
         switch status {
         case .notDetermined:
-            return MindMoryColors.mutedIndigo
+            return MindMoryColors.Content.secondary
         case .granted:
-            return MindMoryColors.success
+            return MindMoryColors.Feedback.success
         case .denied:
-            return MindMoryColors.error
+            return MindMoryColors.Feedback.error
         }
     }
 }
 
-private struct SettingsHeroBadge: View {
+struct SettingsHeroBadge: View {
     let title: String
 
     var body: some View {
         Text(title)
-            .font(MindMoryTypography.caption)
-            .foregroundStyle(MindMoryColors.primaryGreen)
+            .font(MindMoryTypography.bodySmall)
+            .foregroundStyle(MindMoryColors.Surface.primary)
             .padding(.horizontal, MindMorySpacing.sm)
             .padding(.vertical, MindMorySpacing.xs)
-            .background(MindMoryColors.background.opacity(0.94))
+                .background(MindMoryColors.Surface.background.opacity(0.94))
             .clipShape(Capsule())
             .overlay(
                 Capsule()
-                    .stroke(MindMoryColors.border, lineWidth: 1)
+                    .stroke(MindMoryColors.Border.subtle, lineWidth: 1)
             )
     }
 }
 
 
-private struct SettingsStatusBadge: View {
+struct SettingsStatusBadge: View {
     let title: String
     let tint: Color
 
     var body: some View {
         Text(title)
-            .font(MindMoryTypography.caption)
+            .font(MindMoryTypography.bodySmall)
             .foregroundStyle(tint)
             .padding(.horizontal, MindMorySpacing.sm)
             .padding(.vertical, MindMorySpacing.xs)
@@ -500,7 +243,7 @@ private struct SettingsStatusBadge: View {
     }
 }
 
-private struct SettingsNavigationRow<Destination: View>: View {
+struct SettingsNavigationRow<Destination: View>: View {
     let title: String
     let subtitle: String
     let summary: String
@@ -512,34 +255,34 @@ private struct SettingsNavigationRow<Destination: View>: View {
             HStack(alignment: .top, spacing: MindMorySpacing.sm) {
                 ZStack {
                     RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                        .fill(MindMoryColors.surfaceStrong)
+                        .fill(MindMoryColors.Surface.elevated)
                         .frame(width: 46, height: 46)
 
                     Image(systemName: iconName)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(MindMoryColors.primaryGreen)
+                        .font(MindMoryTypography.labelSmall)
+                        .foregroundStyle(MindMoryColors.Surface.primary)
                 }
 
                 VStack(alignment: .leading, spacing: MindMorySpacing.xxs) {
                     Text(title)
                         .font(MindMoryTypography.bodyLarge)
-                        .foregroundStyle(MindMoryColors.textPrimary)
+                        .foregroundStyle(MindMoryColors.Content.primary)
 
                     Text(subtitle)
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
 
                     Text(summary)
-                        .font(MindMoryTypography.caption)
-                        .foregroundStyle(MindMoryColors.primaryGreen)
+                        .font(MindMoryTypography.bodySmall)
+                        .foregroundStyle(MindMoryColors.Surface.primary)
                         .padding(.top, MindMorySpacing.xxs)
                 }
 
                 Spacer(minLength: MindMorySpacing.md)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(MindMoryColors.textSecondary)
+                    .font(MindMoryTypography.labelSmall)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
                     .padding(.top, MindMorySpacing.xs)
             }
         }
@@ -547,7 +290,7 @@ private struct SettingsNavigationRow<Destination: View>: View {
     }
 }
 
-private struct SettingsRadioNavigationRow<Destination: View>: View {
+struct SettingsRadioNavigationRow<Destination: View>: View {
     let title: String
     let subtitle: String
     let linkTitle: String
@@ -564,8 +307,8 @@ private struct SettingsRadioNavigationRow<Destination: View>: View {
         ) {
             NavigationLink(destination: destination()) {
                 Text(linkTitle)
-                    .font(MindMoryTypography.caption)
-                    .foregroundStyle(MindMoryColors.primaryGreen)
+                    .font(MindMoryTypography.bodySmall)
+                    .foregroundStyle(MindMoryColors.Surface.primary)
             }
             .buttonStyle(.plain)
             .padding(.top, MindMorySpacing.xxs)
@@ -573,20 +316,20 @@ private struct SettingsRadioNavigationRow<Destination: View>: View {
     }
 }
 
-private struct SettingsBulletRow: View {
+struct SettingsBulletRow: View {
     let iconName: String
     let text: String
 
     var body: some View {
         HStack(alignment: .top, spacing: MindMorySpacing.sm) {
             Image(systemName: iconName)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(MindMoryColors.primaryGreen)
+                .font(MindMoryTypography.labelSmall)
+                .foregroundStyle(MindMoryColors.Surface.primary)
                 .frame(width: 20)
 
             Text(text)
                 .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .foregroundStyle(MindMoryColors.Content.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -619,11 +362,11 @@ struct RadioSelectionRow<SecondaryContent: View>: View {
                 VStack(alignment: .leading, spacing: MindMorySpacing.xxs) {
                     Text(title)
                         .font(MindMoryTypography.bodyLarge)
-                        .foregroundStyle(MindMoryColors.textPrimary)
+                        .foregroundStyle(MindMoryColors.Content.primary)
 
                     Text(subtitle)
                         .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
 
                     secondaryContent
                 }
@@ -631,8 +374,8 @@ struct RadioSelectionRow<SecondaryContent: View>: View {
                 Spacer(minLength: MindMorySpacing.md)
 
                 Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(isSelected ? MindMoryColors.primaryGreen : MindMoryColors.border)
+                    .font(MindMoryTypography.labelSmall)
+                    .foregroundStyle(isSelected ? MindMoryColors.Surface.primary : MindMoryColors.Border.subtle)
             }
         }
         .buttonStyle(.plain)

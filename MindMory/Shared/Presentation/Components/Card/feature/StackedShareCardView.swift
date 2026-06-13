@@ -27,9 +27,9 @@ struct StackedShareCardView: View {
                 .frame(height: exportMode ? 410 : 230)
                 .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
 
-            Text(memory.title)
-                .font(exportMode ? MindMoryTypography.displayLarge : MindMoryTypography.headingMedium)
-                .foregroundStyle(MindMoryColors.textPrimary)
+                Text(memory.title)
+                .font(exportMode ? MindMoryTypography.display : MindMoryTypography.titleLarge)
+                .foregroundStyle(MindMoryColors.Content.primary)
                 .lineLimit(2)
 
             HStack(spacing: MindMorySpacing.sm) {
@@ -38,14 +38,14 @@ struct StackedShareCardView: View {
                 }
                 Text(memory.dateText)
             }
-            .font(MindMoryTypography.caption)
-            .foregroundStyle(MindMoryColors.primaryGreen)
+            .font(MindMoryTypography.bodySmall)
+            .foregroundStyle(MindMoryColors.Surface.primary)
             .lineLimit(1)
         }
         .padding(exportMode ? MindMorySpacing.xl : MindMorySpacing.md)
-        .background(Color.white)
+        .background(MindMoryColors.Content.inverse)
         .clipShape(cardShape)
-        .shadow(color: .black.opacity(0.16), radius: exportMode ? 30 : 20, x: 0, y: exportMode ? 20 : 14)
+        .shadow(color: MindMoryColors.Content.primary.opacity(0.16), radius: exportMode ? 30 : 20, x: 0, y: exportMode ? 20 : 14)
     }
 
     private var captionCard: some View {
@@ -55,12 +55,12 @@ struct StackedShareCardView: View {
 
             VStack(alignment: .leading, spacing: exportMode ? MindMorySpacing.lg : MindMorySpacing.md) {
                 Text("My Memory")
-                    .font(MindMoryTypography.headingMedium)
-                    .foregroundStyle(MindMoryColors.primaryGreen)
+                    .font(MindMoryTypography.titleMedium)
+                    .foregroundStyle(MindMoryColors.Surface.primary)
 
                 Text(resolvedCaption)
                     .font(exportMode ? MindMoryTypography.bodyLarge : MindMoryTypography.bodyMedium)
-                    .foregroundStyle(MindMoryColors.textPrimary)
+                    .foregroundStyle(MindMoryColors.Content.primary)
                     .lineSpacing(5)
                     .lineLimit(exportMode ? 8 : 7)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -73,15 +73,15 @@ struct StackedShareCardView: View {
                     }
                     Text(memory.dateText)
                 }
-                .font(MindMoryTypography.caption)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .font(MindMoryTypography.bodySmall)
+                .foregroundStyle(MindMoryColors.Content.secondary)
             }
             .padding(exportMode ? MindMorySpacing.xl : MindMorySpacing.lg)
         }
-        .background(LinearGradient(colors: [Color(hex: "#FFF7E6"), Color(hex: "#EFE6D1"), Color(hex: "#EAF1E9")], startPoint: .topLeading, endPoint: .bottomTrailing))
+        .background(LinearGradient(colors: [MindMoryColors.Surface.surface, MindMoryColors.Surface.background, MindMoryColors.Surface.surface], startPoint: .topLeading, endPoint: .bottomTrailing))
         .clipShape(cardShape)
-        .overlay { cardShape.stroke(MindMoryColors.border.opacity(0.7), lineWidth: 1) }
-        .shadow(color: .black.opacity(0.10), radius: exportMode ? 24 : 16, x: 0, y: exportMode ? 18 : 12)
+        .overlay { cardShape.stroke(MindMoryColors.Border.subtle.opacity(0.7), lineWidth: 1) }
+        .shadow(color: MindMoryColors.Content.primary.opacity(0.10), radius: exportMode ? 24 : 16, x: 0, y: exportMode ? 18 : 12)
     }
 
     private var resolvedCaption: String {
@@ -90,8 +90,8 @@ struct StackedShareCardView: View {
 
     private var botanicalDecoration: some View {
         Image(systemName: "leaf.fill")
-            .font(.system(size: exportMode ? 64 : 38))
-            .foregroundStyle(MindMoryColors.primaryGreen.opacity(0.10))
+            .font(exportMode ? MindMoryTypography.display : MindMoryTypography.titleLarge)
+            .foregroundStyle(MindMoryColors.Surface.primary.opacity(0.10))
             .rotationEffect(.degrees(-18))
             .allowsHitTesting(false)
     }
@@ -99,4 +99,20 @@ struct StackedShareCardView: View {
     private var cardShape: RoundedRectangle {
         RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous)
     }
+}
+
+#if DEBUG
+struct StackedShareCardView_Previews: PreviewProvider {
+    static var previews: some View {
+        StackedShareCardView(memory: PreviewData.aromaMemory, captionText: "Caption", debugImageURL: nil)
+            .padding()
+            .previewLayout(.sizeThatFits)
+    }
+}
+#endif
+
+#Preview {
+    StackedShareCardView(memory: PreviewData.aromaMemory, captionText: "A short caption", debugImageURL: nil)
+        .padding()
+        .background(MindMoryColors.Surface.background)
 }

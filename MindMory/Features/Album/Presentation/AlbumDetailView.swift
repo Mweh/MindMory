@@ -13,48 +13,18 @@ struct AlbumDetailView: View {
             .padding(.horizontal, MindMorySpacing.xl)
             .padding(.vertical, MindMorySpacing.lg)
         }
-        .background(MindMoryColors.background.ignoresSafeArea())
+        .background(MindMoryColors.Surface.background.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var header: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                Text(album.name)
-                    .font(MindMoryTypography.headingLarge)
-                    .foregroundStyle(MindMoryColors.textPrimary)
-
-                if let coverPhoto = album.coverPhoto?.uiImage {
-                    MemoryImagePlaceholderView(image: coverPhoto, imageName: nil)
-                        .frame(height: 220)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
-                } else {
-                    MemoryImagePlaceholderView(image: nil, imageName: nil)
-                        .frame(height: 220)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                                .stroke(MindMoryColors.border)
-                        )
-                }
-
-                HStack(spacing: MindMorySpacing.md) {
-                    Text(album.albumDate.displayText)
-                        .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.textSecondary)
-
-                    Spacer()
-
-                    Text(album.photos.isEmpty ? "No photos" : "\(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")")
-                        .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.primaryGreen)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
+        AlbumHeaderCardView(
+            name: album.name,
+            coverPhoto: album.coverPhoto?.uiImage,
+            albumDateText: album.albumDate.displayText,
+            photoCountText: album.photos.isEmpty ? "No photos" : "\(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")"
+        )
     }
 
     private var sectionList: some View {
@@ -87,20 +57,20 @@ struct AlbumDetailView: View {
         VStack(alignment: .center, spacing: MindMorySpacing.sm) {
             Text("No album layout available yet.")
                 .font(MindMoryTypography.bodyMedium)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .foregroundStyle(MindMoryColors.Content.secondary)
 
             Text("Create or open an album with image and text sections to see memories in a beautiful layout.")
                 .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.textSecondary)
+                .foregroundStyle(MindMoryColors.Content.secondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(MindMorySpacing.lg)
-        .background(MindMoryColors.surface)
+        .background(MindMoryColors.Surface.surface)
         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                .stroke(MindMoryColors.border)
+                .stroke(MindMoryColors.Border.subtle)
         )
     }
 }

@@ -24,14 +24,29 @@ final class CoreLocationRepository: NSObject, LocationRepositoryProtocol, CLLoca
 
         return await withCheckedContinuation { continuation in
             authorizationContinuation = continuation
-            locationManager.requestWhenInUseAuthorization()
+            // Requesting authorization can prompt the UI; perform the request off the immediate call stack
+            // to avoid potential main-thread stalls while still delivering the delegate callback.
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                self?.locationManager.requestWhenInUseAuthorization()
+            }
         }
     }
 
     func getCurrentLocation() async throws -> CurrentLocationContext? {
-        guard CLLocationManager.locationServicesEnabled() else { return nil }
+        let servicesEnabled = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            DispatchQueue.global(qos: .userInitiated).async {
+                continuation.resume(returning: CLLocationManager.locationServicesEnabled())
+            }
+        }
 
-        let status = locationManager.authorizationStatus
+        guard servicesEnabled else { return nil }
+
+        let status = await withCheckedContinuation { (continuation: CheckedContinuation<CLAuthorizationStatus, Never>) in
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                continuation.resume(returning: self?.locationManager.authorizationStatus ?? .notDetermined)
+            }
+        }
+
         guard status == .authorizedAlways || status == .authorizedWhenInUse else { return nil }
 
         return try await withCheckedThrowingContinuation { continuation in

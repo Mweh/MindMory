@@ -155,9 +155,7 @@ final class HomeViewModel: ObservableObject {
     }
 
     func selectStat(_ stat: SelectedStatCard) {
-        withAnimation(.easeInOut(duration: 0.35)) {
-            selectedStat = selectedStat == stat ? nil : stat
-        }
+        selectedStat = stat
     }
 
     func flipCard() {
