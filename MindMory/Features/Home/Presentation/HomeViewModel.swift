@@ -43,7 +43,8 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var state: HomeViewState = .loading
     @Published private(set) var contextualState: ContextualMemoryState = .idle
     @Published private(set) var focusedMemory: Memory?
-    @Published private(set) var contextualAssetLocalIdentifier: String?
+    @Published private(set) var contextualMemory: ContextualMemory?
+    @Published private(set) var selectedAssetLocalIdentifier: String?
     @Published private(set) var statCards: [HomeStatCardModel] = []
     @Published var selectedStat: SelectedStatCard? = nil
     @Published var cardSide: MemoryCardSide = .front
@@ -59,6 +60,14 @@ final class HomeViewModel: ObservableObject {
 
     var eventName: String {
         focusedMemory?.locationName ?? focusedMemory?.title ?? "this moment"
+    }
+
+    var focusedImageSource: MemoryImageSource {
+        if let selectedAssetLocalIdentifier {
+            return .assetLocalIdentifier(selectedAssetLocalIdentifier)
+        }
+
+        return focusedMemory?.imageSource ?? .placeholder
     }
 
     var headerCopy: MemoriesHeaderCopy {
@@ -131,7 +140,8 @@ final class HomeViewModel: ObservableObject {
 
     func load() {
         focusedMemory = memories.first(where: \.isFavorite) ?? memories.first
-        contextualAssetLocalIdentifier = nil
+        contextualMemory = nil
+        selectedAssetLocalIdentifier = nil
         captionText = focusedMemory?.journalText ?? ""
         statCards = makeStatCards()
         refreshHomeCardState()
@@ -177,7 +187,7 @@ final class HomeViewModel: ObservableObject {
     }
 
     func showContextualAsset(localIdentifier: String) {
-        contextualAssetLocalIdentifier = localIdentifier
+        selectedAssetLocalIdentifier = localIdentifier
         let routedMemory = Memory(
             id: UUID(),
             title: "A memory is nearby",
@@ -189,9 +199,7 @@ final class HomeViewModel: ObservableObject {
             isFavorite: false,
             tags: ["Nearby"]
         )
-        focusedMemory = routedMemory
-        captionText = ""
-        contextualState = .loaded(ContextualMemory(
+        let contextualMemory = ContextualMemory(
             id: routedMemory.id,
             title: routedMemory.title,
             subtitle: routedMemory.subtitle,
@@ -204,7 +212,11 @@ final class HomeViewModel: ObservableObject {
             score: 0,
             distanceMeters: nil,
             notificationConfidenceScore: 0
-        ))
+        )
+        focusedMemory = routedMemory
+        self.contextualMemory = contextualMemory
+        captionText = ""
+        contextualState = .loaded(contextualMemory)
         homeCardState = .normal
         state = .positive(
             Reminder(
@@ -238,8 +250,9 @@ final class HomeViewModel: ObservableObject {
 
         switch newState {
         case .loaded(let contextualMemory):
+            self.contextualMemory = contextualMemory
             focusedMemory = contextualMemory.asMemory
-            contextualAssetLocalIdentifier = contextualMemory.assetLocalIdentifier
+            selectedAssetLocalIdentifier = contextualMemory.assetLocalIdentifier
             captionText = contextualMemory.journalText ?? ""
             state = .positive(
                 Reminder(
@@ -252,9 +265,11 @@ final class HomeViewModel: ObservableObject {
                 focusedMemory
             )
         case .permissionRequired(.photoLibrary):
-            contextualAssetLocalIdentifier = nil
+            contextualMemory = nil
+            selectedAssetLocalIdentifier = nil
         case .empty, .error:
-            contextualAssetLocalIdentifier = nil
+            contextualMemory = nil
+            selectedAssetLocalIdentifier = nil
         case .idle, .loading, .permissionRequired:
             break
         }

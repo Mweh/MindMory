@@ -33,6 +33,7 @@ struct HomeView: View {
             if let memory = viewModel.focusedMemory {
                 ShareMemoryPreviewView(
                     memory: memory,
+                    imageSource: viewModel.focusedImageSource,
                     captionText: viewModel.captionText,
                     dismissAction: viewModel.dismissSharePreview
                 )
@@ -100,7 +101,7 @@ struct HomeView: View {
         case .normal:
             InteractiveMemoryCardView(
                 memory: memory,
-                assetLocalIdentifier: viewModel.contextualAssetLocalIdentifier,
+                imageSource: viewModel.focusedImageSource,
                 side: $viewModel.cardSide,
                 captionText: $viewModel.captionText,
                 flipAction: viewModel.flipCard,

@@ -1,8 +1,9 @@
 import SwiftUI
+import UIKit
 
 struct MemoryCardFrontView: View {
     let memory: Memory
-    var assetLocalIdentifier: String? = nil
+    var imageSource: MemoryImageSource
     let photoParallax: CGSize
     let contentParallax: CGSize
 
@@ -20,10 +21,19 @@ struct MemoryCardFrontView: View {
 
     @ViewBuilder
     private var imageContent: some View {
-        if let assetLocalIdentifier {
-            ContextualMemoryAssetImageView(assetLocalIdentifier: assetLocalIdentifier)
-        } else {
-            ImagePlaceholder(imageName: memory.imageName)
+        switch imageSource {
+        case .assetLocalIdentifier(let localIdentifier):
+            ContextualMemoryAssetImageView(assetLocalIdentifier: localIdentifier)
+        case .assetName(let assetName):
+            ImagePlaceholder(imageName: assetName)
+        case .debugImageURL(let url):
+            if let image = UIImage(contentsOfFile: url.path) {
+                ImagePlaceholder(image: image)
+            } else {
+                ImagePlaceholder(imageName: nil)
+            }
+        case .placeholder:
+            ImagePlaceholder(imageName: nil)
         }
     }
 
@@ -47,7 +57,7 @@ struct MemoryCardFrontView: View {
 #if DEBUG
 struct MemoryCardFrontView_Previews: PreviewProvider {
     static var previews: some View {
-        MemoryCardFrontView(memory: PreviewData.aromaMemory, photoParallax: .zero, contentParallax: .zero)
+        MemoryCardFrontView(memory: PreviewData.aromaMemory, imageSource: PreviewData.aromaMemory.imageSource, photoParallax: .zero, contentParallax: .zero)
             .padding()
             .previewLayout(.sizeThatFits)
     }
@@ -55,7 +65,7 @@ struct MemoryCardFrontView_Previews: PreviewProvider {
 #endif
 
 #Preview {
-    MemoryCardFrontView(memory: PreviewData.aromaMemory, photoParallax: .zero, contentParallax: .zero)
+    MemoryCardFrontView(memory: PreviewData.aromaMemory, imageSource: PreviewData.aromaMemory.imageSource, photoParallax: .zero, contentParallax: .zero)
         .padding()
         .background(MindMoryColors.Surface.background)
 }
