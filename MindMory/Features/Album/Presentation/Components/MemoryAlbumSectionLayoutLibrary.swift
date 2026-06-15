@@ -28,7 +28,7 @@ enum MemoryAlbumFrameShape: String, CaseIterable, Codable, Equatable {
     }
 }
 
-enum MirrorType {
+enum MirrorType: Equatable {
     case none
     case vertical  // left-right mirror (column flip)
     case horizontal  // top-bottom mirror (row flip)
@@ -63,6 +63,16 @@ struct MemoryAlbumSectionLayoutTemplate: Identifiable, Equatable {
             self.frameShapes = Array(repeating: .square, count: layoutCount)
         }
         self.mirrorGroup = mirrorGroup
+    }
+
+    static func == (lhs: MemoryAlbumSectionLayoutTemplate, rhs: MemoryAlbumSectionLayoutTemplate) -> Bool {
+        lhs.id == rhs.id
+            && lhs.layoutCount == rhs.layoutCount
+            && lhs.variant == rhs.variant
+            && lhs.title == rhs.title
+            && lhs.albumHeight == rhs.albumHeight
+            && lhs.frameShapes == rhs.frameShapes
+            && lhs.mirrorGroup == rhs.mirrorGroup
     }
 
     func estimatedHeight(forWidth width: CGFloat, spacing: CGFloat = MindMorySpacing.sm) -> CGFloat {
@@ -341,14 +351,10 @@ struct MemoryAlbumSectionLayoutRenderer<Content: View>: View {
 
     var body: some View {
         let screenWidth: CGFloat = {
-            if #available(iOS 26.0, *) {
-                if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                    return scene.screen.bounds.width
-                }
-                return 390
-            } else {
-                return UIScreen.main.bounds.width
+            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                return scene.screen.bounds.width
             }
+            return UIScreen.main.bounds.width
         }()
 
         let width = availableWidth ?? (screenWidth - (MindMorySpacing.xl * 2))

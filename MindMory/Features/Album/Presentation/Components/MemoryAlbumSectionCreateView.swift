@@ -422,15 +422,10 @@ struct MemoryAlbumSectionCreateView: View {
             .clipped()
         }
         .frame(height: template.estimatedHeight(forWidth: {
-            // Prefer a UIScreen instance from the active window scene on newer OSes.
-            if #available(iOS 26.0, *) {
-                if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                    return scene.screen.bounds.width - (MindMorySpacing.xl * 2)
-                }
-                return 390 - (MindMorySpacing.xl * 2)
-            } else {
-                return UIScreen.main.bounds.width - (MindMorySpacing.xl * 2)
+            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                return scene.screen.bounds.width - (MindMorySpacing.xl * 2)
             }
+            return UIScreen.main.bounds.width - (MindMorySpacing.xl * 2)
         }()))
     }
 }

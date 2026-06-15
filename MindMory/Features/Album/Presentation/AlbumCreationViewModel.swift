@@ -108,7 +108,7 @@ class AlbumCreationViewModel: ObservableObject {
                 )
 
                 if let repository = self.albumRepository {
-                    try repository.save(album)
+                    try await repository.save(album)
                 }
 
                 await MainActor.run {
