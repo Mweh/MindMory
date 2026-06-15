@@ -2,6 +2,8 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject var viewModel: HomeViewModel
+    @AppStorage("hasSeenTooltip") private var hasSeenTooltip = false
+    @State private var cardFrame: CGRect = .zero
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -27,6 +29,17 @@ struct HomeView: View {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
         .onAppear { viewModel.load() }
+        .onPreferenceChange(CardFrameKey.self) { frame in
+            cardFrame = frame
+        }
+        .overlay {
+            if !hasSeenTooltip && cardFrame != .zero && viewModel.cardSide == .front {
+                SpotlightTooltipView(cardFrame: cardFrame) {
+                    hasSeenTooltip = true
+                }
+                .ignoresSafeArea()
+            }
+        }
         .sheet(isPresented: $viewModel.isShowingSharePreview) {
             if let memory = viewModel.focusedMemory {
                 ShareMemoryPreviewView(
@@ -90,6 +103,14 @@ struct HomeView: View {
                 captionText: $viewModel.captionText,
                 flipAction: viewModel.flipCard,
                 shareAction: viewModel.showSharePreview
+            )
+            .overlay(
+                GeometryReader { geo in
+                    Color.clear.preference(
+                        key: CardFrameKey.self,
+                        value: geo.frame(in: .global)
+                    )
+                }
             )
         case .firstReminderPrepared:
             FirstReminderPreparedCardView()
