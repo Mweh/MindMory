@@ -22,7 +22,7 @@ struct OnboardingPageView: View {
             .scaledToFill()
             .frame(maxWidth: .infinity)
             .frame(height: 360)
-            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large)
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium)
             )
             .padding(
                 .horizontal,
@@ -33,7 +33,7 @@ struct OnboardingPageView: View {
 
     private var titleText: some View {
         Text(page.title)
-            .font(MindMoryTypography.display)
+            .font(MindMoryTypography.headline)
             .foregroundStyle(MindMoryColors.Content.primary)
             .multilineTextAlignment(.center)
             .lineSpacing(4)

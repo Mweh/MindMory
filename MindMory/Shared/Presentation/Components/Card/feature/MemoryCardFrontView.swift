@@ -3,7 +3,6 @@ import SwiftUI
 struct MemoryCardFrontView: View {
     let memory: Memory
     var assetLocalIdentifier: String? = nil
-    var debugImageURL: URL? = nil
     let photoParallax: CGSize
     let contentParallax: CGSize
 
@@ -12,7 +11,7 @@ struct MemoryCardFrontView: View {
             .offset(photoParallax)
             .frame(maxWidth: .infinity)
             .frame(height: 430)
-            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
             .padding(MindMorySpacing.sm)
             .background(frontBackground)
             .clipShape(cardShape)
@@ -21,12 +20,10 @@ struct MemoryCardFrontView: View {
 
     @ViewBuilder
     private var imageContent: some View {
-        if debugImageURL != nil {
-            MemoryImagePlaceholderView(imageName: memory.imageName, debugImageURL: debugImageURL)
-        } else if let assetLocalIdentifier {
+        if let assetLocalIdentifier {
             ContextualMemoryAssetImageView(assetLocalIdentifier: assetLocalIdentifier)
         } else {
-            MemoryImagePlaceholderView(imageName: memory.imageName)
+            ImagePlaceholder(imageName: memory.imageName)
         }
     }
 
@@ -43,7 +40,7 @@ struct MemoryCardFrontView: View {
     }
 
     private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous)
+        RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
     }
 }
 

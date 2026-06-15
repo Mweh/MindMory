@@ -11,7 +11,7 @@ struct ContextualMemoryAssetImageView: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                MemoryImagePlaceholderView(imageName: "")
+                ImagePlaceholder(imageName: "")
 
                 if let image {
                     Image(uiImage: image)

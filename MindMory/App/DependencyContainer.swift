@@ -85,8 +85,7 @@ final class DependencyContainer: ObservableObject {
                 eventRepository: eventRepository,
                 photoLibraryRepository: photoLibraryRepository
             ),
-            qaDebugSettingsRepository: QADebugSettingsRepository(),
-            debugImageStorageService: DebugImageStorageService()
+            qaDebugSettingsRepository: QADebugSettingsRepository()
         )
     }
 

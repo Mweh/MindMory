@@ -1,30 +1,61 @@
 import SwiftUI
+import UIKit
 
 struct AlbumDetailView: View {
     let album: Album
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
+        PageLayout(
+            padding: EdgeInsets(
+                top: MindMorySpacing.lg,
+                leading: MindMorySpacing.xl,
+                bottom: MindMorySpacing.xl,
+                trailing: MindMorySpacing.xl
+            )
+        ) {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 header
                 sectionList
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, MindMorySpacing.xl)
-            .padding(.vertical, MindMorySpacing.lg)
         }
-        .background(MindMoryColors.Surface.background.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var header: some View {
-        AlbumHeaderCardView(
-            name: album.name,
-            coverPhoto: album.coverPhoto?.uiImage,
-            albumDateText: album.albumDate.displayText,
-            photoCountText: album.photos.isEmpty ? "No photos" : "\(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")"
-        )
+        AppCard {
+            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                Text(album.name)
+                    .font(MindMoryTypography.titleLarge)
+                    .foregroundStyle(MindMoryColors.Content.primary)
+
+                if let image = album.coverPhoto?.uiImage {
+                    ImagePlaceholder(image: image, imageName: nil)
+                        .frame(height: 220)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+                } else {
+                    ImagePlaceholder(image: nil, imageName: nil)
+                        .frame(height: 220)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                                .stroke(MindMoryColors.Border.subtle)
+                        )
+                }
+
+                HStack(spacing: MindMorySpacing.md) {
+                    Spacer()
+
+                    Text(album.photos.isEmpty ? "No photos" : "\(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")")
+                        .font(MindMoryTypography.bodySmall)
+                        .foregroundStyle(MindMoryColors.Content.link)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     private var sectionList: some View {
@@ -67,9 +98,9 @@ struct AlbumDetailView: View {
         .frame(maxWidth: .infinity)
         .padding(MindMorySpacing.lg)
         .background(MindMoryColors.Surface.surface)
-        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
                 .stroke(MindMoryColors.Border.subtle)
         )
     }

@@ -4,13 +4,12 @@ struct AlbumSectionPhotoCell: View {
     let image: UIImage?
 
     var body: some View {
-        MemoryImagePlaceholderView(
+        ImagePlaceholder(
             image: image,
             imageName: nil,
-            placeholderIcon: "photo.on.rectangle",
-            placeholderText: image == nil ? "Tap to add photo" : nil
+            subtitle: image == nil ? "Tap to add photo" : nil,
+            useBackground: false
         )
-        .background(MindMoryColors.Surface.surface)
         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)

@@ -39,10 +39,10 @@ private struct MindMoryPrimaryButtonStyle: ButtonStyle {
         let pressDepth = (configuration.isPressed && isEnabled) ? Metrics.pressTravel : 0
         
         // Disabled state colors using semantic tokens
-        let shadowColor: Color = isEnabled ? MindMoryColors.Surface.primary : MindMoryColors.Content.disabled.opacity(0.4)
-        let fillColor: Color = isEnabled ? MindMoryColors.Surface.background : MindMoryColors.Content.disabled.opacity(0.12)
-        let borderColor: Color = isEnabled ? MindMoryColors.Surface.primary : MindMoryColors.Content.disabled.opacity(0.25)
-        let textColor: Color = isEnabled ? MindMoryColors.Surface.primary : MindMoryColors.Content.disabled.opacity(0.6)
+        let shadowColor: Color = isEnabled ? MindMoryColors.Surface.primary : MindMoryColors.Border.strong
+        let fillColor: Color = isEnabled ? MindMoryColors.Surface.background : MindMoryColors.Surface.disabled
+        let borderColor: Color = isEnabled ? MindMoryColors.Surface.primary : MindMoryColors.Border.strong
+        let textColor: Color = isEnabled ? MindMoryColors.Surface.primary : MindMoryColors.Content.tertiary
         
         return Color.clear
             .frame(maxWidth: .infinity)

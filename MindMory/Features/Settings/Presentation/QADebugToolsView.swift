@@ -7,53 +7,23 @@ struct QADebugToolsView: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
 
     var body: some View {
-        Form {
-            Section {
-                Toggle("Skip Onboarding", isOn: $viewModel.skipOnboarding)
+        PageLayout {
+            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                SectionTitle(
+                    title: "QA Debug Tools",
+                    description: "Use this debug view to verify onboarding, force specific Home card states, and override the Home card image during testing.",
+                    size: .large
+                )
 
-                Button("Reset Onboarding", role: .destructive) {
-                    viewModel.resetOnboarding()
-                }
-            } header: {
-                Text("Onboarding")
-            } footer: {
-                Text("Debug/testing only. Resetting onboarding lets QA verify the first-run flow again.")
-            }
+                onboardingSection
+                homeCardStateSection
+                photoOverrideSection
 
-            Section {
-                HomeCardStatePickerView(selectedState: $viewModel.homeCardState)
-            } header: {
-                Text("Home Card State")
-            } footer: {
-                Text("Controls which large Home card is shown for QA testing.")
-            }
-
-            Section {
-                currentImagePreview
-
-                PhotosPicker(
-                    selection: $selectedPhotoItem,
-                    matching: .images,
-                    photoLibrary: .shared()
-                ) {
-                    Label("Import Photo", systemImage: "photo.badge.plus")
-                }
-
-                Button("Reset to Default Photo", role: .destructive) {
-                    viewModel.resetHomeCardPhoto()
-                }
-            } header: {
-                Text("Home 3D Card Mock Photo")
-            } footer: {
-                Text("The selected photo is stored locally and overrides the Home 3D card image in Debug builds.")
-            }
-
-            if let statusMessage = viewModel.statusMessage {
-                Section {
-                    Text(statusMessage)
-                        .foregroundStyle(MindMoryColors.Content.secondary)
+                if let statusMessage = viewModel.statusMessage {
+                    statusSection(message: statusMessage)
                 }
             }
+            .frame(maxWidth: .infinity)
         }
         .navigationTitle("QA Debug Tools")
         .navigationBarTitleDisplayMode(.inline)
@@ -62,21 +32,128 @@ struct QADebugToolsView: View {
         }
     }
 
-    private var currentImagePreview: some View {
-        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-            Text("Current image preview")
-                .font(MindMoryTypography.bodyMedium)
+    private var onboardingSection: some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
+                SectionTitle(
+                    title: "Onboarding",
+                    description: "Reset or re-enable the first-run flow so QA can verify onboarding screens again.",
+                    size: .medium
+                )
 
-            MemoryImagePlaceholderView(
-                imageName: PreviewData.aromaMemory.imageName,
-                debugImageURL: viewModel.selectedImageURL
-            )
-            .frame(height: 180)
-            .clipShape(
-                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-            )
+                Toggle(isOn: $viewModel.skipOnboarding) {
+                    VStack(alignment: .leading, spacing: MindMorySpacing.xxs) {
+                        Text("Skip onboarding")
+                            .font(MindMoryTypography.bodyLarge)
+                            .foregroundStyle(MindMoryColors.Content.primary)
+
+                        Text("The app will treat onboarding as completed until this is reset.")
+                            .font(MindMoryTypography.bodySmall)
+                            .foregroundStyle(MindMoryColors.Content.secondary)
+                    }
+                }
+                .toggleStyle(SwitchToggleStyle(tint: MindMoryColors.Surface.primary))
+
+                Divider().overlay(MindMoryColors.Border.subtle)
+
+                Button("Reset onboarding", role: .destructive) {
+                    viewModel.resetOnboarding()
+                }
+                .font(MindMoryTypography.bodyMedium)
+                .foregroundStyle(MindMoryColors.Content.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, MindMorySpacing.md)
+                .background(MindMoryColors.Surface.surface)
+                .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+            }
         }
-        .padding(.vertical, MindMorySpacing.xs)
+    }
+
+    private var homeCardStateSection: some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
+                SectionTitle(
+                    title: "Home card state",
+                    description: "Force a specific Home card scenario for QA playback and UI verification.",
+                    size: .medium
+                )
+
+                Text("The selected state will be reflected in the Home screen after return.")
+                    .font(MindMoryTypography.bodySmall)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
+
+                HomeCardStatePickerView(selectedState: $viewModel.homeCardState)
+                    .padding(.top, MindMorySpacing.sm)
+            }
+        }
+    }
+
+    private var photoOverrideSection: some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
+                SectionTitle(
+                    title: "Home card photo override",
+                    description: "Import an image to override the Home card photo during debug testing.",
+                    size: .medium
+                )
+
+                ImagePlaceholder(
+                    imageName: PreviewData.aromaMemory.imageName,
+                    title: nil,
+                    subtitle: "No override photo selected yet."
+                )
+                .frame(height: 180)
+                .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+
+                HStack(spacing: MindMorySpacing.sm) {
+                    PhotosPicker(
+                        selection: $selectedPhotoItem,
+                        matching: .images,
+                        photoLibrary: .shared()
+                    ) {
+                        HStack(spacing: MindMorySpacing.sm) {
+                            Image(systemName: "photo.badge.plus")
+                                .font(MindMoryTypography.bodyLarge)
+
+                            Text("Import photo")
+                                .font(MindMoryTypography.bodyLarge)
+                        }
+                        .foregroundStyle(MindMoryColors.Surface.primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, MindMorySpacing.md)
+                        .background(MindMoryColors.Surface.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button("Reset to default", role: .destructive) {
+                        viewModel.resetHomeCardPhoto()
+                    }
+                    .font(MindMoryTypography.bodyMedium)
+                    .foregroundStyle(MindMoryColors.Content.primary)
+                    .padding(.vertical, MindMorySpacing.md)
+                    .padding(.horizontal, MindMorySpacing.lg)
+                    .background(MindMoryColors.Surface.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private func statusSection(message: String) -> some View {
+        AppCard {
+            HStack(alignment: .top, spacing: MindMorySpacing.sm) {
+                Image(systemName: "info.circle")
+                    .font(MindMoryTypography.titleSmall)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
+
+                Text(message)
+                    .font(MindMoryTypography.bodyMedium)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
+                    .multilineTextAlignment(.leading)
+            }
+        }
     }
 }
 

@@ -6,7 +6,6 @@ struct SettingsNotificationTriggersCard: View {
     var body: some View {
         AppCard {
             VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                titleSection
                 triggerTogglesSection
                 wordingPreferenceSection
                 saveButton
@@ -14,17 +13,6 @@ struct SettingsNotificationTriggersCard: View {
             .toggleStyle(
                 SwitchToggleStyle(tint: MindMoryColors.Surface.primary)
             )
-        }
-    }
-
-    private var titleSection: some View {
-        VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-            Text("Contextual triggers")
-                .font(MindMoryTypography.titleMedium)
-
-            Text("Turn on which kinds of location and moment triggers should create reminders.")
-                .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.Content.secondary)
         }
     }
 
