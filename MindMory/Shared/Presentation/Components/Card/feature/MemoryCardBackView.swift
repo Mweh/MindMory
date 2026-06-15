@@ -83,7 +83,7 @@ struct MemoryCardBackView: View {
     private var botanicalDecoration: some View {
         VStack(spacing: -6) {
             Image(systemName: "leaf.fill")
-                .font(MindMoryTypography.display)
+                .font(MindMoryTypography.titleLarge)
                 .rotationEffect(.degrees(-18))
             Image(systemName: "leaf.fill")
                 .font(MindMoryTypography.titleLarge)
@@ -103,7 +103,7 @@ struct MemoryCardBackView: View {
     }
 
     private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous)
+        RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
     }
 }
 

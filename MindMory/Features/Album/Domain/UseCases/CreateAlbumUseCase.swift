@@ -20,7 +20,6 @@ struct CreateAlbumUseCase {
         note: String,
         photos: [AlbumPhoto],
         sections: [MemoryAlbumSection] = [],
-        albumDate: AlbumDate = AlbumDate(start: Date(), end: Date()),
         category: AlbumCategory
     ) throws -> Album {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -39,7 +38,6 @@ struct CreateAlbumUseCase {
             note: note,
             photos: photos,
             sections: sections,
-            albumDate: albumDate,
             createdAt: Date(),
             category: category
         )

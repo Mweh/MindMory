@@ -50,12 +50,10 @@ final class HomeViewModel: ObservableObject {
     @Published var captionText = ""
     @Published var homeCardState: HomeCardState = .normal
     @Published var isShowingSharePreview = false
-    @Published private(set) var debugHomeCardImageURL: URL?
 
     private let memories: [Memory]
     private let findContextualMemoryUseCase: FindContextualMemoryUseCase?
     private let qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
-    private let debugImageStorageService: DebugImageStorageService
     private var contextualDiscoveryTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
@@ -107,24 +105,21 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
+    var contextualErrorMessage: String? {
+        if case let .error(message) = contextualState {
+            return message
+        }
+        return nil
+    }
+
     init(
         memories: [Memory],
         findContextualMemoryUseCase: FindContextualMemoryUseCase? = nil,
-        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol,
-        debugImageStorageService: DebugImageStorageService
+        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
     ) {
         self.memories = memories
         self.findContextualMemoryUseCase = findContextualMemoryUseCase
         self.qaDebugSettingsRepository = qaDebugSettingsRepository
-        self.debugImageStorageService = debugImageStorageService
-        NotificationCenter.default.publisher(for: .qaDebugHomeCardImageDidChange)
-            .sink { [weak self] _ in
-                Task { @MainActor in
-                    self?.refreshDebugHomeCardImage()
-                }
-            }
-            .store(in: &cancellables)
-
         NotificationCenter.default.publisher(for: .qaDebugHomeCardStateDidChange)
             .sink { [weak self] _ in
                 Task { @MainActor in
@@ -139,7 +134,6 @@ final class HomeViewModel: ObservableObject {
         contextualAssetLocalIdentifier = nil
         captionText = focusedMemory?.journalText ?? ""
         statCards = makeStatCards()
-        refreshDebugHomeCardImage()
         refreshHomeCardState()
         state = focusedMemory == nil ? .empty : .positive(
             Reminder(
@@ -176,6 +170,10 @@ final class HomeViewModel: ObservableObject {
         } else {
             openAppSettings()
         }
+    }
+
+    func retryContextualDiscovery() {
+        discoverContextualMemory()
     }
 
     func showContextualAsset(localIdentifier: String) {
@@ -255,7 +253,6 @@ final class HomeViewModel: ObservableObject {
             )
         case .permissionRequired(.photoLibrary):
             contextualAssetLocalIdentifier = nil
-            homeCardState = .photoAccessDenied
         case .empty, .error:
             contextualAssetLocalIdentifier = nil
         case .idle, .loading, .permissionRequired:
@@ -271,16 +268,6 @@ final class HomeViewModel: ObservableObject {
         }
 
         UIApplication.shared.open(url)
-    }
-
-    private func refreshDebugHomeCardImage() {
-        #if DEBUG
-        debugHomeCardImageURL = debugImageStorageService.imageURL(
-            path: qaDebugSettingsRepository.debugHomeCardImagePath
-        )
-        #else
-        debugHomeCardImageURL = nil
-        #endif
     }
 
     private func refreshHomeCardState() {

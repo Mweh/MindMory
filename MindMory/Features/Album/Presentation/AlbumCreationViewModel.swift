@@ -9,10 +9,6 @@ class AlbumCreationViewModel: ObservableObject {
     @Published var alertMessage: String?
     @Published var savedAlbum: Album?
 
-    @Published var isDateRange: Bool = false
-    @Published var albumDateStart: Date = Date()
-    @Published var albumDateEnd: Date = Date()
-
     let category: AlbumCategory
     let loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase
     let createAlbumUseCase: CreateAlbumUseCase
@@ -22,17 +18,6 @@ class AlbumCreationViewModel: ObservableObject {
     var isSaveButtonDisabled: Bool {
         guard coverPhoto != nil else { return true }
         return albumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    var albumDate: AlbumDate {
-        AlbumDate(
-            start: albumDateStart,
-            end: isDateRange ? albumDateEnd : albumDateStart
-        )
-    }
-
-    var dateRangeIsValid: Bool {
-        !isDateRange || albumDateEnd >= albumDateStart
     }
 
     var albumSummary: String? {
@@ -119,7 +104,6 @@ class AlbumCreationViewModel: ObservableObject {
                     note: self.note,
                     photos: self.buildAlbumPhotos(),
                     sections: self.albumSections(),
-                    albumDate: self.albumDate,
                     category: self.category
                 )
 

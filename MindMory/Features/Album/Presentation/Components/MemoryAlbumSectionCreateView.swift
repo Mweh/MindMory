@@ -52,7 +52,7 @@ struct MemoryAlbumSectionCreateView: View {
     }
 
     var body: some View {
-        ScrollView {
+        PageLayout {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 // Context-aware header
                 sectionHeader
@@ -71,9 +71,7 @@ struct MemoryAlbumSectionCreateView: View {
 
                 Spacer(minLength: MindMorySpacing.xl)
             }
-            .padding(MindMorySpacing.xl)
         }
-        .background(MindMoryColors.Surface.background.ignoresSafeArea())
         .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -178,9 +176,9 @@ struct MemoryAlbumSectionCreateView: View {
                         .font(MindMoryTypography.bodyMedium)
                         .padding(MindMorySpacing.sm)
                         .background(MindMoryColors.Surface.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
                         .overlay(
-                            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                            RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous)
                                 .stroke(MindMoryColors.Border.subtle)
                         )
                 }
@@ -197,9 +195,9 @@ struct MemoryAlbumSectionCreateView: View {
                         .font(MindMoryTypography.bodyMedium)
                         .padding(MindMorySpacing.sm)
                         .background(MindMoryColors.Surface.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
                         .overlay(
-                            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                            RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous)
                                 .stroke(MindMoryColors.Border.subtle)
                         )
                 }
@@ -418,7 +416,7 @@ struct MemoryAlbumSectionCreateView: View {
                 MemoryAlbumSectionTemplatePlaceholder()
             }, availableWidth: containerWidth)
             .frame(width: containerWidth, height: template.estimatedHeight(forWidth: containerWidth))
-            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
             // keep the preview clean: no per-cell debug badges or stacked icon chips
             .frame(maxWidth: .infinity, alignment: .center)
             .clipped()
@@ -633,19 +631,19 @@ private struct OptionInfoBar: View {
 
                 Spacer()
 
-                badgePill(icon: "photo.on.rectangle", text: "\(template.layoutCount) images", tint: MindMoryColors.Content.tertiary)
+                Badge(iconName: "photo.on.rectangle", text: "\(template.layoutCount) images", tint: MindMoryColors.Content.tertiary, style: .iconText)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: MindMorySpacing.sm) {
                     if columnCount > 1 {
-                        capsulePill(icon: "square.grid.2x2", text: "\(columnCount) cols", color: MindMoryColors.Content.link)
+                        Badge(iconName: "square.grid.2x2", text: "\(columnCount) cols", tint: MindMoryColors.Content.link, style: .iconText)
                     }
 
-                    if portraitCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.portrait.iconName, text: "\(portraitCount)", color: MindMoryColors.Content.link) }
-                    if landscapeCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.landscape.iconName, text: "\(landscapeCount)", color: MindMoryColors.Content.tertiary) }
-                    if squareCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.square.iconName, text: "\(squareCount)", color: MindMoryColors.Content.secondary) }
-                    if flexibleCount > 0 { capsulePill(icon: MemoryAlbumFrameShape.flexible.iconName, text: "\(flexibleCount)", color: MindMoryColors.Content.secondary) }
+                    if portraitCount > 0 { Badge(iconName: MemoryAlbumFrameShape.portrait.iconName, text: "\(portraitCount)", tint: MindMoryColors.Content.link, style: .iconText) }
+                    if landscapeCount > 0 { Badge(iconName: MemoryAlbumFrameShape.landscape.iconName, text: "\(landscapeCount)", tint: MindMoryColors.Content.tertiary, style: .iconText) }
+                    if squareCount > 0 { Badge(iconName: MemoryAlbumFrameShape.square.iconName, text: "\(squareCount)", tint: MindMoryColors.Content.secondary, style: .iconText) }
+                    if flexibleCount > 0 { Badge(iconName: MemoryAlbumFrameShape.flexible.iconName, text: "\(flexibleCount)", tint: MindMoryColors.Content.secondary, style: .iconText) }
                 }
                 .padding(.vertical, MindMorySpacing.xs)
             }
@@ -704,11 +702,11 @@ private struct OptionInfoBar: View {
 
 private struct MemoryAlbumSectionTemplatePlaceholder: View {
     var body: some View {
-        MemoryImagePlaceholderView(
+        ImagePlaceholder(
             image: nil,
             imageName: nil,
-            placeholderIcon: "photo.on.rectangle.angled",
-            placeholderText: "Layout preview"
+            subtitle: "Layout preview",
+            cornerRadius: nil
         )
         // Note: do not apply inner corner clipping here so adjacent cells render seamlessly
     }

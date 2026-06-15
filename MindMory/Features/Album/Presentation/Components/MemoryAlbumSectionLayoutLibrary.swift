@@ -96,18 +96,22 @@ struct MemoryAlbumSectionLayoutTemplate: Identifiable, Equatable {
                 return h0 + spacing + h1
 
             case 2: // focus split (left larger)
-                let leftWidth = width * 0.66 - spacing * 0.33
-                let rightWidth = width - leftWidth - spacing
-                let hLeft = leftWidth * shape(at: 0).heightMultiplier
-                let hRight = rightWidth * shape(at: 1).heightMultiplier
-                return max(hLeft, hRight)
+                let sizes = computeBalancedColumnWidths(
+                    totalWidth: width,
+                    spacingBetweenColumns: spacing,
+                    leftMultipliers: [shape(at: 0).heightMultiplier],
+                    rightMultipliers: [shape(at: 1).heightMultiplier]
+                )
+                return sizes.height
 
             case 3: // reverse focus (right larger)
-                let rightWidth = width * 0.66 - spacing * 0.33
-                let leftWidth = width - rightWidth - spacing
-                let hLeft = leftWidth * shape(at: 0).heightMultiplier
-                let hRight = rightWidth * shape(at: 1).heightMultiplier
-                return max(hLeft, hRight)
+                let sizes = computeBalancedColumnWidths(
+                    totalWidth: width,
+                    spacingBetweenColumns: spacing,
+                    leftMultipliers: [shape(at: 0).heightMultiplier],
+                    rightMultipliers: [shape(at: 1).heightMultiplier]
+                )
+                return sizes.height
 
             default: // side-by-side
                 return rowHeight(forIndices: [0, 1], columns: 2, availableWidth: width)
@@ -368,26 +372,38 @@ struct MemoryAlbumSectionLayoutRenderer<Content: View>: View {
                 .frame(width: width, height: h0 + spacing + h1)
 
             case 2: // focus split (left larger)
-                let leftWidth = width * 0.66 - spacing * 0.33
-                let rightWidth = width - leftWidth - spacing
+                let sizes = computeBalancedColumnWidths(
+                    totalWidth: width,
+                    spacingBetweenColumns: spacing,
+                    leftMultipliers: [template.frameShapes.safe(0)?.heightMultiplier ?? 1],
+                    rightMultipliers: [template.frameShapes.safe(1)?.heightMultiplier ?? 1]
+                )
+                let leftWidth = sizes.left
+                let rightWidth = sizes.right
                 let hLeft = leftWidth * (template.frameShapes.safe(0)?.heightMultiplier ?? 1)
                 let hRight = rightWidth * (template.frameShapes.safe(1)?.heightMultiplier ?? 1)
                 HStack(spacing: spacing) {
                     imageCell(0).frame(width: leftWidth, height: hLeft)
                     imageCell(1).frame(width: rightWidth, height: hRight)
                 }
-                .frame(width: width, height: max(hLeft, hRight))
+                .frame(width: width, height: sizes.height)
 
             case 3: // reverse focus (right larger)
-                let rightWidth = width * 0.66 - spacing * 0.33
-                let leftWidth = width - rightWidth - spacing
+                let sizes = computeBalancedColumnWidths(
+                    totalWidth: width,
+                    spacingBetweenColumns: spacing,
+                    leftMultipliers: [template.frameShapes.safe(0)?.heightMultiplier ?? 1],
+                    rightMultipliers: [template.frameShapes.safe(1)?.heightMultiplier ?? 1]
+                )
+                let leftWidth = sizes.left
+                let rightWidth = sizes.right
                 let hLeft = leftWidth * (template.frameShapes.safe(0)?.heightMultiplier ?? 1)
                 let hRight = rightWidth * (template.frameShapes.safe(1)?.heightMultiplier ?? 1)
                 HStack(spacing: spacing) {
                     imageCell(0).frame(width: leftWidth, height: hLeft)
                     imageCell(1).frame(width: rightWidth, height: hRight)
                 }
-                .frame(width: width, height: max(hLeft, hRight))
+                .frame(width: width, height: sizes.height)
 
             default: // side-by-side
                 let cols = 2

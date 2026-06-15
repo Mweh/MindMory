@@ -16,9 +16,16 @@ struct AlbumListView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            content
-                .padding(.horizontal, MindMorySpacing.xl)
-                .padding(.top, MindMorySpacing.lg)
+            PageLayout(
+                padding: EdgeInsets(
+                    top: MindMorySpacing.lg,
+                    leading: MindMorySpacing.xl,
+                    bottom: MindMorySpacing.xl,
+                    trailing: MindMorySpacing.xl
+                )
+            ) {
+                content
+            }
 
             floatingActionButton
                 .padding(.trailing, MindMorySpacing.xl)
@@ -33,7 +40,6 @@ struct AlbumListView: View {
                 viewModel.addAlbum(album)
             }
         }
-        .background(MindMoryColors.Surface.background.ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -115,17 +121,17 @@ struct AlbumListView: View {
         NavigationLink(destination: AlbumDetailView(album: album)) {
             VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
                 if let image = album.coverPhoto?.uiImage {
-                    MemoryImagePlaceholderView(image: image, imageName: nil)
+                    ImagePlaceholder(image: image, imageName: nil)
                         .frame(height: 190)
                         .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
                 } else {
-                    MemoryImagePlaceholderView(image: nil, imageName: nil)
+                    ImagePlaceholder(image: nil, imageName: nil)
                         .frame(height: 190)
                         .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
                         .overlay(
-                            RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
                                 .stroke(MindMoryColors.Border.subtle)
                         )
                 }
@@ -136,10 +142,6 @@ struct AlbumListView: View {
                         .foregroundStyle(MindMoryColors.Content.primary)
 
                     HStack(spacing: MindMorySpacing.sm) {
-                        Text(album.albumDate.displayText)
-                            .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.Content.secondary)
-
                         Spacer()
 
                         Text(album.photos.isEmpty ? "No photos" : "\(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")")
@@ -151,9 +153,9 @@ struct AlbumListView: View {
             }
                 .padding(MindMorySpacing.lg)
                 .background(MindMoryColors.Surface.background)
-            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
                     .stroke(MindMoryColors.Border.subtle, lineWidth: 1)
             )
         }

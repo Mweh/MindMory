@@ -5,7 +5,7 @@ struct MemoryDetailView: View {
     @StateObject var viewModel: MemoryDetailViewModel
 
     var body: some View {
-        ScrollView {
+        PageLayout {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 heroImage
                 headerSection
@@ -14,16 +14,14 @@ struct MemoryDetailView: View {
                 shareButton
                 shareFrameSection
             }
-            .padding(MindMorySpacing.xl)
         }
-        .background(MindMoryColors.Surface.background.ignoresSafeArea())
     }
 
     private var heroImage: some View {
-        MemoryImagePlaceholderView(imageName: viewModel.memory.imageName)
+        ImagePlaceholder(imageName: viewModel.memory.imageName)
             .frame(height: 260)
             .clipShape(
-                RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge)
+                RoundedRectangle(cornerRadius: MindMoryRadius.medium)
             )
     }
 

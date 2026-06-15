@@ -20,7 +20,15 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
+        PageLayout(
+            padding: EdgeInsets(
+                top: MindMorySpacing.xl,
+                leading: MindMorySpacing.lg,
+                bottom: MindMorySpacing.xl,
+                trailing: MindMorySpacing.lg
+            ),
+            background: { backgroundView.ignoresSafeArea() }
+        ) {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 heroSection
                 notificationSection
@@ -32,10 +40,7 @@ struct SettingsView: View {
                 qaDebugSection
                 #endif
             }
-            .padding(.horizontal, MindMorySpacing.lg)
-            .padding(.vertical, MindMorySpacing.xl)
         }
-        .background(backgroundView.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await viewModel.refreshStatuses()
@@ -61,7 +66,7 @@ struct SettingsView: View {
 
     private var heroSection: some View {
         ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous)
+            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -105,7 +110,7 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity)
         .frame(minHeight: 220)
         .overlay(
-            RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous)
+            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
                 .stroke(MindMoryColors.Border.subtle, lineWidth: 1)
         )
         .shadow(color: MindMoryShadow.cardColor, radius: MindMoryShadow.softRadius, x: 0, y: MindMoryShadow.softY)
@@ -113,15 +118,11 @@ struct SettingsView: View {
 
     private var reminderSettingSection: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-            VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-                        Text("Reminder setting")
-                    .font(MindMoryTypography.titleMedium)
-                    .foregroundStyle(MindMoryColors.Content.primary)
-
-                Text("Choose whether to use the app default reminder mode or customize your own preference settings.")
-                    .font(MindMoryTypography.bodySmall)
-                    .foregroundStyle(MindMoryColors.Content.secondary)
-            }
+            SectionTitle(
+                title: "Reminder setting",
+                description: "Choose whether to use the app default reminder mode or customize your own preference settings.",
+                size: .medium
+            )
             SettingsReminderSettingCardView(viewModel: viewModel)
         }
     }
@@ -131,37 +132,86 @@ struct SettingsView: View {
     }
 
     private var locationContextSection: some View {
-        SettingsLocationCardView(viewModel: viewModel)
+        SettingsToggleTileCardView(
+            title: "Location reminder",
+            description: "Let your location guide your reminders.",
+            isOn: $viewModel.preferences.location.usesLocationContext,
+            navigationTitle: "Select point of interest",
+            navigationSubtitle: "Help MindMory understand which places matter most to you.",
+            navigationSummary: viewModel.preferences.locationSummary,
+            iconName: "map.fill",
+            destination: { LocationSettingsDetailView(viewModel: viewModel) },
+            disabledTitle: "Location reminders are off",
+            disabledDescription: "The app will not deliver any location-based reminders until this is turned on."
+        )
     }
 
     private var calendarContextSection: some View {
-        SettingsCalendarCardView(viewModel: viewModel)
+        SettingsToggleTileCardView(
+            title: "Schedule reminder",
+            description: "Receive photo reminders around the events that matter to you.",
+            isOn: $viewModel.preferences.schedule.usesCalendarContext,
+            navigationTitle: "Select event reminders",
+            navigationSubtitle: "Help MindMory focus on the events that matter most to you.",
+            navigationSummary: viewModel.preferences.scheduleSummary,
+            iconName: "calendar.badge.clock",
+            destination: { ScheduleSettingsDetailView(viewModel: viewModel) },
+            disabledTitle: "Calendar reminders are off",
+            disabledDescription: "The app will not deliver any calendar-based reminders until this is turned on."
+        )
     }
 
     private var deliverySection: some View {
-        SettingsDeliveryCardView(viewModel: viewModel)
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            SectionTitle(
+                title: "Delivery & personalization",
+                description: "Adjust when and how reminders arrive.",
+                size: .medium
+            )
+
+            SettingsDeliveryCardView(viewModel: viewModel)
+        }
     }
 
     private var privacySection: some View {
-        SettingsPrivacyCardView()
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            SectionTitle(
+                title: "Privacy & behavior notes",
+                description: "These settings show real permissions and reminder preferences.",
+                size: .medium
+            )
+
+            SettingsPrivacyCardView()
+        }
     }
 
     #if DEBUG
     private var qaDebugSection: some View {
-        SettingsQACardView(viewModel: viewModel)
-    }
-    #endif
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            SectionTitle(
+                title: "QA Debug",
+                description: "Debug/testing only. Hidden from Release builds.",
+                size: .medium
+            )
 
-    private func sectionTitle(title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: MindMorySpacing.xxs) {
-            Text(title)
-                .font(MindMoryTypography.titleMedium)
-
-            Text(subtitle)
-                .font(MindMoryTypography.bodyMedium)
-                .foregroundStyle(MindMoryColors.Content.secondary)
+            SettingsToggleTileCardView(
+                title: "Enable QA Debug Mode",
+                description: "Turn on debug tools for QA and testing workflows.",
+                isOn: Binding(
+                    get: { viewModel.qaDebugModeEnabled },
+                    set: { viewModel.qaDebugModeEnabled = $0 }
+                ),
+                navigationTitle: "Open QA Debug Tools",
+                navigationSubtitle: "Reset onboarding and test Home card photos.",
+                navigationSummary: "Debug mode enabled",
+                iconName: "wrench.and.screwdriver.fill",
+                destination: { QADebugToolsView(viewModel: viewModel.makeQADebugToolsViewModel()) },
+                disabledTitle: nil,
+                disabledDescription: nil
+            )
         }
     }
+    #endif
 
     private func handlePermissionAction(for area: SettingsAccessArea) {
         switch viewModel.status(for: area) {
@@ -213,17 +263,7 @@ struct SettingsHeroBadge: View {
     let title: String
 
     var body: some View {
-        Text(title)
-            .font(MindMoryTypography.bodySmall)
-            .foregroundStyle(MindMoryColors.Surface.primary)
-            .padding(.horizontal, MindMorySpacing.sm)
-            .padding(.vertical, MindMorySpacing.xs)
-                .background(MindMoryColors.Surface.background.opacity(0.94))
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(MindMoryColors.Border.subtle, lineWidth: 1)
-            )
+        Badge(iconName: nil, text: title, tint: MindMoryColors.Surface.primary, style: .textOnly, cornerRadius: MindMoryRadius.medium)
     }
 }
 
@@ -233,13 +273,7 @@ struct SettingsStatusBadge: View {
     let tint: Color
 
     var body: some View {
-        Text(title)
-            .font(MindMoryTypography.bodySmall)
-            .foregroundStyle(tint)
-            .padding(.horizontal, MindMorySpacing.sm)
-            .padding(.vertical, MindMorySpacing.xs)
-            .background(tint.opacity(0.10))
-            .clipShape(Capsule())
+        Badge(iconName: nil, text: title, tint: tint, style: .textOnly)
     }
 }
 
@@ -256,10 +290,10 @@ struct SettingsNavigationRow<Destination: View>: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
                         .fill(MindMoryColors.Surface.elevated)
-                        .frame(width: 46, height: 46)
+                        .frame(width: 36, height: 36)
 
                     Image(systemName: iconName)
-                        .font(MindMoryTypography.labelSmall)
+                        .font(MindMoryTypography.bodyLarge)
                         .foregroundStyle(MindMoryColors.Surface.primary)
                 }
 
@@ -318,20 +352,23 @@ struct SettingsRadioNavigationRow<Destination: View>: View {
 
 struct SettingsBulletRow: View {
     let iconName: String
-    let text: String
+    let title: String
+    let description: String
 
     var body: some View {
         HStack(alignment: .top, spacing: MindMorySpacing.sm) {
             Image(systemName: iconName)
-                .font(MindMoryTypography.labelSmall)
+                .font(MindMoryTypography.bodyLarge)
                 .foregroundStyle(MindMoryColors.Surface.primary)
-                .frame(width: 20)
+                .frame(minWidth: 28, minHeight: 28)
 
-            Text(text)
-                .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.Content.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            SectionTitle(
+                title: title,
+                description: description,
+                size: .small
+            )
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -358,7 +395,7 @@ struct RadioSelectionRow<SecondaryContent: View>: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(alignment: .top, spacing: MindMorySpacing.sm) {
+            HStack(alignment: .center, spacing: MindMorySpacing.sm) {
                 VStack(alignment: .leading, spacing: MindMorySpacing.xxs) {
                     Text(title)
                         .font(MindMoryTypography.bodyLarge)
@@ -374,7 +411,8 @@ struct RadioSelectionRow<SecondaryContent: View>: View {
                 Spacer(minLength: MindMorySpacing.md)
 
                 Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
-                    .font(MindMoryTypography.labelSmall)
+                    .font(MindMoryTypography.bodyLarge)
+                    .frame(width: 26, height: 26)
                     .foregroundStyle(isSelected ? MindMoryColors.Surface.primary : MindMoryColors.Border.subtle)
             }
         }

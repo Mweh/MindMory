@@ -27,10 +27,10 @@ struct ShareableMemoryFrameView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(MindMoryColors.Surface.background)
         .clipShape(
-            RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge)
+            RoundedRectangle(cornerRadius: MindMoryRadius.medium)
         )
         .overlay {
-            RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge)
+            RoundedRectangle(cornerRadius: MindMoryRadius.medium)
                 .stroke(MindMoryColors.Border.subtle)
         }
         .shadow(
