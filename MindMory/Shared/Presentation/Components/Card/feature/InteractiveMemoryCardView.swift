@@ -8,7 +8,11 @@ struct InteractiveMemoryCardView: View {
     let flipAction: () -> Void
     let shareAction: () -> Void
 
-    private var isBackVisible: Bool { side == .back }
+    @State private var displayedSide: MemoryCardSide = .front
+    @State private var flipRotation: Double = 0
+    @State private var isFlipping = false
+
+    private var isBackVisible: Bool { displayedSide == .back }
 
     var body: some View {
         ZStack {
@@ -18,11 +22,34 @@ struct InteractiveMemoryCardView: View {
                 MemoryCardFrontView(memory: memory, imageSource: imageSource, photoParallax: .zero, contentParallax: .zero)
             }
         }
+        .rotation3DEffect(.degrees(flipRotation), axis: (x: 0, y: 1, z: 0), perspective: 0.75)
         .shadow(color: .black.opacity(0.13), radius: 18, x: 0, y: 16)
         .contentShape(cardShape)
-        .onTapGesture {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        .onAppear { displayedSide = side }
+        .onTapGesture(perform: flipCard)
+    }
+
+    private func flipCard() {
+        guard !isFlipping else { return }
+        isFlipping = true
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+            flipRotation = 90
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+            displayedSide = displayedSide == .front ? .back : .front
             flipAction()
+            flipRotation = -90
+
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                flipRotation = 0
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.34) {
+                isFlipping = false
+            }
         }
     }
 
