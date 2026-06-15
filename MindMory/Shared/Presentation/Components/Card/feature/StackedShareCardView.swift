@@ -1,8 +1,11 @@
 import SwiftUI
+import UIKit
 
 struct StackedShareCardView: View {
     let memory: Memory
     let captionText: String
+    var resolvedImage: UIImage?
+    var fallbackImageName: String?
     var exportMode = false
 
     var body: some View {
@@ -22,7 +25,7 @@ struct StackedShareCardView: View {
 
     private var photoCard: some View {
         VStack(alignment: .leading, spacing: exportMode ? MindMorySpacing.lg : MindMorySpacing.sm) {
-            ImagePlaceholder(imageName: memory.imageName)
+            ImagePlaceholder(image: resolvedImage, imageName: fallbackImageName ?? memory.imageName)
                 .frame(height: exportMode ? 410 : 230)
                 .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
 

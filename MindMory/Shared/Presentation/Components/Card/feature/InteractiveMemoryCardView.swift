@@ -2,7 +2,7 @@ import SwiftUI
 
 struct InteractiveMemoryCardView: View {
     let memory: Memory
-    var assetLocalIdentifier: String? = nil
+    var imageSource: MemoryImageSource
     @Binding var side: MemoryCardSide
     @Binding var captionText: String
     let flipAction: () -> Void
@@ -15,7 +15,7 @@ struct InteractiveMemoryCardView: View {
             if isBackVisible {
                 MemoryCardBackView(memory: memory, captionText: $captionText, shareAction: shareAction)
             } else {
-                MemoryCardFrontView(memory: memory, assetLocalIdentifier: assetLocalIdentifier, photoParallax: .zero, contentParallax: .zero)
+                MemoryCardFrontView(memory: memory, imageSource: imageSource, photoParallax: .zero, contentParallax: .zero)
             }
         }
         .shadow(color: .black.opacity(0.13), radius: 18, x: 0, y: 16)
@@ -34,7 +34,7 @@ struct InteractiveMemoryCardView: View {
 #if DEBUG
 struct InteractiveMemoryCardView_Previews: PreviewProvider {
     static var previews: some View {
-        InteractiveMemoryCardView(memory: PreviewData.aromaMemory, assetLocalIdentifier: nil, side: .constant(.front), captionText: .constant(""), flipAction: {}, shareAction: {})
+        InteractiveMemoryCardView(memory: PreviewData.aromaMemory, imageSource: PreviewData.aromaMemory.imageSource, side: .constant(.front), captionText: .constant(""), flipAction: {}, shareAction: {})
             .padding()
             .previewLayout(.sizeThatFits)
     }
