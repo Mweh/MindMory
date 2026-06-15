@@ -31,11 +31,15 @@ final class MemoryAlbumCreationViewModel: AlbumCreationViewModel {
         sections = sampleSections ?? Self.defaultSections
     }
 
-    func applyTemplate(name: String, note: String = "", sections: [MemoryAlbumSection]) {
-        albumName = name
+    func applyTemplate(note: String = "", sections: [MemoryAlbumSection]) {
         self.note = note
         self.sections = sections
         savedAlbum = nil
+    }
+
+    override func configureForEditing(_ album: Album) {
+        super.configureForEditing(album)
+        sections = album.sections
     }
 
     func addSection(_ section: MemoryAlbumSection) {

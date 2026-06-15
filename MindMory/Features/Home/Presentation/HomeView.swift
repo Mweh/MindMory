@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     @StateObject var viewModel: HomeViewModel
@@ -26,7 +27,7 @@ struct HomeView: View {
         }
         .navigationBarHidden(true)
         .onTapGesture {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            UIApplication.shared.dismissKeyboard()
         }
         .onAppear { viewModel.load() }
         .sheet(isPresented: $viewModel.isShowingSharePreview) {

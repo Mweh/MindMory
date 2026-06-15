@@ -1,8 +1,10 @@
 import SwiftUI
+import UIKit
 
 struct JournalEntryView: View {
 
     @Binding var text: String
+    @FocusState private var isTextEditorFocused: Bool
 
     let saveAction: () -> Void
 
@@ -12,6 +14,7 @@ struct JournalEntryView: View {
                 .font(MindMoryTypography.titleMedium)
 
             TextEditor(text: $text)
+                .focused($isTextEditorFocused)
                 .frame(minHeight: 110)
                 .scrollContentBackground(.hidden)
                 .background(MindMoryColors.Surface.surface)
@@ -19,9 +22,12 @@ struct JournalEntryView: View {
                     RoundedRectangle(cornerRadius: MindMoryRadius.small)
                 )
 
-            Button("Save reflection", action: saveAction)
-                .font(MindMoryTypography.labelLarge)
-                .foregroundStyle(MindMoryColors.Surface.primary)
+            Button("Save reflection") {
+                UIApplication.shared.dismissKeyboard()
+                saveAction()
+            }
+            .font(MindMoryTypography.labelLarge)
+            .foregroundStyle(MindMoryColors.Surface.primary)
         }
         .padding(MindMorySpacing.lg)
         .mindMoryCardStyle()

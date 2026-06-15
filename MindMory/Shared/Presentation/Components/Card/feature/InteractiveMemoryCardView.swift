@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct InteractiveMemoryCardView: View {
     let memory: Memory
@@ -21,7 +22,7 @@ struct InteractiveMemoryCardView: View {
         .shadow(color: .black.opacity(0.13), radius: 18, x: 0, y: 16)
         .contentShape(cardShape)
         .onTapGesture {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            UIApplication.shared.dismissKeyboard()
             flipAction()
         }
     }

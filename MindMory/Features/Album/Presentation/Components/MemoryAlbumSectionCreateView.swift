@@ -8,7 +8,7 @@ protocol MemoryAlbumLabelable {
 struct MemoryAlbumSectionCreateView: View {
     @State private var selectedSectionType: MemoryAlbumSectionType = .image
     @State private var selectedLayoutCount: Int = 1
-    @State private var selectedMirrorVariants: [Int: Int] = [:]  // [variantId: selectedMirrorVariant]
+    @State private var selectedMirrorVariants: [String: Int] = [:]  // [templateId: selectedMirrorVariant]
     @State private var textBlockType: MemoryAlbumTextBlockType = .titleAndDescription
     @State private var textHorizontalAlignment: MemoryAlbumTextHorizontalAlignment = .leading
     @State private var textVerticalAlignment: MemoryAlbumTextVerticalAlignment = .top
@@ -24,6 +24,7 @@ struct MemoryAlbumSectionCreateView: View {
     let onSave: (MemoryAlbumSection) -> Void
 
     @FocusState private var isTitleFocused: Bool
+    @FocusState private var isDescriptionFocused: Bool
 
     init(existingSection: MemoryAlbumSection? = nil, onSave: @escaping (MemoryAlbumSection) -> Void) {
         self.existingSection = existingSection
@@ -81,6 +82,9 @@ struct MemoryAlbumSectionCreateView: View {
                     isTitleFocused = true
                 }
             }
+        }
+        .onTapGesture {
+            UIApplication.shared.dismissKeyboard()
         }
     }
 
@@ -191,6 +195,11 @@ struct MemoryAlbumSectionCreateView: View {
                         .foregroundStyle(MindMoryColors.Content.secondary)
 
                     TextField("Enter description", text: $textDescription, axis: .vertical)
+                        .focused($isDescriptionFocused)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            UIApplication.shared.dismissKeyboard()
+                        }
                         .lineLimit(2...4)
                         .font(MindMoryTypography.bodyMedium)
                         .padding(MindMorySpacing.sm)
@@ -363,7 +372,7 @@ struct MemoryAlbumSectionCreateView: View {
                     .opacity(0.25)
                     .frame(maxWidth: .infinity)
 
-                let finalVariant = selectedMirrorVariants[variant.variant] ?? variant.variant
+                let finalVariant = selectedMirrorVariants[variant.id] ?? variant.variant
                 let previewTemplate = MemoryAlbumSectionLayoutCatalog.template(layoutCount: variant.layoutCount, variant: finalVariant)
 
                 VStack(spacing: MindMorySpacing.md) {
@@ -371,10 +380,12 @@ struct MemoryAlbumSectionCreateView: View {
 
                     // Label and mirror tabs at top
                     OptionHeaderBar(
-                        template: previewTemplate,
+                        mirrorType: variant.mirrorGroup?.mirrorType,
+                        primaryVariant: variant.variant,
+                        mirrorVariant: variant.mirrorGroup?.mirrorVariant,
                         selectedMirror: Binding(
-                            get: { selectedMirrorVariants[variant.variant] ?? variant.variant },
-                            set: { selectedMirrorVariants[variant.variant] = $0 }
+                            get: { selectedMirrorVariants[variant.id] ?? variant.variant },
+                            set: { selectedMirrorVariants[variant.id] = $0 }
                         )
                     )
 
@@ -408,109 +419,60 @@ struct MemoryAlbumSectionCreateView: View {
     private struct MemoryAlbumSectionLayoutOptionView: View {
     let template: MemoryAlbumSectionLayoutTemplate
 
+    private var previewWidth: CGFloat {
+        if #available(iOS 26.0, *) {
+            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                return scene.screen.bounds.width - (MindMorySpacing.xl * 2)
+            }
+            return 390 - (MindMorySpacing.xl * 2)
+        } else {
+            return UIScreen.main.bounds.width - (MindMorySpacing.xl * 2)
+        }
+    }
+
+    private var previewHeight: CGFloat {
+        template.estimatedHeight(forWidth: previewWidth)
+    }
+
     var body: some View {
         GeometryReader { proxy in
             let containerWidth = proxy.size.width
+            let contentHeight = template.estimatedHeight(forWidth: containerWidth)
 
             MemoryAlbumSectionLayoutRenderer(template: template, content: { _ in
                 MemoryAlbumSectionTemplatePlaceholder()
             }, availableWidth: containerWidth)
-            .frame(width: containerWidth, height: template.estimatedHeight(forWidth: containerWidth))
+            .frame(width: containerWidth, height: contentHeight)
             .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
             // keep the preview clean: no per-cell debug badges or stacked icon chips
             .frame(maxWidth: .infinity, alignment: .center)
             .clipped()
         }
-        .frame(height: template.estimatedHeight(forWidth: {
-            // Prefer a UIScreen instance from the active window scene on newer OSes.
-            if #available(iOS 26.0, *) {
-                if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                    return scene.screen.bounds.width - (MindMorySpacing.xl * 2)
-                }
-                return 390 - (MindMorySpacing.xl * 2)
-            } else {
-                return UIScreen.main.bounds.width - (MindMorySpacing.xl * 2)
-            }
-        }()))
+        .frame(height: previewHeight)
     }
 }
 
 private struct OptionHeaderBar: View {
-    let template: MemoryAlbumSectionLayoutTemplate
+    let mirrorType: MirrorType?
+    let primaryVariant: Int
+    let mirrorVariant: Int?
     @Binding var selectedMirror: Int
-
-    private var portraitCount: Int { template.frameShapes.filter { $0 == .portrait }.count }
-    private var landscapeCount: Int { template.frameShapes.filter { $0 == .landscape }.count }
-    private var squareCount: Int { template.frameShapes.filter { $0 == .square }.count }
-    private var flexibleCount: Int { template.frameShapes.filter { $0 == .flexible }.count }
-    private var columnCount: Int { template.gridColumns.count }
-    
-    private var mirrorVariant: MemoryAlbumSectionLayoutTemplate? {
-        guard let mirror = template.mirrorGroup, mirror.mirrorVariant != template.variant else { return nil }
-        return MemoryAlbumSectionLayoutCatalog.template(layoutCount: template.layoutCount, variant: mirror.mirrorVariant)
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-            // Mirror tabs if applicable
-            if let mirror = template.mirrorGroup {
-                HStack(spacing: MindMorySpacing.sm) {
-                    mirrorTabButton(
-                        isSelected: selectedMirror == template.variant,
-                        title: mirror.mirrorType == .vertical ? "Left" : "Top",
-                        icon: mirror.mirrorType == .vertical ? "arrow.left.and.right" : "arrow.up.and.down"
-                    ) {
-                        selectedMirror = template.variant
-                    }
+            if let mirrorType = mirrorType, let mirrorVariant = mirrorVariant {
+                Picker(selection: $selectedMirror) {
+                    Label(mirrorType == .vertical ? "Left" : "Top", systemImage: mirrorType == .vertical ? "arrow.left.and.right" : "arrow.up.and.down")
+                        .tag(primaryVariant)
 
-                    mirrorTabButton(
-                        isSelected: selectedMirror == mirror.mirrorVariant,
-                        title: mirror.mirrorType == .vertical ? "Right" : "Bottom",
-                        icon: mirror.mirrorType == .vertical ? "arrow.right.and.left" : "arrow.down.and.up"
-                    ) {
-                        selectedMirror = mirror.mirrorVariant
-                    }
+                    Label(mirrorType == .vertical ? "Right" : "Bottom", systemImage: mirrorType == .vertical ? "arrow.right.and.left" : "arrow.down.and.up")
+                        .tag(mirrorVariant)
+                } label: {
+                    Text("Mirror")
                 }
+                .pickerStyle(.segmented)
             }
         }
-    }
-
-    @ViewBuilder
-    private func mirrorTabButton(isSelected: Bool, title: String, icon: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(MindMoryTypography.labelSmall)
-                Text(title)
-                    .font(MindMoryTypography.labelSmall)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(10)
-                .background(isSelected ? MindMoryColors.Surface.primary : MindMoryColors.Surface.surface)
-                .foregroundStyle(isSelected ? MindMoryColors.Content.inverse : MindMoryColors.Content.primary)
-                .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                        .stroke(MindMoryColors.Border.subtle, lineWidth: isSelected ? 0 : 1)
-                )
-        }
-    }
-
-    @ViewBuilder
-    private func capsulePill(icon: String, text: String, color: Color) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(MindMoryTypography.labelSmall)
-                .foregroundStyle(color)
-
-            Text(text)
-                .font(MindMoryTypography.labelSmall)
-                .foregroundStyle(color)
-        }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 8)
-        .background(color.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
     }
 }
 
@@ -664,40 +626,6 @@ private struct OptionInfoBar: View {
                 .stroke(MindMoryColors.Surface.primary.opacity(0.18))
         )
     }
-
-    @ViewBuilder
-    private func badgePill(icon: String, text: String, tint: Color) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(MindMoryTypography.labelSmall)
-                .foregroundStyle(tint)
-
-            Text(text)
-                .font(MindMoryTypography.labelSmall)
-                .foregroundStyle(tint)
-        }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
-        .background(tint.opacity(0.16))
-        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
-    }
-
-    @ViewBuilder
-    private func capsulePill(icon: String, text: String, color: Color) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.caption2)
-                .foregroundStyle(color)
-
-            Text(text)
-                .font(MindMoryTypography.labelSmall)
-                .foregroundStyle(color)
-        }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
-        .background(color.opacity(0.16))
-        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
-    }
 }
 
 private struct MemoryAlbumSectionTemplatePlaceholder: View {
@@ -705,14 +633,10 @@ private struct MemoryAlbumSectionTemplatePlaceholder: View {
         ImagePlaceholder(
             image: nil,
             imageName: nil,
-            subtitle: "Layout preview",
-            cornerRadius: nil
+            placeholderStyle: .iconOnly
         )
-        // Note: do not apply inner corner clipping here so adjacent cells render seamlessly
     }
 }
-
-
 
 extension MemoryAlbumTextBlockType: MemoryAlbumLabelable {}
 extension MemoryAlbumTextHorizontalAlignment: MemoryAlbumLabelable {}

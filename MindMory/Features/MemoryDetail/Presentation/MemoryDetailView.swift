@@ -20,9 +20,6 @@ struct MemoryDetailView: View {
     private var heroImage: some View {
         ImagePlaceholder(imageName: viewModel.memory.imageName)
             .frame(height: 260)
-            .clipShape(
-                RoundedRectangle(cornerRadius: MindMoryRadius.medium)
-            )
     }
 
     private var headerSection: some View {

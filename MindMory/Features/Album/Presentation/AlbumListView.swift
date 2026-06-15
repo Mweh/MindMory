@@ -4,6 +4,7 @@ import SwiftData
 struct AlbumListView: View {
     @StateObject private var viewModel: AlbumListViewModel
     @State private var isShowingCreateAlbum = false
+    @State private var selectedAlbum: Album?
     @Environment(\.modelContext) private var modelContext
 
     init(viewModel: AlbumListViewModel) {
@@ -30,8 +31,6 @@ struct AlbumListView: View {
             floatingActionButton
                 .padding(.trailing, MindMorySpacing.xl)
                 .padding(.bottom, MindMorySpacing.xl)
-
-            // Use navigationDestination with isPresented to trigger navigation from a NavigationStack
         }
         .navigationDestination(isPresented: $isShowingCreateAlbum) {
             MemoryAlbumCreationView(
@@ -40,19 +39,51 @@ struct AlbumListView: View {
                 viewModel.addAlbum(album)
             }
         }
+        .navigationDestination(item: $selectedAlbum) { album in
+            AlbumDetailView(
+                album: album,
+                onEdit: { updatedAlbum in
+                    viewModel.updateAlbum(updatedAlbum)
+                    selectedAlbum = updatedAlbum
+                },
+                onDelete: {
+                    viewModel.removeAlbum(id: album.id)
+                    selectedAlbum = nil
+                }
+            )
+        }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             viewModel.configure(repository: albumRepository)
         }
+        .alert("Albums", isPresented: alertBinding) {
+            Button("OK", role: .cancel) {
+                viewModel.dismissAlert()
+            }
+        } message: {
+            Text(viewModel.alertMessage ?? "")
+        }
+    }
+
+    private var alertBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.alertMessage != nil },
+            set: { isPresented in
+                if !isPresented { viewModel.dismissAlert() }
+            }
+        )
     }
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.albums.isEmpty {
-            emptyState
-        } else {
+        if viewModel.isLoading {
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if !viewModel.albums.isEmpty {
             albumList
+        } else {
+            emptyState
         }
     }
 
@@ -118,22 +149,18 @@ struct AlbumListView: View {
     }
 
     private func albumItem(for album: Album) -> some View {
-        NavigationLink(destination: AlbumDetailView(album: album)) {
+        Button {
+            selectedAlbum = album
+        } label: {
             VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
                 if let image = album.coverPhoto?.uiImage {
                     ImagePlaceholder(image: image, imageName: nil)
                         .frame(height: 190)
                         .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
                 } else {
                     ImagePlaceholder(image: nil, imageName: nil)
                         .frame(height: 190)
                         .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                                .stroke(MindMoryColors.Border.subtle)
-                        )
                 }
 
                 VStack(alignment: .leading, spacing: MindMorySpacing.xs) {

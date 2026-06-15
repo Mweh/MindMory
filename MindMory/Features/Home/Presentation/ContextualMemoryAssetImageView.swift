@@ -21,6 +21,7 @@ struct ContextualMemoryAssetImageView: View {
                         .clipped()
                 }
             }
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
             .task {
                 requestImage(for: proxy.size, scale: displayScale)
             }

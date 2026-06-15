@@ -6,6 +6,17 @@ struct MemoryAlbumSectionView<PhotoCell: View>: View {
     let isPreview: Bool
     let photoCell: (Int, MemoryAlbumSection) -> PhotoCell
 
+    private var screenWidth: CGFloat {
+        if #available(iOS 26.0, *) {
+            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                return scene.screen.bounds.width
+            }
+            return 390
+        } else {
+            return UIScreen.main.bounds.width
+        }
+    }
+
     init(
         section: MemoryAlbumSection,
         isPreview: Bool = false,
@@ -31,7 +42,7 @@ struct MemoryAlbumSectionView<PhotoCell: View>: View {
                 }, availableWidth: contentWidth)
                 .frame(width: contentWidth, height: contentHeight)
             }
-            .frame(height: max(template.estimatedHeight(forWidth: UIScreen.main.bounds.width - (MindMorySpacing.xl * 2)), template.albumHeight))
+            .frame(height: max(template.estimatedHeight(forWidth: screenWidth - (MindMorySpacing.xl * 2)), template.albumHeight))
             .frame(maxWidth: .infinity)
 
         case .text(let textSection):

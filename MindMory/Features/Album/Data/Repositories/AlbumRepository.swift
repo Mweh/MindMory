@@ -3,9 +3,9 @@ import SwiftData
 
 @MainActor
 protocol AlbumRepositoryProtocol {
-    func fetchAlbums() -> [Album]
-    func save(_ album: Album) throws
-    func deleteAlbum(id: UUID) throws
+    func fetchAlbums() async throws -> [Album]
+    func save(_ album: Album) async throws
+    func deleteAlbum(id: UUID) async throws
 }
 
 @MainActor
@@ -16,15 +16,13 @@ final class AlbumRepository: AlbumRepositoryProtocol {
         self.context = context
     }
 
-    func fetchAlbums() -> [Album] {
+    func fetchAlbums() async throws -> [Album] {
         let fetchDescriptor = FetchDescriptor<AlbumEntity>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
-        let entities = (try? context.fetch(fetchDescriptor)) ?? []
-        return entities.compactMap { entity in
-            try? entity.toDomainMainActor()
-        }
+        let entities = try context.fetch(fetchDescriptor)
+        return try entities.map { try $0.toDomainMainActor() }
     }
 
-    func save(_ album: Album) throws {
+    func save(_ album: Album) async throws {
         let encoded = try JSONEncoder().encode(album)
 
         if let existingEntity = try context.fetch(FetchDescriptor<AlbumEntity>()).first(where: { $0.id == album.id }) {
@@ -37,7 +35,7 @@ final class AlbumRepository: AlbumRepositoryProtocol {
         try context.save()
     }
 
-    func deleteAlbum(id: UUID) throws {
+    func deleteAlbum(id: UUID) async throws {
         let fetchDescriptor = FetchDescriptor<AlbumEntity>()
         guard let entity = try context.fetch(fetchDescriptor).first(where: { $0.id == id }) else { return }
         context.delete(entity)

@@ -20,7 +20,9 @@ struct CreateAlbumUseCase {
         note: String,
         photos: [AlbumPhoto],
         sections: [MemoryAlbumSection] = [],
-        category: AlbumCategory
+        category: AlbumCategory,
+        id: UUID? = nil,
+        createdAt: Date? = nil
     ) throws -> Album {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -33,12 +35,12 @@ struct CreateAlbumUseCase {
         }
 
         return Album(
-            id: UUID(),
+            id: id ?? UUID(),
             name: trimmedName,
             note: note,
             photos: photos,
             sections: sections,
-            createdAt: Date(),
+            createdAt: createdAt ?? Date(),
             category: category
         )
     }

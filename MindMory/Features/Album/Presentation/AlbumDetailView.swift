@@ -1,8 +1,29 @@
 import SwiftUI
-import UIKit
+import SwiftData
 
 struct AlbumDetailView: View {
-    let album: Album
+    @State private var album: Album
+    let onEdit: ((Album) -> Void)?
+    let onDelete: (() -> Void)?
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @State private var showDeleteConfirmation = false
+    @State private var isShowingEditAlbum = false
+
+    private var albumRepository: AlbumRepository {
+        AlbumRepository(context: modelContext)
+    }
+
+    init(
+        album: Album,
+        onEdit: ((Album) -> Void)? = nil,
+        onDelete: (() -> Void)? = nil
+    ) {
+        self._album = State(initialValue: album)
+        self.onEdit = onEdit
+        self.onDelete = onDelete
+    }
 
     var body: some View {
         PageLayout(
@@ -19,8 +40,55 @@ struct AlbumDetailView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .navigationTitle("")
+        .navigationTitle(album.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                if onEdit != nil {
+                    Button(action: { isShowingEditAlbum = true }) {
+                        Image(systemName: "pencil")
+                    }
+                }
+
+                if onDelete != nil {
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                }
+            }
+        }
+        .navigationDestination(isPresented: $isShowingEditAlbum) {
+            MemoryAlbumCreationView(
+                viewModel: configuredEditViewModel(),
+                onCreate: handleEditSave
+            )
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .alert("Delete album", isPresented: $showDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                dismiss()
+                onDelete?()
+            }
+            Button("Cancel", role: .cancel) {
+                showDeleteConfirmation = false
+            }
+        } message: {
+            Text("Are you sure you want to delete \(album.name)? This action cannot be undone.")
+        }
+    }
+
+    private func configuredEditViewModel() -> MemoryAlbumCreationViewModel {
+        let viewModel = MemoryAlbumCreationViewModel(albumRepository: albumRepository)
+        viewModel.configureForEditing(album)
+        return viewModel
+    }
+
+    private func handleEditSave(_ updatedAlbum: Album) {
+        isShowingEditAlbum = false
+        album = updatedAlbum
+        onEdit?(updatedAlbum)
     }
 
     private var header: some View {
@@ -34,16 +102,10 @@ struct AlbumDetailView: View {
                     ImagePlaceholder(image: image, imageName: nil)
                         .frame(height: 220)
                         .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
                 } else {
                     ImagePlaceholder(image: nil, imageName: nil)
                         .frame(height: 220)
                         .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                                .stroke(MindMoryColors.Border.subtle)
-                        )
                 }
 
                 HStack(spacing: MindMorySpacing.md) {

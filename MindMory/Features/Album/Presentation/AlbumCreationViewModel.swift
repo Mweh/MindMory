@@ -8,21 +8,28 @@ class AlbumCreationViewModel: ObservableObject {
     @Published private(set) var photos: [AlbumPhoto] = []
     @Published var alertMessage: String?
     @Published var savedAlbum: Album?
+    @Published private(set) var isProcessing: Bool = false
 
     let category: AlbumCategory
     let loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase
     let createAlbumUseCase: CreateAlbumUseCase
     private var albumRepository: AlbumRepositoryProtocol?
+    private var existingAlbum: Album?
     var photoLoadingTask: Task<Void, Never>?
+    private var saveTask: Task<Void, Never>?
+
+    var isEditMode: Bool {
+        existingAlbum != nil
+    }
 
     var isSaveButtonDisabled: Bool {
         guard coverPhoto != nil else { return true }
-        return albumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return albumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isProcessing
     }
 
     var albumSummary: String? {
         guard let album = savedAlbum else { return nil }
-        return "Album \(album.name) created with \(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")."
+        return "Album \(album.name) \(isEditMode ? "updated" : "created") with \(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")."
     }
 
     func albumSections() -> [MemoryAlbumSection] {
@@ -52,6 +59,15 @@ class AlbumCreationViewModel: ObservableObject {
 
     func configure(repository: AlbumRepositoryProtocol) {
         self.albumRepository = repository
+    }
+
+    func configureForEditing(_ album: Album) {
+        existingAlbum = album
+        albumName = album.name
+        note = album.note
+        coverPhoto = album.coverPhoto
+        photos = Array(album.photos.dropFirst())
+        savedAlbum = nil
     }
 
     func updateCoverPhoto(from imageData: [Data]) {
@@ -95,7 +111,11 @@ class AlbumCreationViewModel: ObservableObject {
     }
 
     func saveAlbum() {
-        Task { [weak self] in
+        guard !isProcessing else { return }
+        isProcessing = true
+
+        saveTask?.cancel()
+        saveTask = Task { [weak self] in
             guard let self = self else { return }
 
             do {
@@ -104,20 +124,24 @@ class AlbumCreationViewModel: ObservableObject {
                     note: self.note,
                     photos: self.buildAlbumPhotos(),
                     sections: self.albumSections(),
-                    category: self.category
+                    category: self.category,
+                    id: self.existingAlbum?.id,
+                    createdAt: self.existingAlbum?.createdAt
                 )
 
                 if let repository = self.albumRepository {
-                    try repository.save(album)
+                    try await repository.save(album)
                 }
 
                 await MainActor.run {
                     self.savedAlbum = album
-                    self.presentAlert("\(album.name) is ready. Your album has been created.")
+                    self.presentAlert("\(album.name) is ready. Your album has been \(self.isEditMode ? "updated" : "created").")
+                    self.isProcessing = false
                 }
             } catch {
                 await MainActor.run {
                     self.presentAlert(error.localizedDescription)
+                    self.isProcessing = false
                 }
             }
         }
@@ -137,5 +161,6 @@ class AlbumCreationViewModel: ObservableObject {
 
     deinit {
         photoLoadingTask?.cancel()
+        saveTask?.cancel()
     }
 }

@@ -103,7 +103,6 @@ struct QADebugToolsView: View {
                     subtitle: "No override photo selected yet."
                 )
                 .frame(height: 180)
-                .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
 
                 HStack(spacing: MindMorySpacing.sm) {
                     PhotosPicker(
