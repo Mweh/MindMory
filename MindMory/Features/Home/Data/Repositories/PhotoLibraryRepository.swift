@@ -82,3 +82,29 @@ final class PhotoLibraryRepository: PhotoLibraryRepositoryProtocol {
         }
     }
 }
+
+final class UserDefaultsContextualMemoryCacheRepository: ContextualMemoryCacheRepositoryProtocol {
+    private enum Keys {
+        static let cache = "contextualMemory.cache"
+    }
+
+    private let userDefaults: UserDefaults
+
+    init(userDefaults: UserDefaults = .standard) {
+        self.userDefaults = userDefaults
+    }
+
+    func load() -> ContextualMemoryCache? {
+        guard let data = userDefaults.data(forKey: Keys.cache) else { return nil }
+        return try? JSONDecoder().decode(ContextualMemoryCache.self, from: data)
+    }
+
+    func save(_ cache: ContextualMemoryCache) {
+        guard let data = try? JSONEncoder().encode(cache) else { return }
+        userDefaults.set(data, forKey: Keys.cache)
+    }
+
+    func clear() {
+        userDefaults.removeObject(forKey: Keys.cache)
+    }
+}
