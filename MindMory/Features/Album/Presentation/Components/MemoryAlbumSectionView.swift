@@ -21,23 +21,18 @@ struct MemoryAlbumSectionView<PhotoCell: View>: View {
         case .image(let layoutCount, let layoutVariant, _):
             let template = MemoryAlbumSectionLayoutCatalog.template(layoutCount: layoutCount, variant: layoutVariant)
 
-            // Compute a stable container width based on the active window scene's screen when possible.
-            let screenWidth: CGFloat = {
-                if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                    return scene.screen.bounds.width
-                }
-                return UIScreen.main.bounds.width
-            }()
+            GeometryReader { proxy in
+                let contentWidth = max(0, proxy.size.width)
+                let contentHeight = max(template.estimatedHeight(forWidth: contentWidth), template.albumHeight)
 
-            let containerWidth = max(0, screenWidth - (MindMorySpacing.xl * 2))
-            let estimatedHeight = template.estimatedHeight(forWidth: containerWidth)
-
-            MemoryAlbumSectionLayoutRenderer(template: template, content: { photoIndex in
-                photoCell(photoIndex, section)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }, availableWidth: containerWidth)
+                MemoryAlbumSectionLayoutRenderer(template: template, content: { photoIndex in
+                    photoCell(photoIndex, section)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }, availableWidth: contentWidth)
+                .frame(width: contentWidth, height: contentHeight)
+            }
+            .frame(height: max(template.estimatedHeight(forWidth: UIScreen.main.bounds.width - (MindMorySpacing.xl * 2)), template.albumHeight))
             .frame(maxWidth: .infinity)
-            .frame(height: max(estimatedHeight, template.albumHeight))
 
         case .text(let textSection):
             AnimatedTextSectionView(textSection: textSection, isPreview: isPreview)

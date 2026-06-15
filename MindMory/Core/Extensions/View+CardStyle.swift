@@ -1,7 +1,7 @@
 import SwiftUI
 
 extension View {
-    func mindMoryCardStyle(radius: CGFloat = MindMoryRadius.large) -> some View {
+    func mindMoryCardStyle(radius: CGFloat = MindMoryRadius.medium) -> some View {
         self
             .background(MindMoryColors.Surface.background)
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))

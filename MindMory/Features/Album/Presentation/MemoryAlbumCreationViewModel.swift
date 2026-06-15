@@ -4,20 +4,8 @@ import Foundation
 final class MemoryAlbumCreationViewModel: AlbumCreationViewModel {
     @Published private(set) var sections: [MemoryAlbumSection] = []
 
-    init(
-        sampleSections: [MemoryAlbumSection]? = nil,
-        loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase = LoadAlbumPhotosUseCase(),
-        createAlbumUseCase: CreateAlbumUseCase = CreateAlbumUseCase(),
-        albumRepository: AlbumRepositoryProtocol? = nil
-    ) {
-        super.init(category: .memory, loadAlbumPhotosUseCase: loadAlbumPhotosUseCase, createAlbumUseCase: createAlbumUseCase, albumRepository: albumRepository)
-
-        if let sampleSections = sampleSections {
-            sections = sampleSections
-            return
-        }
-
-        sections = [
+    static var defaultSections: [MemoryAlbumSection] {
+        [
             MemoryAlbumSection(textSection: MemoryAlbumTextSection(
                 templateVariant: 0,
                 blockType: .titleAndDescription,
@@ -30,6 +18,24 @@ final class MemoryAlbumCreationViewModel: AlbumCreationViewModel {
             )),
             MemoryAlbumSection(layoutCount: 1, layoutVariant: 0, photos: [nil])
         ]
+    }
+
+    init(
+        sampleSections: [MemoryAlbumSection]? = nil,
+        loadAlbumPhotosUseCase: LoadAlbumPhotosUseCase = LoadAlbumPhotosUseCase(),
+        createAlbumUseCase: CreateAlbumUseCase = CreateAlbumUseCase(),
+        albumRepository: AlbumRepositoryProtocol? = nil
+    ) {
+        super.init(category: .memory, loadAlbumPhotosUseCase: loadAlbumPhotosUseCase, createAlbumUseCase: createAlbumUseCase, albumRepository: albumRepository)
+
+        sections = sampleSections ?? Self.defaultSections
+    }
+
+    func applyTemplate(name: String, note: String = "", sections: [MemoryAlbumSection]) {
+        albumName = name
+        self.note = note
+        self.sections = sections
+        savedAlbum = nil
     }
 
     func addSection(_ section: MemoryAlbumSection) {

@@ -1,11 +1,16 @@
 import SwiftUI
 
-private func settingsDetailPage<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-    ScrollView(showsIndicators: false) {
+private func settingsDetailPage<Content: View>(@ViewBuilder content: @escaping () -> Content) -> some View {
+    PageLayout(
+        padding: EdgeInsets(
+            top: MindMorySpacing.xl,
+            leading: MindMorySpacing.lg,
+            bottom: MindMorySpacing.xl,
+            trailing: MindMorySpacing.lg
+        )
+    ) {
         content()
-            .padding(.horizontal, MindMorySpacing.lg)
     }
-    .background(MindMoryColors.Surface.background.ignoresSafeArea())
 }
 
 struct LocationSettingsDetailView: View {

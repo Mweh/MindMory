@@ -25,7 +25,7 @@ struct SpotlightTooltipView: View {
     @State private var opacity: Double = 0
     
     // matches interactive memory card view's card shape corner radius
-    private let cardCornerRadius: CGFloat = MindMoryRadius.extraLarge
+    private let cardCornerRadius: CGFloat = MindMoryRadius.large
     // a little breathing room
     private let spotlightPadding: CGFloat = 8
     

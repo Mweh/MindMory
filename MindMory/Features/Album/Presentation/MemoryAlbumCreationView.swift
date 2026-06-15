@@ -15,6 +15,146 @@ struct MemoryAlbumCreationView: View {
     @State private var selectedPickerIndex: Int?
     @State private var isAddingSection = false
     @State private var preconfiguredSection: MemoryAlbumSection? = nil
+    @State private var selectedTemplateID: UUID? = nil
+    @State private var albumTemplates: [MemoryAlbumTemplate] = [
+        MemoryAlbumTemplate(
+            title: "Birthday album",
+            subtitle: "Bright colors, playful layouts, and a joyful story.",
+            suggestedName: "Birthday Moments",
+            note: "Capture the celebration, cake, and candid smiles.",
+            iconName: "gift.fill",
+            accent: Color(hex: "F4A261"),
+            sections: [
+                MemoryAlbumSection(textSection: MemoryAlbumTextSection(
+                    templateVariant: 0,
+                    blockType: .titleAndDescription,
+                    horizontalAlignment: .center,
+                    verticalAlignment: .top,
+                    isTitleFirst: true,
+                    title: "Birthday Highlights",
+                    description: "A joyful album to showcase the cake, laughter, and moments worth celebrating.",
+                    style: .default
+                )),
+                MemoryAlbumSection(layoutCount: 1, layoutVariant: 0, photos: [nil]),
+                MemoryAlbumSection(textSection: MemoryAlbumTextSection(
+                    templateVariant: 1,
+                    blockType: .descriptionOnly,
+                    horizontalAlignment: .leading,
+                    verticalAlignment: .center,
+                    isTitleFirst: false,
+                    title: "",
+                    description: "Candles, wishes, and the spark of every surprise — a bright start to the day.",
+                    style: .default
+                )),
+                MemoryAlbumSection(layoutCount: 2, layoutVariant: 0, photos: [nil, nil]),
+                MemoryAlbumSection(textSection: MemoryAlbumTextSection(
+                    templateVariant: 2,
+                    blockType: .titleOnly,
+                    horizontalAlignment: .leading,
+                    verticalAlignment: .center,
+                    isTitleFirst: true,
+                    title: "Celebrate the day",
+                    description: "",
+                    style: .default
+                )),
+                MemoryAlbumSection(layoutCount: 3, layoutVariant: 1, photos: [nil, nil, nil]),
+                MemoryAlbumSection(textSection: MemoryAlbumTextSection(
+                    templateVariant: 0,
+                    blockType: .titleAndDescription,
+                    horizontalAlignment: .leading,
+                    verticalAlignment: .top,
+                    isTitleFirst: true,
+                    title: "The moments that matter",
+                    description: "Share the feeling of the day with heartfelt captions and the people who made it special.",
+                    style: .default
+                )),
+                MemoryAlbumSection(layoutCount: 4, layoutVariant: 3, photos: [nil, nil, nil, nil]),
+                MemoryAlbumSection(textSection: MemoryAlbumTextSection(
+                    templateVariant: 1,
+                    blockType: .descriptionOnly,
+                    horizontalAlignment: .leading,
+                    verticalAlignment: .center,
+                    isTitleFirst: false,
+                    title: "",
+                    description: "End with the glow of celebration, the laughter shared, and the wishes that linger on.",
+                    style: .default
+                ))
+            ]
+        ),
+        MemoryAlbumTemplate(
+            title: "Graduation album",
+            subtitle: "Elegant layouts for caps, speeches, and celebration.",
+            suggestedName: "Graduation Day",
+            note: "Frame the achievement with ceremony, family, and the moment you turned the page.",
+            iconName: "graduationcap.fill",
+            accent: Color(hex: "6A8D92"),
+            sections: [
+                MemoryAlbumSection(textSection: MemoryAlbumTextSection(
+                    templateVariant: 0,
+                    blockType: .titleAndDescription,
+                    horizontalAlignment: .leading,
+                    verticalAlignment: .top,
+                    isTitleFirst: true,
+                    title: "Graduation Day",
+                    description: "A polished album layout designed to capture the ceremony, the cheers, and the proud moments.",
+                    style: .default
+                )),
+                MemoryAlbumSection(layoutCount: 1, layoutVariant: 0, photos: [nil]),
+                MemoryAlbumSection(textSection: MemoryAlbumTextSection(
+                    templateVariant: 1,
+                    blockType: .descriptionOnly,
+                    horizontalAlignment: .leading,
+                    verticalAlignment: .center,
+                    isTitleFirst: false,
+                    title: "",
+                    description: "From the procession to the proud smiles, keep the detail of the day and the people who were there.",
+                    style: .default
+                )),
+                MemoryAlbumSection(layoutCount: 2, layoutVariant: 2, photos: [nil, nil]),
+                MemoryAlbumSection(textSection: MemoryAlbumTextSection(
+                    templateVariant: 0,
+                    blockType: .titleAndDescription,
+                    horizontalAlignment: .center,
+                    verticalAlignment: .top,
+                    isTitleFirst: true,
+                    title: "Caps, gowns, and proud looks",
+                    description: "Highlight the ceremony energy, the applause, and the quiet moments between every milestone.",
+                    style: .default
+                )),
+                MemoryAlbumSection(layoutCount: 3, layoutVariant: 2, photos: [nil, nil, nil]),
+                MemoryAlbumSection(textSection: MemoryAlbumTextSection(
+                    templateVariant: 2,
+                    blockType: .titleOnly,
+                    horizontalAlignment: .leading,
+                    verticalAlignment: .center,
+                    isTitleFirst: true,
+                    title: "Family cheers",
+                    description: "",
+                    style: .default
+                )),
+                MemoryAlbumSection(layoutCount: 4, layoutVariant: 3, photos: [nil, nil, nil, nil]),
+                MemoryAlbumSection(textSection: MemoryAlbumTextSection(
+                    templateVariant: 1,
+                    blockType: .descriptionOnly,
+                    horizontalAlignment: .leading,
+                    verticalAlignment: .center,
+                    isTitleFirst: false,
+                    title: "",
+                    description: "Finish with warm congratulations, the feeling of accomplishment, and the start of the next chapter.",
+                    style: .default
+                ))
+            ]
+        ),
+        MemoryAlbumTemplate(
+            title: "Custom album",
+            subtitle: "Start fresh and build your own story from scratch.",
+            suggestedName: "Custom album",
+            note: "Add sections and photos in the order that matters most to you.",
+            iconName: "sparkles",
+            accent: Color(hex: "7FA08E"),
+            sections: MemoryAlbumCreationViewModel.defaultSections
+        )
+    ]
     
     @State private var selectedSectionID: UUID?
     @State private var selectedTextTitle: String = ""
@@ -33,29 +173,34 @@ struct MemoryAlbumCreationView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                    if currentStep == .details {
-                        stepHeader
-                    }
+            PageLayout(
+                padding: EdgeInsets(
+                    top: MindMorySpacing.xl,
+                    leading: MindMorySpacing.xl,
+                    bottom: MindMorySpacing.xl,
+                    trailing: MindMorySpacing.xl
+                )
+            ) {
+                    ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                        switch currentStep {
+                        case .details:
+                            detailsStep
+                        case .selectPhotos:
+                            selectPhotosStep
+                        }
 
-                    switch currentStep {
-                    case .details:
-                        detailsStep
-                    case .selectPhotos:
-                        selectPhotosStep
+                        if currentStep == .selectPhotos {
+                            footerButtons
+                        }
                     }
-
-                    if currentStep == .selectPhotos {
-                        footerButtons
-                    }
+                    .padding(.bottom, MindMorySpacing.xl)
                 }
-                .padding(MindMorySpacing.xl)
             }
             .onTapGesture {
                 draggingSectionID = nil
             }
-            // Floating add-section button when building sections
+
             if currentStep == .selectPhotos {
                 floatingMenuButton
                     .padding(.trailing, MindMorySpacing.xl)
@@ -81,8 +226,6 @@ struct MemoryAlbumCreationView: View {
                 preconfiguredSection = nil
             }
         }
-        
-
         .onChange(of: currentStep) { _, newStep in
             if newStep == .selectPhotos, selectedSectionID == nil {
                 selectedSectionID = viewModel.sections.first?.id
@@ -97,7 +240,6 @@ struct MemoryAlbumCreationView: View {
             }
             syncSelectedTextSection()
         }
-        .background(MindMoryColors.Surface.background.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
         .toolbar {
             // Leading back control: if on selectPhotos, go back to details; otherwise dismiss
@@ -117,6 +259,8 @@ struct MemoryAlbumCreationView: View {
                 }
             }
         }
+        .navigationTitle(currentStep == .selectPhotos ? "Select album photos" : "Create an album")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $isShowingTextEditor) {
             sectionTextEditorSheet
         }
@@ -188,45 +332,109 @@ struct MemoryAlbumCreationView: View {
         dismiss()
     }
 
-    private var stepHeader: some View {
-        HStack(spacing: MindMorySpacing.sm) {
-            Text(stepTitle)
-                .font(MindMoryTypography.titleLarge)
-                .foregroundStyle(MindMoryColors.Content.primary)
-
-            Spacer()
-
-            Text(stepSubtitle)
-                .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.Content.secondary)
-                .multilineTextAlignment(.trailing)
-        }
-    }
-
     private var detailsStep: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-            AlbumDetailsFormCardView(viewModel: viewModel, selectedCoverPhotoItem: $selectedCoverPhotoItem)
+            coverPhotoSection
 
-            AlbumCoverCardView(viewModel: viewModel, selectedCoverPhotoItem: $selectedCoverPhotoItem)
+            albumTitleSection
 
-            AlbumDateCardView(viewModel: viewModel)
+            albumTemplateSection
+
             PrimaryButton(title: primaryButtonTitle, action: primaryButtonAction)
-                .disabled(primaryButtonDisabled)
+                .disabled(isDetailsStepDisabled)
                 .frame(maxWidth: .infinity)
                 .padding(.top, MindMorySpacing.md)
         }
     }
 
-    private var selectPhotosStep: some View {
-        VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-            // Album header (cover + title + date) shown above the sections
-            AlbumHeaderCardView(
-                name: viewModel.albumName.isEmpty ? "Untitled memory" : viewModel.albumName,
-                coverPhoto: viewModel.coverPhoto?.uiImage,
-                albumDateText: viewModel.albumDate.displayText,
-                photoCountText: "\(photoCount) photo(s)"
+    private var coverPhotoSection: some View {
+        PhotosPicker(
+            selection: $selectedCoverPhotoItem,
+            matching: .images,
+            photoLibrary: .shared()
+        ) {
+            ZStack {
+                ImagePlaceholder(
+                    image: viewModel.coverPhoto?.uiImage,
+                    title: "Your Story Starts Here",
+                    subtitle: "Tap to select a cover that defines your collection"
+                )
+                .frame(height: 240)
+                .overlay(
+                    RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                        .stroke(MindMoryColors.Border.subtle, lineWidth: 1)
+                )
+
+                if viewModel.coverPhoto != nil {
+                    RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                        .fill(Color.black.opacity(0.24))
+                        .frame(height: 240)
+                        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+
+                    VStack(spacing: MindMorySpacing.xs) {
+                        Image(systemName: "pencil.circle.fill")
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundStyle(.white)
+                        Text("Change cover photo")
+                            .font(MindMoryTypography.bodySmall)
+                            .foregroundStyle(MindMoryColors.Surface.background)
+                    }
+                    .padding(MindMorySpacing.md)
+                    .background(Color.black.opacity(0.24))
+                    .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+                    .padding(MindMorySpacing.lg)
+                    .frame(maxHeight: .infinity, alignment: .bottomLeading)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var albumTitleSection: some View {
+        TextFieldComponent(
+            title: "Album title",
+            iconName: "pencil.tip",
+            borderColor: viewModel.albumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? MindMoryColors.Content.secondary.opacity(0.2) : MindMoryColors.Surface.primary.opacity(0.6)
+        ) {
+            TextField("Name your album", text: $viewModel.albumName)
+        }
+    }
+
+    private var albumTemplateSection: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            SectionTitle(
+                title: "Album templates",
+                size: .small
             )
 
+            VStack(spacing: MindMorySpacing.md) {
+                ForEach(albumTemplates) { template in
+                    MemoryAlbumTemplateCard(
+                        template: template,
+                        isSelected: template.id == selectedTemplateID
+                    ) {
+                        if selectedTemplateID == template.id {
+                            selectedTemplateID = nil
+                        } else {
+                            selectedTemplateID = template.id
+                            viewModel.applyTemplate(
+                                name: template.suggestedName,
+                                note: template.note,
+                                sections: template.sections
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var isDetailsStepDisabled: Bool {
+        viewModel.albumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.coverPhoto == nil
+    }
+
+    private var selectPhotosStep: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
             ForEach(viewModel.sections) { section in
                 draggableSection(section)
             }
@@ -279,12 +487,12 @@ struct MemoryAlbumCreationView: View {
             .overlay(
                 Group {
                     if draggingSectionID == section.id {
-                        RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                        RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
                             .stroke(MindMoryColors.Surface.primary.opacity(0.6), style: StrokeStyle(lineWidth: 3, dash: [6]))
                     }
                 }
             )
-            .contentShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
             .onTapGesture {
                 draggingSectionID = nil
                 selectedSectionID = section.id
@@ -341,30 +549,6 @@ struct MemoryAlbumCreationView: View {
         )
     }
 
-    private var photoCount: Int {
-        viewModel.sections.reduce(0) { result, section in
-            guard case .image(_, _, let photos) = section.content else { return result }
-            return result + photos.compactMap { $0 }.count
-        } + (viewModel.coverPhoto != nil ? 1 : 0)
-    }
-
-    private var floatingActionButton: some View {
-        Button {
-            sectionInsertionIndex = nil
-            isAddingSection = true
-        } label: {
-            Image(systemName: "plus")
-                .font(MindMoryTypography.labelLarge)
-                .foregroundColor(.white)
-                .frame(width: 56, height: 56)
-                .background(MindMoryColors.Surface.primary)
-                .clipShape(Circle())
-                .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Add section")
-    }
-
     private var floatingMenuButton: some View {
         Menu {
             Button(action: {
@@ -414,30 +598,12 @@ struct MemoryAlbumCreationView: View {
         }
     }
 
-    private var stepTitle: String {
-        switch currentStep {
-        case .details:
-            return "Step 1"
-        case .selectPhotos:
-            return "Step 2"
-        }
-    }
-
-    private var stepSubtitle: String {
-        switch currentStep {
-        case .details:
-            return "Memory title and cover photo"
-        case .selectPhotos:
-            return "Build sections and save your memory album"
-        }
-    }
-
     private var primaryButtonTitle: String {
         switch currentStep {
         case .details:
             return "Continue"
         case .selectPhotos:
-            return "Simpan Album"
+            return "Save album"
         }
     }
 
@@ -517,9 +683,9 @@ struct MemoryAlbumCreationView: View {
                             .font(MindMoryTypography.bodyMedium)
                             .padding(MindMorySpacing.sm)
                             .background(MindMoryColors.Surface.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
                             .overlay(
-                                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                                RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous)
                                     .stroke(MindMoryColors.Border.subtle)
                             )
                     }
@@ -534,9 +700,9 @@ struct MemoryAlbumCreationView: View {
                             .font(MindMoryTypography.bodyMedium)
                             .padding(MindMorySpacing.sm)
                             .background(MindMoryColors.Surface.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
                             .overlay(
-                                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                                RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous)
                                     .stroke(MindMoryColors.Border.subtle)
                             )
                     }
@@ -566,14 +732,6 @@ struct MemoryAlbumCreationView: View {
         }
     }
 
-    private func previousStep() {
-        switch currentStep {
-        case .details:
-            break
-        case .selectPhotos:
-            currentStep = .details
-        }
-    }
 }
 
 #Preview("Graduation Album") {

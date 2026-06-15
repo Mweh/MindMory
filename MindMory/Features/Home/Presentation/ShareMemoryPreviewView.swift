@@ -1,7 +1,9 @@
 import SwiftUI
 import CoreTransferable
 import ImageIO
+import Photos
 import UniformTypeIdentifiers
+import UIKit
 
 struct MemoryShareImage: Transferable {
     let data: Data
@@ -16,17 +18,19 @@ struct MemoryShareImage: Transferable {
 
 struct ShareMemoryPreviewView: View {
     let memory: Memory
+    let imageSource: MemoryImageSource
     let captionText: String
-    var debugImageURL: URL? = nil
     let dismissAction: () -> Void
 
     @Environment(\.displayScale) private var displayScale
+    @State private var resolvedImage: UIImage?
+    @State private var fallbackImageName: String?
     @State private var shareImage: MemoryShareImage?
     @State private var renderError: String?
 
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
+            PageLayout {
                 VStack(spacing: MindMorySpacing.lg) {
                     VStack(spacing: MindMorySpacing.xs) {
                         Text("Photo + Caption + Memory")
@@ -39,7 +43,12 @@ struct ShareMemoryPreviewView: View {
                     }
                     .multilineTextAlignment(.center)
 
-                    StackedShareCardView(memory: memory, captionText: captionText, debugImageURL: debugImageURL)
+                    StackedShareCardView(
+                        memory: memory,
+                        captionText: captionText,
+                        resolvedImage: resolvedImage,
+                        fallbackImageName: fallbackImageName
+                    )
 
                     if let renderError {
                         Text(renderError)
@@ -49,9 +58,7 @@ struct ShareMemoryPreviewView: View {
 
                     shareControl
                 }
-                .padding(MindMorySpacing.xl)
             }
-            .background(MindMoryColors.Surface.background.ignoresSafeArea())
             .navigationTitle("Share Memory")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -61,7 +68,7 @@ struct ShareMemoryPreviewView: View {
                 }
             }
         }
-        .task { renderShareImage() }
+        .task { await prepareShareImage() }
     }
 
     @ViewBuilder
@@ -86,7 +93,15 @@ struct ShareMemoryPreviewView: View {
                             .stroke(MindMoryColors.Surface.primary, lineWidth: 1)
                     }
             }
-            } else {
+        } else if renderError != nil {
+            Text("Share Memory")
+                .font(MindMoryTypography.labelLarge)
+                .foregroundStyle(MindMoryColors.Content.secondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(MindMoryColors.Surface.surface)
+                .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+        } else {
             ProgressView("Preparing image…")
                 .font(MindMoryTypography.bodyMedium)
                 .foregroundStyle(MindMoryColors.Content.secondary)
@@ -94,14 +109,43 @@ struct ShareMemoryPreviewView: View {
     }
 
     @MainActor
-    private func renderShareImage() {
+    private func prepareShareImage() async {
+        shareImage = nil
         renderError = nil
+        resolvedImage = nil
+        fallbackImageName = nil
 
+        switch imageSource {
+        case .assetLocalIdentifier(let localIdentifier):
+            guard let image = await resolveAssetImage(localIdentifier: localIdentifier) else {
+                renderError = "This photo is no longer available. Please choose another memory."
+                return
+            }
+            resolvedImage = image
+        case .debugImageURL(let url):
+            guard let image = UIImage(contentsOfFile: url.path) else {
+                renderError = "Could not prepare the memory image. Please try again."
+                return
+            }
+            resolvedImage = image
+        case .assetName(let assetName):
+            fallbackImageName = assetName
+        case .placeholder:
+            renderError = "This photo is no longer available. Please choose another memory."
+            return
+        }
+
+        renderShareImage()
+    }
+
+    @MainActor
+    private func renderShareImage() {
         let renderer = ImageRenderer(
             content: ShareableMemoryExportView(
                 memory: memory,
                 captionText: captionText,
-                debugImageURL: debugImageURL
+                resolvedImage: resolvedImage,
+                fallbackImageName: fallbackImageName
             )
         )
         renderer.scale = displayScale
@@ -113,6 +157,30 @@ struct ShareMemoryPreviewView: View {
         }
 
         shareImage = MemoryShareImage(data: data)
+    }
+
+    private func resolveAssetImage(localIdentifier: String) async -> UIImage? {
+        let assets = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
+        guard let asset = assets.firstObject else { return nil }
+
+        let options = PHImageRequestOptions()
+        options.deliveryMode = .highQualityFormat
+        options.resizeMode = .exact
+        options.isNetworkAccessAllowed = true
+
+        return await withCheckedContinuation { continuation in
+            PHImageManager.default().requestImage(
+                for: asset,
+                targetSize: CGSize(width: 1080, height: 1350),
+                contentMode: .aspectFill,
+                options: options
+            ) { image, info in
+                if let isDegraded = info?[PHImageResultIsDegradedKey] as? Bool, isDegraded {
+                    return
+                }
+                continuation.resume(returning: image)
+            }
+        }
     }
 
     private func pngData(from image: CGImage) -> Data? {

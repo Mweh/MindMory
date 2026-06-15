@@ -1,9 +1,11 @@
 import SwiftUI
+import UIKit
 
 struct StackedShareCardView: View {
     let memory: Memory
     let captionText: String
-    var debugImageURL: URL? = nil
+    var resolvedImage: UIImage?
+    var fallbackImageName: String?
     var exportMode = false
 
     var body: some View {
@@ -23,12 +25,12 @@ struct StackedShareCardView: View {
 
     private var photoCard: some View {
         VStack(alignment: .leading, spacing: exportMode ? MindMorySpacing.lg : MindMorySpacing.sm) {
-            MemoryImagePlaceholderView(imageName: memory.imageName, debugImageURL: debugImageURL)
+            ImagePlaceholder(image: resolvedImage, imageName: fallbackImageName ?? memory.imageName)
                 .frame(height: exportMode ? 410 : 230)
-                .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
 
                 Text(memory.title)
-                .font(exportMode ? MindMoryTypography.display : MindMoryTypography.titleLarge)
+                .font(exportMode ? MindMoryTypography.titleLarge : MindMoryTypography.titleLarge)
                 .foregroundStyle(MindMoryColors.Content.primary)
                 .lineLimit(2)
 
@@ -90,21 +92,21 @@ struct StackedShareCardView: View {
 
     private var botanicalDecoration: some View {
         Image(systemName: "leaf.fill")
-            .font(exportMode ? MindMoryTypography.display : MindMoryTypography.titleLarge)
+            .font(exportMode ? MindMoryTypography.titleLarge : MindMoryTypography.titleLarge)
             .foregroundStyle(MindMoryColors.Surface.primary.opacity(0.10))
             .rotationEffect(.degrees(-18))
             .allowsHitTesting(false)
     }
 
     private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous)
+        RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
     }
 }
 
 #if DEBUG
 struct StackedShareCardView_Previews: PreviewProvider {
     static var previews: some View {
-        StackedShareCardView(memory: PreviewData.aromaMemory, captionText: "Caption", debugImageURL: nil)
+        StackedShareCardView(memory: PreviewData.aromaMemory, captionText: "Caption")
             .padding()
             .previewLayout(.sizeThatFits)
     }
@@ -112,7 +114,7 @@ struct StackedShareCardView_Previews: PreviewProvider {
 #endif
 
 #Preview {
-    StackedShareCardView(memory: PreviewData.aromaMemory, captionText: "A short caption", debugImageURL: nil)
+    StackedShareCardView(memory: PreviewData.aromaMemory, captionText: "A short caption")
         .padding()
         .background(MindMoryColors.Surface.background)
 }

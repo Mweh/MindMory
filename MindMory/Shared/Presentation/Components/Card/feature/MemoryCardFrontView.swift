@@ -1,9 +1,9 @@
 import SwiftUI
+import UIKit
 
 struct MemoryCardFrontView: View {
     let memory: Memory
-    var assetLocalIdentifier: String? = nil
-    var debugImageURL: URL? = nil
+    var imageSource: MemoryImageSource
     let photoParallax: CGSize
     let contentParallax: CGSize
 
@@ -12,7 +12,7 @@ struct MemoryCardFrontView: View {
             .offset(photoParallax)
             .frame(maxWidth: .infinity)
             .frame(height: 430)
-            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
             .padding(MindMorySpacing.sm)
             .background(frontBackground)
             .clipShape(cardShape)
@@ -21,12 +21,19 @@ struct MemoryCardFrontView: View {
 
     @ViewBuilder
     private var imageContent: some View {
-        if debugImageURL != nil {
-            MemoryImagePlaceholderView(imageName: memory.imageName, debugImageURL: debugImageURL)
-        } else if let assetLocalIdentifier {
-            ContextualMemoryAssetImageView(assetLocalIdentifier: assetLocalIdentifier)
-        } else {
-            MemoryImagePlaceholderView(imageName: memory.imageName)
+        switch imageSource {
+        case .assetLocalIdentifier(let localIdentifier):
+            ContextualMemoryAssetImageView(assetLocalIdentifier: localIdentifier)
+        case .assetName(let assetName):
+            ImagePlaceholder(imageName: assetName)
+        case .debugImageURL(let url):
+            if let image = UIImage(contentsOfFile: url.path) {
+                ImagePlaceholder(image: image)
+            } else {
+                ImagePlaceholder(imageName: nil)
+            }
+        case .placeholder:
+            ImagePlaceholder(imageName: nil)
         }
     }
 
@@ -43,14 +50,14 @@ struct MemoryCardFrontView: View {
     }
 
     private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous)
+        RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
     }
 }
 
 #if DEBUG
 struct MemoryCardFrontView_Previews: PreviewProvider {
     static var previews: some View {
-        MemoryCardFrontView(memory: PreviewData.aromaMemory, photoParallax: .zero, contentParallax: .zero)
+        MemoryCardFrontView(memory: PreviewData.aromaMemory, imageSource: PreviewData.aromaMemory.imageSource, photoParallax: .zero, contentParallax: .zero)
             .padding()
             .previewLayout(.sizeThatFits)
     }
@@ -58,7 +65,7 @@ struct MemoryCardFrontView_Previews: PreviewProvider {
 #endif
 
 #Preview {
-    MemoryCardFrontView(memory: PreviewData.aromaMemory, photoParallax: .zero, contentParallax: .zero)
+    MemoryCardFrontView(memory: PreviewData.aromaMemory, imageSource: PreviewData.aromaMemory.imageSource, photoParallax: .zero, contentParallax: .zero)
         .padding()
         .background(MindMoryColors.Surface.background)
 }

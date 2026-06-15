@@ -5,11 +5,11 @@ struct FirstReminderPreparedCardView: View {
         HomeStateCardContainer {
             VStack(spacing: MindMorySpacing.xl) {
                 Image(systemName: "bell")
-                    .font(MindMoryTypography.display)
+                    .font(MindMoryTypography.titleLarge)
                     .foregroundStyle(MindMoryColors.Content.link)
 
                 Text("Your first reminder is\nbeing prepared.")
-                    .font(MindMoryTypography.display)
+                    .font(MindMoryTypography.headline)
                     .foregroundStyle(MindMoryColors.Content.link)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
@@ -42,9 +42,9 @@ struct HomeStateCardContainer<Content: View>: View {
         content()
             .frame(maxWidth: .infinity, minHeight: 430)
             .background(MindMoryColors.Surface.surface.opacity(0.82))
-            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: MindMoryRadius.extraLarge, style: .continuous)
+                RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
                     .stroke(MindMoryColors.Border.subtle.opacity(0.55), lineWidth: 1)
             }
             .shadow(color: .black.opacity(0.08), radius: 18, x: 0, y: 12)

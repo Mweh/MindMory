@@ -56,7 +56,7 @@ struct ExpandableStatCardView: View {
     }
 
     private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: 22, style: .continuous)
+        RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
     }
 }
 

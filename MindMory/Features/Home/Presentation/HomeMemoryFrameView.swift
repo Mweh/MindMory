@@ -6,15 +6,15 @@ struct HomeMemoryFrameView: View {
     var compact = false
 
     var body: some View {
-        AppCard {
-            HStack(alignment: .top, spacing: MindMorySpacing.md) {
-                textSection
+        HStack(alignment: .top, spacing: MindMorySpacing.md) {
+            textSection
 
-                Spacer()
+            Spacer()
 
-                thumbnailView
-            }
+            thumbnailView
         }
+        .padding(MindMorySpacing.lg)
+        .mindMoryCardStyle()
     }
 
     private var textSection: some View {

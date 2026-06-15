@@ -5,15 +5,15 @@ struct HomeReminderCardView: View {
     let reminder: Reminder
 
     var body: some View {
-        AppCard {
-            HStack(alignment: .top, spacing: MindMorySpacing.md) {
-                IconBadgeView(systemName: "bell.badge.fill")
+        HStack(alignment: .top, spacing: MindMorySpacing.md) {
+            Badge(iconName: "bell.badge.fill", text: nil, tint: MindMoryColors.Content.primary, style: .iconOnly)
 
-                contentSection
+            contentSection
 
-                Spacer()
-            }
+            Spacer()
         }
+        .padding(MindMorySpacing.lg)
+        .mindMoryCardStyle()
     }
 
     private var contentSection: some View {

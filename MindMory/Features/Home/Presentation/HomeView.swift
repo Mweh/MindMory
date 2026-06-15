@@ -6,7 +6,14 @@ struct HomeView: View {
     @State private var cardFrame: CGRect = .zero
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
+        PageLayout(
+            padding: EdgeInsets(
+                top: MindMorySpacing.xl,
+                leading: MindMorySpacing.xl,
+                bottom: MindMorySpacing.xxl,
+                trailing: MindMorySpacing.xl
+            )
+        ) {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 header
 
@@ -18,12 +25,7 @@ struct HomeView: View {
 
                 contextualContent
             }
-            .padding(.horizontal, MindMorySpacing.xl)
-            .padding(.top, MindMorySpacing.xl)
-            .padding(.bottom, MindMorySpacing.xxl)
         }
-        .scrollDismissesKeyboard(.interactively)
-        .background(MindMoryColors.Surface.background.ignoresSafeArea())
         .navigationBarHidden(true)
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
@@ -44,8 +46,8 @@ struct HomeView: View {
             if let memory = viewModel.focusedMemory {
                 ShareMemoryPreviewView(
                     memory: memory,
+                    imageSource: viewModel.focusedImageSource,
                     captionText: viewModel.captionText,
-                    debugImageURL: viewModel.debugHomeCardImageURL,
                     dismissAction: viewModel.dismissSharePreview
                 )
                 .presentationDetents([.large])
@@ -64,20 +66,35 @@ struct HomeView: View {
                 homeCard(for: memory)
             }
         case .permissionRequired(.photoLibrary):
-            PhotoAccessDeniedCardView(
-                allowAction: viewModel.didTapAllowPhotoAccess
+            NoPermissionStateView(
+                title: "Photos access is required",
+                subtitle: "Allow photo access so MindMory can surface memories from nearby moments.",
+                buttonTitle: "Allow Access",
+                iconName: "photo.on.rectangle.angled",
+                action: viewModel.didTapAllowPhotoAccess
             )
         case .permissionRequired:
-            ContextualMemoryEmptyStateView(
-                title: "Memories can meet you where you are.",
-                subtitle: "Allow access when you’re ready to rediscover nearby moments.",
-                systemImage: "location.fill"
+            NoPermissionStateView(
+                title: "Permission needed",
+                subtitle: "Allow access so MindMory can connect your current location with meaningful memories.",
+                buttonTitle: "Allow Access",
+                iconName: "location.fill",
+                action: viewModel.didTapAllowPhotoAccess
             )
-        case .empty, .error:
+        case .empty:
             ContextualMemoryEmptyStateView(
                 title: "This might be your first memory here.",
                 subtitle: "We’ll help you keep this moment when it becomes worth remembering."
             )
+        case .error:
+            if let errorMessage = viewModel.contextualErrorMessage {
+                ErrorStateView(
+                    message: errorMessage,
+                    retryAction: viewModel.retryContextualDiscovery
+                )
+            } else {
+                ErrorStateView(message: "Something went wrong.", retryAction: viewModel.retryContextualDiscovery)
+            }
         case .loaded, .idle:
             if let memory = viewModel.focusedMemory {
                 favoriteHeader
@@ -97,8 +114,7 @@ struct HomeView: View {
         case .normal:
             InteractiveMemoryCardView(
                 memory: memory,
-                assetLocalIdentifier: viewModel.contextualAssetLocalIdentifier,
-                debugImageURL: viewModel.debugHomeCardImageURL,
+                imageSource: viewModel.focusedImageSource,
                 side: $viewModel.cardSide,
                 captionText: $viewModel.captionText,
                 flipAction: viewModel.flipCard,
@@ -114,10 +130,6 @@ struct HomeView: View {
             )
         case .firstReminderPrepared:
             FirstReminderPreparedCardView()
-        case .photoAccessDenied:
-            PhotoAccessDeniedCardView(
-                allowAction: viewModel.didTapAllowPhotoAccess
-            )
         }
     }
 
@@ -159,7 +171,7 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(MindMorySpacing.md)
         .background(MindMoryColors.Surface.surface)
-        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
     }
 }
 
