@@ -3,6 +3,8 @@ import UIKit
 
 struct HomeView: View {
     @StateObject var viewModel: HomeViewModel
+    @AppStorage("hasSeenTooltip") private var hasSeenTooltip = false
+    @State private var cardFrame: CGRect = .zero
 
     var body: some View {
         PageLayout(
@@ -30,10 +32,22 @@ struct HomeView: View {
             UIApplication.shared.dismissKeyboard()
         }
         .onAppear { viewModel.load() }
+        .onPreferenceChange(CardFrameKey.self) { frame in
+            cardFrame = frame
+        }
+        .overlay {
+            if !hasSeenTooltip && cardFrame != .zero && viewModel.cardSide == .front {
+                SpotlightTooltipView(cardFrame: cardFrame) {
+                    hasSeenTooltip = true
+                }
+                .ignoresSafeArea()
+            }
+        }
         .sheet(isPresented: $viewModel.isShowingSharePreview) {
             if let memory = viewModel.focusedMemory {
                 ShareMemoryPreviewView(
                     memory: memory,
+                    imageSource: viewModel.focusedImageSource,
                     captionText: viewModel.captionText,
                     dismissAction: viewModel.dismissSharePreview
                 )
@@ -101,11 +115,19 @@ struct HomeView: View {
         case .normal:
             InteractiveMemoryCardView(
                 memory: memory,
-                assetLocalIdentifier: viewModel.contextualAssetLocalIdentifier,
+                imageSource: viewModel.focusedImageSource,
                 side: $viewModel.cardSide,
                 captionText: $viewModel.captionText,
                 flipAction: viewModel.flipCard,
                 shareAction: viewModel.showSharePreview
+            )
+            .overlay(
+                GeometryReader { geo in
+                    Color.clear.preference(
+                        key: CardFrameKey.self,
+                        value: geo.frame(in: .global)
+                    )
+                }
             )
         case .firstReminderPrepared:
             FirstReminderPreparedCardView()

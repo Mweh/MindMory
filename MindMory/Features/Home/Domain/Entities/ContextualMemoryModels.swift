@@ -120,6 +120,87 @@ enum ContextualMemoryState: Equatable {
     case error(String)
 }
 
+struct ContextualMemoryCache: Codable, Equatable {
+    let assetLocalIdentifier: String
+    let locationKey: String?
+    let latitude: Double?
+    let longitude: Double?
+    let placemarkName: String?
+    let eventIdentifier: String?
+    let eventTitle: String?
+    let eventStartDate: Date?
+    let eventEndDate: Date?
+    let discoveredAt: Date
+    let memoryId: UUID
+    let title: String
+    let subtitle: String
+    let dateText: String
+    let locationName: String?
+    let journalText: String?
+    let tags: [String]
+
+    var memory: Memory {
+        Memory(
+            id: memoryId,
+            title: title,
+            subtitle: subtitle,
+            dateText: dateText,
+            locationName: locationName,
+            imageName: "",
+            journalText: journalText,
+            isFavorite: false,
+            tags: tags
+        )
+    }
+
+    func contextualMemory(context: ContextualMemoryContext) -> ContextualMemory {
+        ContextualMemory(
+            id: memoryId,
+            title: title,
+            subtitle: subtitle,
+            dateText: dateText,
+            locationName: locationName,
+            assetLocalIdentifier: assetLocalIdentifier,
+            journalText: journalText,
+            tags: tags,
+            context: context,
+            score: 0,
+            distanceMeters: nil,
+            notificationConfidenceScore: 0
+        )
+    }
+}
+
+extension ContextualMemory {
+    func makeCache(discoveredAt: Date = Date()) -> ContextualMemoryCache {
+        ContextualMemoryCache(
+            assetLocalIdentifier: assetLocalIdentifier,
+            locationKey: context.currentLocation?.cacheKey,
+            latitude: context.currentLocation?.latitude,
+            longitude: context.currentLocation?.longitude,
+            placemarkName: context.currentLocation?.placemarkName,
+            eventIdentifier: context.currentEvent?.id,
+            eventTitle: context.currentEvent?.title,
+            eventStartDate: context.currentEvent?.startDate,
+            eventEndDate: context.currentEvent?.endDate,
+            discoveredAt: discoveredAt,
+            memoryId: id,
+            title: title,
+            subtitle: subtitle,
+            dateText: dateText,
+            locationName: locationName,
+            journalText: journalText,
+            tags: tags
+        )
+    }
+}
+
+extension CurrentLocationContext {
+    var cacheKey: String? {
+        placemarkName?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+}
+
 private func haversineDistance(latitude: Double, longitude: Double, otherLatitude: Double, otherLongitude: Double) -> Double {
     let earthRadius = 6_371_000.0
     let deltaLatitude = (otherLatitude - latitude) * .pi / 180

@@ -18,10 +18,6 @@ struct MemoryCardBackView: View {
                         .foregroundStyle(MindMoryColors.Content.primary)
 
                     Spacer()
-
-                    Image(systemName: memory.isFavorite ? "star.fill" : "star")
-                        .font(MindMoryTypography.labelMedium)
-                        .foregroundStyle(MindMoryColors.Surface.primary)
                 }
 
                 VStack(alignment: .leading, spacing: MindMorySpacing.sm) {

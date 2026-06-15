@@ -13,6 +13,7 @@ final class DependencyContainer: ObservableObject {
     private let locationRepository: LocationRepositoryProtocol
     private let eventRepository: EventRepositoryProtocol
     private let photoLibraryRepository: PhotoLibraryRepositoryProtocol
+    private let contextualMemoryCacheRepository: ContextualMemoryCacheRepositoryProtocol
     private let smartMemoryNotificationDelegate: SmartMemoryNotificationDelegate
     private let smartMemoryNotificationStore: SmartMemoryNotificationCooldownStore
     private let smartMemoryNotificationCoordinator: SmartMemoryNotificationCoordinator
@@ -25,7 +26,8 @@ final class DependencyContainer: ObservableObject {
             contextRepository: MockContextRepository(),
             locationRepository: CoreLocationRepository(),
             eventRepository: EventKitRepository(),
-            photoLibraryRepository: PhotoLibraryRepository()
+            photoLibraryRepository: PhotoLibraryRepository(),
+            contextualMemoryCacheRepository: UserDefaultsContextualMemoryCacheRepository()
         )
     }
 
@@ -36,7 +38,8 @@ final class DependencyContainer: ObservableObject {
         contextRepository: ContextRepositoryProtocol,
         locationRepository: LocationRepositoryProtocol,
         eventRepository: EventRepositoryProtocol,
-        photoLibraryRepository: PhotoLibraryRepositoryProtocol
+        photoLibraryRepository: PhotoLibraryRepositoryProtocol,
+        contextualMemoryCacheRepository: ContextualMemoryCacheRepositoryProtocol
     ) {
         self.appRouter = AppRouter()
         self.memoryRepository = memoryRepository
@@ -46,6 +49,7 @@ final class DependencyContainer: ObservableObject {
         self.locationRepository = locationRepository
         self.eventRepository = eventRepository
         self.photoLibraryRepository = photoLibraryRepository
+        self.contextualMemoryCacheRepository = contextualMemoryCacheRepository
         self.smartMemoryNotificationDelegate = SmartMemoryNotificationDelegate(appRouter: appRouter)
         self.smartMemoryNotificationStore = SmartMemoryNotificationCooldownStore()
         self.smartMemoryNotificationCoordinator = SmartMemoryNotificationCoordinator(
@@ -85,6 +89,9 @@ final class DependencyContainer: ObservableObject {
                 eventRepository: eventRepository,
                 photoLibraryRepository: photoLibraryRepository
             ),
+            getCurrentLocationUseCase: GetCurrentLocationUseCase(repository: locationRepository),
+            getCurrentEventUseCase: GetCurrentEventUseCase(repository: eventRepository),
+            contextualMemoryCacheRepository: contextualMemoryCacheRepository,
             qaDebugSettingsRepository: QADebugSettingsRepository()
         )
     }

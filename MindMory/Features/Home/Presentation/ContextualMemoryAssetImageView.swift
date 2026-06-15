@@ -5,6 +5,7 @@ struct ContextualMemoryAssetImageView: View {
     let assetLocalIdentifier: String
 
     @State private var image: UIImage?
+    @State private var isUnavailable = false
     @State private var requestID: PHImageRequestID?
     @Environment(\.displayScale) private var displayScale
 
@@ -19,6 +20,12 @@ struct ContextualMemoryAssetImageView: View {
                         .scaledToFill()
                         .frame(width: proxy.size.width, height: proxy.size.height)
                         .clipped()
+                } else if isUnavailable {
+                    Text("This photo is no longer available. Please choose another memory.")
+                        .font(MindMoryTypography.bodySmall)
+                        .foregroundStyle(MindMoryColors.Content.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(MindMorySpacing.lg)
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
@@ -38,9 +45,11 @@ struct ContextualMemoryAssetImageView: View {
             PHImageManager.default().cancelImageRequest(requestID)
         }
 
+        isUnavailable = false
         let assets = PHAsset.fetchAssets(withLocalIdentifiers: [assetLocalIdentifier], options: nil)
         guard let asset = assets.firstObject else {
             image = nil
+            isUnavailable = true
             return
         }
 
@@ -55,9 +64,13 @@ struct ContextualMemoryAssetImageView: View {
             targetSize: targetSize,
             contentMode: .aspectFill,
             options: options
-        ) { result, _ in
+        ) { result, info in
             Task { @MainActor in
+                if let isDegraded = info?[PHImageResultIsDegradedKey] as? Bool, isDegraded, result == nil {
+                    return
+                }
                 image = result
+                isUnavailable = result == nil
             }
         }
     }
