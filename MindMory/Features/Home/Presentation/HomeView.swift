@@ -18,12 +18,6 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 header
 
-                HomeStatsGridView(
-                    cards: viewModel.statCards,
-                    selectedStat: viewModel.selectedStat,
-                    selectAction: viewModel.selectStat
-                )
-
                 contextualContent
             }
         }

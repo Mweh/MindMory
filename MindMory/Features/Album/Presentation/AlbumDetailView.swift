@@ -35,12 +35,11 @@ struct AlbumDetailView: View {
             )
         ) {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                header
                 sectionList
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .navigationTitle(album.name)
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
@@ -89,35 +88,6 @@ struct AlbumDetailView: View {
         isShowingEditAlbum = false
         album = updatedAlbum
         onEdit?(updatedAlbum)
-    }
-
-    private var header: some View {
-        AppCard {
-            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                Text(album.name)
-                    .font(MindMoryTypography.titleLarge)
-                    .foregroundStyle(MindMoryColors.Content.primary)
-
-                if let image = album.coverPhoto?.uiImage {
-                    ImagePlaceholder(image: image, imageName: nil)
-                        .frame(height: 220)
-                        .frame(maxWidth: .infinity)
-                } else {
-                    ImagePlaceholder(image: nil, imageName: nil)
-                        .frame(height: 220)
-                        .frame(maxWidth: .infinity)
-                }
-
-                HStack(spacing: MindMorySpacing.md) {
-                    Spacer()
-
-                    Text(album.photos.isEmpty ? "No photos" : "\(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")")
-                        .font(MindMoryTypography.bodySmall)
-                        .foregroundStyle(MindMoryColors.Content.link)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
     }
 
     private var sectionList: some View {
