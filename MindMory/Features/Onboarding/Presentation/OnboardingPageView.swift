@@ -37,6 +37,9 @@ struct OnboardingPageView: View {
             .foregroundStyle(MindMoryColors.Content.primary)
             .multilineTextAlignment(.center)
             .lineSpacing(4)
+            .lineLimit(3)
+            .truncationMode(.tail)
+            .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, MindMorySpacing.xl)
     }
 }

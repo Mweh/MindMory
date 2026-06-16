@@ -23,7 +23,7 @@ struct MemoryAlbumCreationView: View {
             suggestedName: "Birthday Moments",
             note: "Capture the celebration, cake, and candid smiles.",
             iconName: "gift.fill",
-            accent: Color(hex: "F4A261"),
+            accent: MindMoryColors.Surface.primary,
             sections: [
                 MemoryAlbumSection(textSection: MemoryAlbumTextSection(
                     templateVariant: 0,
@@ -87,7 +87,7 @@ struct MemoryAlbumCreationView: View {
             suggestedName: "Graduation Day",
             note: "Frame the achievement with ceremony, family, and the moment you turned the page.",
             iconName: "graduationcap.fill",
-            accent: Color(hex: "6A8D92"),
+            accent: MindMoryColors.Surface.primary,
             sections: [
                 MemoryAlbumSection(textSection: MemoryAlbumTextSection(
                     templateVariant: 0,
@@ -151,7 +151,7 @@ struct MemoryAlbumCreationView: View {
             suggestedName: "Custom album",
             note: "Add sections and photos in the order that matters most to you.",
             iconName: "sparkles",
-            accent: Color(hex: "7FA08E"),
+            accent: MindMoryColors.Surface.primary,
             sections: MemoryAlbumCreationViewModel.defaultSections
         )
     ]

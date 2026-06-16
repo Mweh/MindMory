@@ -1,36 +1,20 @@
 import SwiftUI
-#if canImport(UIKit)
-import UIKit
-#endif
-
-private enum SettingsDestination: Hashable {
-    case location
-    case schedule
-    case delivery
-    case message
-    case customize
-    #if DEBUG
-    case qaDebugTools
-    #endif
-}
 
 struct SettingsView: View {
 
     @StateObject var viewModel: SettingsViewModel
-    @Environment(\.openURL) private var openURL
 
     var body: some View {
-        PageLayout(
+        CustomSettingsLayout(
             padding: EdgeInsets(
-                top: MindMorySpacing.xl,
-                leading: MindMorySpacing.lg,
-                bottom: MindMorySpacing.xl,
-                trailing: MindMorySpacing.lg
-            ),
-            background: { backgroundView.ignoresSafeArea() }
+                top: MindMorySpacing.lg,
+                leading: MindMorySpacing.xl,
+                bottom: MindMorySpacing.xxl,
+                trailing: MindMorySpacing.xl
+            )
         ) {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                heroSection
+                headerSection
                 notificationSection
                 locationContextSection
                 calendarContextSection
@@ -47,73 +31,24 @@ struct SettingsView: View {
         }
     }
 
-    private var backgroundView: some View {
-        ZStack {
-            MindMoryColors.Surface.background
-
-            Circle()
-                .fill(MindMoryColors.Surface.elevated.opacity(0.9))
-                .frame(width: 240, height: 240)
-                .blur(radius: 6)
-                .offset(x: 170, y: -260)
-
-            Circle()
-                .fill(MindMoryColors.Surface.surface.opacity(0.95))
-                .frame(width: 220, height: 220)
-                .offset(x: -150, y: 360)
-        }
-    }
-
-    private var heroSection: some View {
-        ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            MindMoryColors.Surface.elevated,
-                            MindMoryColors.Surface.surface,
-                            MindMoryColors.Surface.background
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-
-            Circle()
-                .fill(MindMoryColors.Surface.primary.opacity(0.12))
-                .frame(width: 180, height: 180)
-                .offset(x: 120, y: -56)
-
-            Circle()
-                .fill(MindMoryColors.Content.secondary.opacity(0.10))
-                .frame(width: 120, height: 120)
-                .offset(x: 238, y: 18)
-
-            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                HStack(spacing: MindMorySpacing.xs) {
-                    SettingsHeroBadge(title: "Adaptive")
-                    SettingsHeroBadge(title: "Context-aware")
-                }
-
-                VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-                    Text("Settings")
-                        .font(MindMoryTypography.headline)
-                        .foregroundStyle(MindMoryColors.Content.primary)
-
-                    Text("A few small adjustments can help MindMory deliver better reminders and make it easier to preserve the moments you'd otherwise forget.")
-                        .font(MindMoryTypography.bodyMedium)
-                        .foregroundStyle(MindMoryColors.Content.secondary)
-                }
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            HStack(spacing: MindMorySpacing.xs) {
+                SettingsHeroBadge(title: "Adaptive")
+                SettingsHeroBadge(title: "Context-aware")
             }
-            .padding(MindMorySpacing.xl)
+
+            VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+                Text("Settings")
+                    .font(MindMoryTypography.displayLevel)
+                    .foregroundStyle(MindMoryColors.Content.inverse)
+
+                Text("A few small adjustments can help MindMory deliver better reminders and make it easier to preserve the moments you'd otherwise forget.")
+                    .font(MindMoryTypography.bodyMedium)
+                    .foregroundStyle(MindMoryColors.Content.inverseSecondary)
+            }
         }
-        .frame(maxWidth: .infinity)
-        .frame(minHeight: 220)
-        .overlay(
-            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                .stroke(MindMoryColors.Border.subtle, lineWidth: 1)
-        )
-        .shadow(color: MindMoryShadow.cardColor, radius: MindMoryShadow.softRadius, x: 0, y: MindMoryShadow.softY)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var reminderSettingSection: some View {
@@ -161,18 +96,6 @@ struct SettingsView: View {
         )
     }
 
-    private var deliverySection: some View {
-        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-            SectionTitle(
-                title: "Delivery & personalization",
-                description: "Adjust when and how reminders arrive.",
-                size: .medium
-            )
-
-            SettingsDeliveryCardView(viewModel: viewModel)
-        }
-    }
-
     private var privacySection: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
             SectionTitle(
@@ -213,57 +136,14 @@ struct SettingsView: View {
     }
     #endif
 
-    private func handlePermissionAction(for area: SettingsAccessArea) {
-        switch viewModel.status(for: area) {
-        case .granted:
-            return
-        case .notDetermined:
-            Task {
-                await viewModel.requestAccess(for: area)
-            }
-        case .denied:
-            openAppSettings()
-        }
-    }
-
-    private func openAppSettings() {
-        #if canImport(UIKit)
-        guard let url = URL(string: UIApplication.openSettingsURLString) else {
-            return
-        }
-
-        openURL(url)
-        #endif
-    }
-
-    private func label(for status: PermissionStatus) -> String {
-        switch status {
-        case .notDetermined:
-            return "Pending"
-        case .granted:
-            return "Enabled"
-        case .denied:
-            return "Needs review"
-        }
-    }
-
-    private func tint(for status: PermissionStatus) -> Color {
-        switch status {
-        case .notDetermined:
-            return MindMoryColors.Content.secondary
-        case .granted:
-            return MindMoryColors.Feedback.success
-        case .denied:
-            return MindMoryColors.Feedback.error
-        }
-    }
 }
+
 
 struct SettingsHeroBadge: View {
     let title: String
 
     var body: some View {
-        Badge(iconName: nil, text: title, tint: MindMoryColors.Surface.primary, style: .textOnly, cornerRadius: MindMoryRadius.medium)
+        Badge(iconName: nil, text: title, tint: MindMoryColors.Content.inverse, style: .textOnly, cornerRadius: MindMoryRadius.medium)
     }
 }
 

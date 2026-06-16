@@ -23,7 +23,7 @@ enum MainTab: CaseIterable {
     var icon: String {
         switch self {
         case .home:
-            return "house.fill"
+            return "sparkles"
 
         case .album:
             return "photo.on.rectangle"

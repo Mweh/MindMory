@@ -47,6 +47,8 @@ enum MindMoryTypography {
         .system(.largeTitle, design: .rounded)
         .weight(.bold)
 
+    static let displayLevel = display
+
     // ═══════════════════════════════════════════════════════════
     // MARK: Headline
     // ═══════════════════════════════════════════════════════════

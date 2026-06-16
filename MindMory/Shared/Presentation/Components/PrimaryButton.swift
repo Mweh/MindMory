@@ -40,7 +40,7 @@ private struct MindMoryPrimaryButtonStyle: ButtonStyle {
         
         // Disabled state colors using semantic tokens
         let shadowColor: Color = isEnabled ? MindMoryColors.Surface.primary : MindMoryColors.Border.strong
-        let fillColor: Color = isEnabled ? MindMoryColors.Surface.background : MindMoryColors.Surface.disabled
+        let fillColor: Color = isEnabled ? MindMoryColors.Surface.elevated : MindMoryColors.Surface.disabled
         let borderColor: Color = isEnabled ? MindMoryColors.Surface.primary : MindMoryColors.Border.strong
         let textColor: Color = isEnabled ? MindMoryColors.Surface.primary : MindMoryColors.Content.tertiary
         

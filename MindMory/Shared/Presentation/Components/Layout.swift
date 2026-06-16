@@ -16,7 +16,7 @@ struct PageLayout<Content: View, Background: View>: View {
         ),
         scrollable: Bool = true,
         alignment: Alignment = .topLeading,
-        @ViewBuilder background: @escaping () -> Background = { MindMoryColors.Surface.background.ignoresSafeArea() },
+        @ViewBuilder background: @escaping () -> Background = { MindMoryColors.Surface.backgroundGradient.ignoresSafeArea() },
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.padding = padding

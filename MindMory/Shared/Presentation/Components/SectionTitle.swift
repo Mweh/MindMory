@@ -10,23 +10,33 @@ struct SectionTitle: View {
     let title: String
     let description: String?
     let size: Size
+    let titleColor: Color
+    let descriptionColor: Color
 
-    init(title: String, description: String? = nil, size: Size = .medium) {
+    init(
+        title: String,
+        description: String? = nil,
+        size: Size = .medium,
+        titleColor: Color = MindMoryColors.Content.primary,
+        descriptionColor: Color? = nil
+    ) {
         self.title = title
         self.description = description
         self.size = size
+        self.titleColor = titleColor
+        self.descriptionColor = descriptionColor ?? MindMoryColors.Content.secondary
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: description == nil ? 0 : MindMorySpacing.xxs) {
             Text(title)
                 .font(titleFont)
-                .foregroundStyle(MindMoryColors.Content.primary)
+                .foregroundStyle(titleColor)
 
             if let description = description {
                 Text(description)
                     .font(descriptionFont)
-                    .foregroundStyle(MindMoryColors.Content.secondary)
+                    .foregroundStyle(descriptionColor)
             }
         }
     }

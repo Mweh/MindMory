@@ -7,7 +7,7 @@ struct HomeView: View {
     @State private var cardFrame: CGRect = .zero
 
     var body: some View {
-        PageLayout(
+        CustomMemoriesLayout(
             padding: EdgeInsets(
                 top: MindMorySpacing.xl,
                 leading: MindMorySpacing.xl,
@@ -137,13 +137,13 @@ struct HomeView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
             Text(viewModel.headerCopy.title)
-                .font(MindMoryTypography.headline)
-                .foregroundStyle(MindMoryColors.Content.primary)
+                .font(MindMoryTypography.displayLevel)
+                .foregroundStyle(MindMoryColors.Content.inverse)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(viewModel.headerCopy.subtitle)
                 .font(MindMoryTypography.bodyMedium)
-                .foregroundStyle(MindMoryColors.Content.link)
+                .foregroundStyle(MindMoryColors.Content.inverseSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
