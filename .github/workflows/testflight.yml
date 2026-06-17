@@ -79,15 +79,6 @@ jobs:
           echo "Profile team: $TEAM_IDENTIFIER"
           echo "Profile app identifier: $APP_IDENTIFIER"
 
-      - name: Verify Code Signing
-        run: security find-identity -v -p codesigning
-
-      - name: Xcode Version
-        run: xcodebuild -version
-
-      - name: List Schemes
-        run: xcodebuild -list -project MindMory.xcodeproj
-
       - name: Upload to TestFlight
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
