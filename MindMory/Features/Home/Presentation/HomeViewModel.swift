@@ -130,6 +130,24 @@ final class HomeViewModel: ObservableObject {
         return "Memory matched to this location"
     }
 
+    var locationBannerSubtitle: String {
+        if let placemarkName = contextualMemory?.context.currentLocation?.placemarkName,
+           !placemarkName.isEmpty {
+            return "Matched to your current Apple Maps location."
+        }
+
+        if let eventLocation = contextualMemory?.context.currentEvent?.location,
+           !eventLocation.isEmpty {
+            return "Matched to your current event location."
+        }
+
+        if case .loaded = contextualState {
+            return "A memory connected to where you are now."
+        }
+
+        return "A memory connected to where you are now."
+    }
+
     init(
         memories: [Memory],
         findContextualMemoryUseCase: FindContextualMemoryUseCase? = nil,
@@ -183,6 +201,10 @@ final class HomeViewModel: ObservableObject {
     }
 
     private func loadContextualMemory() async {
+        await MainActor.run {
+            contextualState = .loading
+        }
+
         guard let context = await currentContext() else {
             await MainActor.run {
                 contextualState = .empty(.noContext)
@@ -197,10 +219,6 @@ final class HomeViewModel: ObservableObject {
                 contextualDiscoveryTask = nil
             }
             return
-        }
-
-        await MainActor.run {
-            contextualState = .loading
         }
         let result = await findContextualMemoryUseCase?.execute(now: context.now) ?? .empty(.noContext)
         await MainActor.run {

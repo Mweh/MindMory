@@ -59,10 +59,9 @@ struct HomeView: View {
     @ViewBuilder
     private var contextualContent: some View {
         switch viewModel.contextualState {
-        case .loading:
+        case .idle, .loading:
             loadingCard
             if let memory = viewModel.focusedMemory {
-                favoriteHeader
                 homeCard(for: memory)
             }
         case .permissionRequired(.photoLibrary):
@@ -103,9 +102,8 @@ struct HomeView: View {
             } else {
                 ErrorStateView(message: "Something went wrong.", retryAction: viewModel.retryContextualDiscovery)
             }
-        case .loaded, .idle:
+        case .loaded:
             if let memory = viewModel.focusedMemory {
-                favoriteHeader
                 homeCard(for: memory)
             } else {
                 ContextualMemoryEmptyStateView(
@@ -174,7 +172,7 @@ struct HomeView: View {
                     .font(MindMoryTypography.bodyMedium)
                     .foregroundStyle(MindMoryColors.Content.primary)
 
-                Text("A memory connected to where you are now")
+                Text(viewModel.locationBannerSubtitle)
                     .font(MindMoryTypography.bodySmall)
                     .foregroundStyle(MindMoryColors.Content.secondary)
             }
