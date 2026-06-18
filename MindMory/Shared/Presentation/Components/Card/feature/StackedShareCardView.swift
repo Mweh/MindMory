@@ -27,7 +27,6 @@ struct StackedShareCardView: View {
         VStack(alignment: .leading, spacing: exportMode ? MindMorySpacing.lg : MindMorySpacing.sm) {
             ImagePlaceholder(image: resolvedImage, imageName: fallbackImageName ?? memory.imageName)
                 .frame(height: exportMode ? 410 : 230)
-                .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
 
                 Text(memory.title)
                 .font(exportMode ? MindMoryTypography.titleLarge : MindMoryTypography.titleLarge)

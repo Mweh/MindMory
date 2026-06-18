@@ -161,13 +161,17 @@ struct MemoryAlbumCreationView: View {
     @State private var selectedTextDescription: String = ""
     @State private var isShowingTextEditor = false
     @State private var sectionInsertionIndex: Int?
+    @FocusState private var isAlbumTitleFocused: Bool
+    @FocusState private var isSectionTextTitleFocused: Bool
+    @FocusState private var isSectionTextDescriptionFocused: Bool
     @State private var draggingSectionID: UUID?
-    @State private var currentStep: Step = .details
+    @State private var currentStep: Step
     let onCreate: (Album) -> Void
     @Environment(\.dismiss) private var dismiss
 
     init(viewModel: MemoryAlbumCreationViewModel, onCreate: @escaping (Album) -> Void) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        _currentStep = State(initialValue: viewModel.isEditMode ? .details : .details)
         self.onCreate = onCreate
     }
 
@@ -198,6 +202,7 @@ struct MemoryAlbumCreationView: View {
                 }
             }
             .onTapGesture {
+                UIApplication.shared.dismissKeyboard()
                 draggingSectionID = nil
             }
 
@@ -205,6 +210,17 @@ struct MemoryAlbumCreationView: View {
                 floatingMenuButton
                     .padding(.trailing, MindMorySpacing.xl)
                     .padding(.bottom, MindMorySpacing.xl)
+            }
+        }
+        .overlay {
+            if viewModel.isProcessing {
+                ZStack {
+                    Color.black.opacity(0.2).ignoresSafeArea()
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle())
+                        .padding(24)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemBackground)))
+                }
             }
         }
         .navigationDestination(isPresented: $isAddingSection) {
@@ -259,8 +275,11 @@ struct MemoryAlbumCreationView: View {
                 }
             }
         }
-        .navigationTitle(currentStep == .selectPhotos ? "Select album photos" : "Create an album")
+        .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .onTapGesture {
+            UIApplication.shared.dismissKeyboard()
+        }
         .sheet(isPresented: $isShowingTextEditor) {
             sectionTextEditorSheet
         }
@@ -338,10 +357,12 @@ struct MemoryAlbumCreationView: View {
 
             albumTitleSection
 
-            albumTemplateSection
+            if !viewModel.isEditMode {
+                albumTemplateSection
+            }
 
             PrimaryButton(title: primaryButtonTitle, action: primaryButtonAction)
-                .disabled(isDetailsStepDisabled)
+                .disabled(isDetailsStepDisabled || viewModel.isProcessing)
                 .frame(maxWidth: .infinity)
                 .padding(.top, MindMorySpacing.md)
         }
@@ -360,10 +381,6 @@ struct MemoryAlbumCreationView: View {
                     subtitle: "Tap to select a cover that defines your collection"
                 )
                 .frame(height: 240)
-                .overlay(
-                    RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                        .stroke(MindMoryColors.Border.subtle, lineWidth: 1)
-                )
 
                 if viewModel.coverPhoto != nil {
                     RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
@@ -397,6 +414,11 @@ struct MemoryAlbumCreationView: View {
             borderColor: viewModel.albumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? MindMoryColors.Content.secondary.opacity(0.2) : MindMoryColors.Surface.primary.opacity(0.6)
         ) {
             TextField("Name your album", text: $viewModel.albumName)
+                .focused($isAlbumTitleFocused)
+                .submitLabel(.done)
+                .onSubmit {
+                    UIApplication.shared.dismissKeyboard()
+                }
         }
     }
 
@@ -418,7 +440,6 @@ struct MemoryAlbumCreationView: View {
                         } else {
                             selectedTemplateID = template.id
                             viewModel.applyTemplate(
-                                name: template.suggestedName,
                                 note: template.note,
                                 sections: template.sections
                             )
@@ -593,7 +614,7 @@ struct MemoryAlbumCreationView: View {
     private var footerButtons: some View {
         HStack(spacing: MindMorySpacing.sm) {
             PrimaryButton(title: primaryButtonTitle, action: primaryButtonAction)
-                .disabled(primaryButtonDisabled)
+                .disabled(primaryButtonDisabled || viewModel.isProcessing)
                 .frame(maxWidth: .infinity)
         }
     }
@@ -603,7 +624,16 @@ struct MemoryAlbumCreationView: View {
         case .details:
             return "Continue"
         case .selectPhotos:
-            return "Save album"
+            return viewModel.isEditMode ? "Save changes" : "Save album"
+        }
+    }
+
+    private var navigationTitle: String {
+        switch currentStep {
+        case .details:
+            return viewModel.isEditMode ? "Edit album" : "Create an album"
+        case .selectPhotos:
+            return viewModel.isEditMode ? "Edit album photos" : "Select album photos"
         }
     }
 
@@ -680,6 +710,11 @@ struct MemoryAlbumCreationView: View {
                             .foregroundStyle(MindMoryColors.Content.secondary)
 
                         TextField("Enter title", text: $selectedTextTitle)
+                            .focused($isSectionTextTitleFocused)
+                            .submitLabel(.done)
+                            .onSubmit {
+                                UIApplication.shared.dismissKeyboard()
+                            }
                             .font(MindMoryTypography.bodyMedium)
                             .padding(MindMorySpacing.sm)
                             .background(MindMoryColors.Surface.surface)
@@ -696,6 +731,11 @@ struct MemoryAlbumCreationView: View {
                             .foregroundStyle(MindMoryColors.Content.secondary)
 
                         TextField("Enter description", text: $selectedTextDescription, axis: .vertical)
+                            .focused($isSectionTextDescriptionFocused)
+                            .submitLabel(.done)
+                            .onSubmit {
+                                UIApplication.shared.dismissKeyboard()
+                            }
                             .lineLimit(2...4)
                             .font(MindMoryTypography.bodyMedium)
                             .padding(MindMorySpacing.sm)
@@ -715,6 +755,7 @@ struct MemoryAlbumCreationView: View {
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save") {
+                            UIApplication.shared.dismissKeyboard()
                             updateSelectedTextSection()
                             isShowingTextEditor = false
                         }

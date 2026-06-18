@@ -167,6 +167,36 @@ struct MemoryAlbumSectionLayoutTemplate: Identifiable, Equatable {
                 let bottom = rowHeight(forIndices: [1, 2, 3], columns: 3, availableWidth: width)
                 return top + spacing + bottom
 
+            case 4, 5: // staggered columns or mirrored staggered columns
+                let leftMults: [CGFloat] = [shape(at: 0).heightMultiplier, shape(at: 1).heightMultiplier]
+                let rightMults: [CGFloat] = [shape(at: 2).heightMultiplier, shape(at: 3).heightMultiplier]
+                let sizes = computeBalancedColumnWidths(totalWidth: width, spacingBetweenColumns: spacing, leftMultipliers: leftMults, rightMultipliers: rightMults)
+                let leftTop = leftMults[0] * sizes.left
+                let leftBottom = leftMults[1] * sizes.left
+                let leftTotal = leftTop + spacing + leftBottom
+                let rightTop = rightMults[0] * sizes.right
+                let rightBottom = rightMults[1] * sizes.right
+                let offset: CGFloat = 48
+                if variant == 4 {
+                    return max(leftTotal, rightTop + spacing + rightBottom + offset)
+                } else {
+                    return max(rightTop + spacing + rightBottom, leftTotal + offset)
+                }
+
+            case 6, 7: // staggered rows or mirrored staggered rows
+                let offset: CGFloat = 32
+                let rowWidth = width - offset
+                let cols = 2
+                let totalSpacing = CGFloat(max(0, cols - 1)) * spacing
+                let cellWidth = (rowWidth - totalSpacing) / CGFloat(cols)
+                let topHeight = cellWidth * shape(at: 0).heightMultiplier
+                let topHeight2 = cellWidth * shape(at: 1).heightMultiplier
+                let bottomHeight = cellWidth * shape(at: 2).heightMultiplier
+                let bottomHeight2 = cellWidth * shape(at: 3).heightMultiplier
+                let topRowHeight = max(topHeight, topHeight2)
+                let bottomRowHeight = max(bottomHeight, bottomHeight2)
+                return topRowHeight + spacing + bottomRowHeight
+
             default: // squared grid 2x2
                 let rowH = rowHeight(forIndices: [0, 1], columns: 2, availableWidth: width)
                 let rowH2 = rowHeight(forIndices: [2, 3], columns: 2, availableWidth: width)
@@ -175,6 +205,12 @@ struct MemoryAlbumSectionLayoutTemplate: Identifiable, Equatable {
 
         case 5:
             switch variant {
+            case 0: // split stacked layout
+                let leftMults: [CGFloat] = [shape(at: 0).heightMultiplier, shape(at: 1).heightMultiplier]
+                let rightMults: [CGFloat] = [shape(at: 2).heightMultiplier, shape(at: 3).heightMultiplier, shape(at: 4).heightMultiplier]
+                let sizes = computeBalancedColumnWidths(totalWidth: width, spacingBetweenColumns: spacing, leftMultipliers: leftMults, rightMultipliers: rightMults)
+                return sizes.height
+
             case 1: // three top + two bottom
                 let top = rowHeight(forIndices: [0, 1, 2], columns: 3, availableWidth: width)
                 let bottom = rowHeight(forIndices: [3, 4], columns: 2, availableWidth: width)
@@ -186,16 +222,22 @@ struct MemoryAlbumSectionLayoutTemplate: Identifiable, Equatable {
                 let sizes = computeBalancedColumnWidths(totalWidth: width, spacingBetweenColumns: spacing, leftMultipliers: leftMults, rightMultipliers: rightMults)
                 return sizes.height
 
-            case 3: // single left + 2x2 right grid
-                let leftWidth = width * 0.33 - spacing * 0.33
-                let leftHeight = leftWidth * shape(at: 0).heightMultiplier
-                let rightWidth = width - leftWidth - spacing
-                let rightTop = rowHeight(forIndices: [1, 2], columns: 2, availableWidth: rightWidth)
-                let rightBottom = rowHeight(forIndices: [3, 4], columns: 2, availableWidth: rightWidth)
-                let rightTotal = rightTop + spacing + rightBottom
-                return max(leftHeight, rightTotal)
+            case 3: // mirrored split stacked layout
+                let leftMults: [CGFloat] = [shape(at: 0).heightMultiplier, shape(at: 1).heightMultiplier, shape(at: 2).heightMultiplier]
+                let rightMults: [CGFloat] = [shape(at: 3).heightMultiplier, shape(at: 4).heightMultiplier]
+                let sizes = computeBalancedColumnWidths(totalWidth: width, spacingBetweenColumns: spacing, leftMultipliers: leftMults, rightMultipliers: rightMults)
+                return sizes.height
 
-            case 4: // 2 top + 3 bottom
+            case 4: // single right + 2x2 left
+                let singleWidth = (width - spacing) / 3
+                let singleHeight = singleWidth * shape(at: 4).heightMultiplier
+                let gridWidth = width - singleWidth - spacing
+                let cellWidth = (gridWidth - spacing) / 2
+                let topHeight = max(cellWidth * shape(at: 0).heightMultiplier, cellWidth * shape(at: 1).heightMultiplier)
+                let bottomHeight = max(cellWidth * shape(at: 2).heightMultiplier, cellWidth * shape(at: 3).heightMultiplier)
+                return max(singleHeight, topHeight + spacing + bottomHeight)
+
+            case 5: // 2 top + 3 bottom
                 let top = rowHeight(forIndices: [0, 1], columns: 2, availableWidth: width)
                 let bottom = rowHeight(forIndices: [2, 3, 4], columns: 3, availableWidth: width)
                 return top + spacing + bottom
@@ -221,7 +263,13 @@ enum MemoryAlbumSectionLayoutCatalog {
     static func template(layoutCount: Int, variant: Int) -> MemoryAlbumSectionLayoutTemplate {
         let items = templates(for: layoutCount)
         if let match = items.first(where: { $0.variant == variant }) { return match }
-        guard !items.isEmpty else { fatalError("No templates available for layoutCount \(layoutCount)") }
+        if items.isEmpty {
+            // fallback to a sensible grid template instead of crashing
+            let height = defaultAlbumHeight(for: layoutCount)
+            let cols = Array(repeating: GridItem(.flexible(), spacing: MindMorySpacing.sm), count: min(max(layoutCount, 1), 3))
+            let frameShapes = Array(repeating: MemoryAlbumFrameShape.square, count: max(1, layoutCount))
+            return MemoryAlbumSectionLayoutTemplate(layoutCount: layoutCount, variant: 0, title: "Grid", albumHeight: height, gridColumns: cols, frameShapes: frameShapes)
+        }
         let fallbackIndex = abs(variant) % items.count
         return items[fallbackIndex]
     }
@@ -262,15 +310,19 @@ enum MemoryAlbumSectionLayoutCatalog {
                 MemoryAlbumSectionLayoutTemplate(layoutCount: 4, variant: 2, title: "Two columns (2+2)", albumHeight: height, gridColumns: [.init(.flexible()), .init(.flexible())], frameShapes: [.landscape, .landscape, .landscape, .landscape]),
                 MemoryAlbumSectionLayoutTemplate(layoutCount: 4, variant: 3, title: "Full-width top + three bottom", albumHeight: height, gridColumns: Array(repeating: .init(.flexible(), spacing: MindMorySpacing.sm), count: 3), frameShapes: [.landscape, .square, .square, .square]),
                 // new: staggered two-column variant where the right column is visually offset
-                MemoryAlbumSectionLayoutTemplate(layoutCount: 4, variant: 4, title: "Staggered columns", albumHeight: height, gridColumns: [.init(.flexible()), .init(.flexible())], frameShapes: [.portrait, .portrait, .portrait, .portrait])
+                MemoryAlbumSectionLayoutTemplate(layoutCount: 4, variant: 4, title: "Staggered columns", albumHeight: height, gridColumns: [.init(.flexible()), .init(.flexible())], frameShapes: [.portrait, .portrait, .portrait, .portrait], mirrorGroup: MirrorGroup(primaryVariant: 4, mirrorVariant: 5, mirrorType: .vertical)),
+                MemoryAlbumSectionLayoutTemplate(layoutCount: 4, variant: 5, title: "Staggered columns (mirrored)", albumHeight: height, gridColumns: [.init(.flexible()), .init(.flexible())], frameShapes: [.portrait, .portrait, .portrait, .portrait], mirrorGroup: MirrorGroup(primaryVariant: 4, mirrorVariant: 5, mirrorType: .vertical)),
+                MemoryAlbumSectionLayoutTemplate(layoutCount: 4, variant: 6, title: "Staggered rows", albumHeight: height, gridColumns: Array(repeating: .init(.flexible(), spacing: MindMorySpacing.sm), count: 2), frameShapes: [.landscape, .landscape, .landscape, .landscape], mirrorGroup: MirrorGroup(primaryVariant: 6, mirrorVariant: 7, mirrorType: .horizontal)),
+                MemoryAlbumSectionLayoutTemplate(layoutCount: 4, variant: 7, title: "Staggered rows (mirrored)", albumHeight: height, gridColumns: Array(repeating: .init(.flexible(), spacing: MindMorySpacing.sm), count: 2), frameShapes: [.landscape, .landscape, .landscape, .landscape], mirrorGroup: MirrorGroup(primaryVariant: 6, mirrorVariant: 7, mirrorType: .horizontal))
             ]
 
         case 5:
             base = [
-                MemoryAlbumSectionLayoutTemplate(layoutCount: 5, variant: 0, title: "Split stacked layout", albumHeight: height, gridColumns: Array(repeating: .init(.flexible(), spacing: MindMorySpacing.sm), count: 3), frameShapes: [.square, .square, .square, .square, .square], mirrorGroup: MirrorGroup(primaryVariant: 0, mirrorVariant: 3, mirrorType: .horizontal)),
+                MemoryAlbumSectionLayoutTemplate(layoutCount: 5, variant: 0, title: "Split stacked layout", albumHeight: height, gridColumns: [.init(.flexible()), .init(.flexible())], frameShapes: [.square, .square, .square, .square, .square], mirrorGroup: MirrorGroup(primaryVariant: 0, mirrorVariant: 3, mirrorType: .vertical)),
                 MemoryAlbumSectionLayoutTemplate(layoutCount: 5, variant: 1, title: "Two left + three right", albumHeight: height, gridColumns: [.init(.flexible()), .init(.flexible())], frameShapes: [.portrait, .portrait, .landscape, .landscape, .landscape]),
-                MemoryAlbumSectionLayoutTemplate(layoutCount: 5, variant: 2, title: "Single left + 2x2 right", albumHeight: height, gridColumns: [.init(.flexible()), .init(.flexible())], frameShapes: [.portrait, .square, .square, .square, .square]),
-                MemoryAlbumSectionLayoutTemplate(layoutCount: 5, variant: 3, title: "Split stacked layout (mirrored)", albumHeight: height, gridColumns: [.init(.flexible()), .init(.flexible())], frameShapes: [.square, .square, .square, .square, .square], mirrorGroup: MirrorGroup(primaryVariant: 0, mirrorVariant: 3, mirrorType: .horizontal))
+                MemoryAlbumSectionLayoutTemplate(layoutCount: 5, variant: 2, title: "Single left + 2x2 right", albumHeight: height, gridColumns: [.init(.flexible()), .init(.flexible())], frameShapes: [.portrait, .square, .square, .square, .square], mirrorGroup: MirrorGroup(primaryVariant: 2, mirrorVariant: 4, mirrorType: .vertical)),
+                MemoryAlbumSectionLayoutTemplate(layoutCount: 5, variant: 3, title: "Split stacked layout (mirrored)", albumHeight: height, gridColumns: [.init(.flexible()), .init(.flexible())], frameShapes: [.square, .square, .square, .square, .square], mirrorGroup: MirrorGroup(primaryVariant: 0, mirrorVariant: 3, mirrorType: .vertical)),
+                MemoryAlbumSectionLayoutTemplate(layoutCount: 5, variant: 4, title: "Single right + 2x2 left", albumHeight: height, gridColumns: [.init(.flexible()), .init(.flexible())], frameShapes: [.square, .square, .square, .square, .portrait], mirrorGroup: MirrorGroup(primaryVariant: 2, mirrorVariant: 4, mirrorType: .vertical))
             ]
 
         default:
@@ -547,7 +599,7 @@ struct MemoryAlbumSectionLayoutRenderer<Content: View>: View {
                 }
                 .frame(width: width, height: top + spacing + bottom)
 
-            case 4: // staggered columns (offset right column)
+            case 4, 5: // staggered columns or mirrored staggered columns
                 let leftMults: [CGFloat] = [template.frameShapes.safe(0)?.heightMultiplier ?? 1, template.frameShapes.safe(1)?.heightMultiplier ?? 1]
                 let rightMults: [CGFloat] = [template.frameShapes.safe(2)?.heightMultiplier ?? 1, template.frameShapes.safe(3)?.heightMultiplier ?? 1]
                 let sizes = computeBalancedColumnWidths(totalWidth: width, spacingBetweenColumns: spacing, leftMultipliers: leftMults, rightMultipliers: rightMults)
@@ -559,21 +611,54 @@ struct MemoryAlbumSectionLayoutRenderer<Content: View>: View {
                 let rightTop = rightWidth * (template.frameShapes.safe(2)?.heightMultiplier ?? 1)
                 let rightBottom = rightWidth * (template.frameShapes.safe(3)?.heightMultiplier ?? 1)
                 let rightTotal = rightTop + spacing + rightBottom
-                // visual offset applied to right column; include offset in computed height so layout doesn't clip
-                let rightOffset = spacing * 1.5
-                let containerHeight = max(leftTotal, rightTotal + rightOffset)
+                let offset: CGFloat = 48
+                let isMirrored = template.mirrorGroup?.mirrorVariant == template.variant
+                let containerHeight = isMirrored ? max(rightTotal, leftTotal + offset) : max(leftTotal, rightTotal + offset)
                 HStack(spacing: spacing) {
                     VStack(spacing: spacing) {
                         imageCell(0).frame(width: leftWidth, height: leftTop)
                         imageCell(1).frame(width: leftWidth, height: leftBottom)
                     }
+                    .padding(.top, isMirrored ? offset : 0)
+
                     VStack(spacing: spacing) {
                         imageCell(2).frame(width: rightWidth, height: rightTop)
                         imageCell(3).frame(width: rightWidth, height: rightBottom)
                     }
-                    .padding(.top, rightOffset)
+                    .padding(.top, isMirrored ? 0 : offset)
                 }
                 .frame(width: width, height: containerHeight)
+
+            case 6, 7: // staggered rows or mirrored staggered rows
+                let offset: CGFloat = 32
+                let rowWidth = width - offset
+                let cols = 2
+                let totalSpacing = CGFloat(max(0, cols - 1)) * spacing
+                let cellWidth = (rowWidth - totalSpacing) / CGFloat(cols)
+                let topLeftHeight = cellWidth * (template.frameShapes.safe(0)?.heightMultiplier ?? 1)
+                let topRightHeight = cellWidth * (template.frameShapes.safe(1)?.heightMultiplier ?? 1)
+                let bottomLeftHeight = cellWidth * (template.frameShapes.safe(2)?.heightMultiplier ?? 1)
+                let bottomRightHeight = cellWidth * (template.frameShapes.safe(3)?.heightMultiplier ?? 1)
+                let topRowHeight = max(topLeftHeight, topRightHeight)
+                let bottomRowHeight = max(bottomLeftHeight, bottomRightHeight)
+                VStack(spacing: spacing) {
+                    HStack(spacing: spacing) {
+                        imageCell(0).frame(width: cellWidth, height: topLeftHeight)
+                        imageCell(1).frame(width: cellWidth, height: topRightHeight)
+                    }
+                    .frame(width: rowWidth, alignment: .leading)
+                    .padding(.leading, template.variant == 6 ? offset : 0)
+                    .padding(.trailing, template.variant == 7 ? offset : 0)
+
+                    HStack(spacing: spacing) {
+                        imageCell(2).frame(width: cellWidth, height: bottomLeftHeight)
+                        imageCell(3).frame(width: cellWidth, height: bottomRightHeight)
+                    }
+                    .frame(width: rowWidth, alignment: .leading)
+                    .padding(.trailing, template.variant == 6 ? offset : 0)
+                    .padding(.leading, template.variant == 7 ? offset : 0)
+                }
+                .frame(width: width, height: topRowHeight + spacing + bottomRowHeight)
 
                 default: // squared grid 2x2
                 let cols = 2
@@ -600,14 +685,35 @@ struct MemoryAlbumSectionLayoutRenderer<Content: View>: View {
 
         case 5:
             switch template.variant {
+            case 0: // split stacked layout
+                let leftMults: [CGFloat] = [template.frameShapes.safe(0)?.heightMultiplier ?? 1, template.frameShapes.safe(1)?.heightMultiplier ?? 1]
+                let rightMults: [CGFloat] = [template.frameShapes.safe(2)?.heightMultiplier ?? 1, template.frameShapes.safe(3)?.heightMultiplier ?? 1, template.frameShapes.safe(4)?.heightMultiplier ?? 1]
+                let sizes = computeBalancedColumnWidths(totalWidth: width, spacingBetweenColumns: spacing, leftMultipliers: leftMults, rightMultipliers: rightMults)
+                let leftWidth = sizes.left
+                let rightWidth = sizes.right
+                let leftTop = leftWidth * (template.frameShapes.safe(0)?.heightMultiplier ?? 1)
+                let leftBottom = leftWidth * (template.frameShapes.safe(1)?.heightMultiplier ?? 1)
+                HStack(spacing: spacing) {
+                    VStack(spacing: spacing) {
+                        imageCell(0).frame(width: leftWidth, height: leftTop)
+                        imageCell(1).frame(width: leftWidth, height: leftBottom)
+                    }
+                    VStack(spacing: spacing) {
+                        imageCell(2).frame(width: rightWidth, height: rightWidth * (template.frameShapes.safe(2)?.heightMultiplier ?? 1))
+                        imageCell(3).frame(width: rightWidth, height: rightWidth * (template.frameShapes.safe(3)?.heightMultiplier ?? 1))
+                        imageCell(4).frame(width: rightWidth, height: rightWidth * (template.frameShapes.safe(4)?.heightMultiplier ?? 1))
+                    }
+                }
+                .frame(width: width, height: sizes.height)
+
             case 1: // three top + two bottom
                 let topCols = 3
-                let totalSpacingTop = CGFloat(max(0, topCols - 1)) * spacing
-                let topCellWidth = (width - totalSpacingTop) / CGFloat(topCols)
+                let totalTopSpacing = CGFloat(max(0, topCols - 1)) * spacing
+                let topCellWidth = (width - totalTopSpacing) / CGFloat(topCols)
                 let top = max(topCellWidth * (template.frameShapes.safe(0)?.heightMultiplier ?? 1), topCellWidth * (template.frameShapes.safe(1)?.heightMultiplier ?? 1), topCellWidth * (template.frameShapes.safe(2)?.heightMultiplier ?? 1))
                 let bottomCols = 2
-                let totalSpacingBottom = CGFloat(max(0, bottomCols - 1)) * spacing
-                let bottomCellWidth = (width - totalSpacingBottom) / CGFloat(bottomCols)
+                let totalBottomSpacing = CGFloat(max(0, bottomCols - 1)) * spacing
+                let bottomCellWidth = (width - totalBottomSpacing) / CGFloat(bottomCols)
                 let bottom = max(bottomCellWidth * (template.frameShapes.safe(3)?.heightMultiplier ?? 1), bottomCellWidth * (template.frameShapes.safe(4)?.heightMultiplier ?? 1))
                 VStack(spacing: spacing) {
                     HStack(spacing: spacing) {
@@ -641,29 +747,52 @@ struct MemoryAlbumSectionLayoutRenderer<Content: View>: View {
                 }
                 .frame(width: width, height: sizes.height)
 
-            case 3: // single left + 2x2 right
-                let leftWidth = width * 0.33 - spacing * 0.33
-                let leftHeight = leftWidth * (template.frameShapes.safe(0)?.heightMultiplier ?? 1)
-                let rightWidth = width - leftWidth - spacing
-                let rightTop = max((rightWidth - spacing)/2 * (template.frameShapes.safe(1)?.heightMultiplier ?? 1), (rightWidth - spacing)/2 * (template.frameShapes.safe(2)?.heightMultiplier ?? 1))
-                let rightBottom = max((rightWidth - spacing)/2 * (template.frameShapes.safe(3)?.heightMultiplier ?? 1), (rightWidth - spacing)/2 * (template.frameShapes.safe(4)?.heightMultiplier ?? 1))
-                let rightTotal = rightTop + spacing + rightBottom
+            case 3: // split stacked layout (mirrored)
+                let leftMults: [CGFloat] = [template.frameShapes.safe(0)?.heightMultiplier ?? 1, template.frameShapes.safe(1)?.heightMultiplier ?? 1, template.frameShapes.safe(2)?.heightMultiplier ?? 1]
+                let rightMults: [CGFloat] = [template.frameShapes.safe(3)?.heightMultiplier ?? 1, template.frameShapes.safe(4)?.heightMultiplier ?? 1]
+                let sizes = computeBalancedColumnWidths(totalWidth: width, spacingBetweenColumns: spacing, leftMultipliers: leftMults, rightMultipliers: rightMults)
+                let leftWidth = sizes.left
+                let rightWidth = sizes.right
+                let leftTop = leftWidth * (template.frameShapes.safe(0)?.heightMultiplier ?? 1)
+                let leftMid = leftWidth * (template.frameShapes.safe(1)?.heightMultiplier ?? 1)
+                let leftBottom = leftWidth * (template.frameShapes.safe(2)?.heightMultiplier ?? 1)
                 HStack(spacing: spacing) {
-                    imageCell(0).frame(width: leftWidth, height: leftHeight)
                     VStack(spacing: spacing) {
-                        HStack(spacing: spacing) {
-                            imageCell(1).frame(width: (rightWidth - spacing)/2, height: rightTop)
-                            imageCell(2).frame(width: (rightWidth - spacing)/2, height: rightTop)
-                        }
-                        HStack(spacing: spacing) {
-                            imageCell(3).frame(width: (rightWidth - spacing)/2, height: rightBottom)
-                            imageCell(4).frame(width: (rightWidth - spacing)/2, height: rightBottom)
-                        }
+                        imageCell(0).frame(width: leftWidth, height: leftTop)
+                        imageCell(1).frame(width: leftWidth, height: leftMid)
+                        imageCell(2).frame(width: leftWidth, height: leftBottom)
+                    }
+                    VStack(spacing: spacing) {
+                        imageCell(3).frame(width: rightWidth, height: rightWidth * (template.frameShapes.safe(3)?.heightMultiplier ?? 1))
+                        imageCell(4).frame(width: rightWidth, height: rightWidth * (template.frameShapes.safe(4)?.heightMultiplier ?? 1))
                     }
                 }
-                .frame(width: width, height: max(leftHeight, rightTotal))
+                .frame(width: width, height: sizes.height)
 
-            case 4: // 2 top + 3 bottom
+            case 4: // single right + 2x2 left
+                let rightWidth = (width - spacing) / 3
+                let rightHeight = rightWidth * (template.frameShapes.safe(4)?.heightMultiplier ?? 1)
+                let leftWidth = width - rightWidth - spacing
+                let leftCellWidth = (leftWidth - spacing) / 2
+                let leftTop = max(leftCellWidth * (template.frameShapes.safe(0)?.heightMultiplier ?? 1), leftCellWidth * (template.frameShapes.safe(1)?.heightMultiplier ?? 1))
+                let leftBottom = max(leftCellWidth * (template.frameShapes.safe(2)?.heightMultiplier ?? 1), leftCellWidth * (template.frameShapes.safe(3)?.heightMultiplier ?? 1))
+                let leftTotal = leftTop + spacing + leftBottom
+                HStack(spacing: spacing) {
+                    VStack(spacing: spacing) {
+                        HStack(spacing: spacing) {
+                            imageCell(0).frame(width: leftCellWidth, height: leftTop)
+                            imageCell(1).frame(width: leftCellWidth, height: leftTop)
+                        }
+                        HStack(spacing: spacing) {
+                            imageCell(2).frame(width: leftCellWidth, height: leftBottom)
+                            imageCell(3).frame(width: leftCellWidth, height: leftBottom)
+                        }
+                    }
+                    imageCell(4).frame(width: rightWidth, height: rightHeight)
+                }
+                .frame(width: width, height: max(leftTotal, rightHeight))
+
+            case 5: // 2 top + 3 bottom
                 let topCols = 2
                 let totalTopSpacing = CGFloat(max(0, topCols - 1)) * spacing
                 let topCellWidth = (width - totalTopSpacing) / CGFloat(topCols)
@@ -749,24 +878,30 @@ struct MemoryAlbumSectionLayoutRenderer<Content: View>: View {
     private func imageCell(_ index: Int) -> some View {
         let shape = template.frameShapes.indices.contains(index) ? template.frameShapes[index] : MemoryAlbumFrameShape.square
 
-        if let aspect = aspectRatio(for: shape) {
-            GeometryReader { proxy in
-                content(index)
-                    .aspectRatio(aspect, contentMode: .fill)
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .clipped()
-                    .overlay(debugOverlay(index: index, width: proxy.size.width, height: proxy.size.height), alignment: .topLeading)
+        let clippedCell = Group {
+            if let aspect = aspectRatio(for: shape) {
+                GeometryReader { proxy in
+                    content(index)
+                        .aspectRatio(aspect, contentMode: .fill)
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                        .clipped()
+                        .overlay(debugOverlay(index: index, width: proxy.size.width, height: proxy.size.height), alignment: .topLeading)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                GeometryReader { proxy in
+                    content(index)
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                        .clipped()
+                        .overlay(debugOverlay(index: index, width: proxy.size.width, height: proxy.size.height), alignment: .topLeading)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            GeometryReader { proxy in
-                content(index)
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .clipped()
-                    .overlay(debugOverlay(index: index, width: proxy.size.width, height: proxy.size.height), alignment: .topLeading)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+
+        clippedCell
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
     }
 
     @ViewBuilder

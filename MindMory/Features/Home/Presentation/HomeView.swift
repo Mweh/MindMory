@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     @StateObject var viewModel: HomeViewModel
@@ -17,18 +18,12 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 header
 
-                HomeStatsGridView(
-                    cards: viewModel.statCards,
-                    selectedStat: viewModel.selectedStat,
-                    selectAction: viewModel.selectStat
-                )
-
                 contextualContent
             }
         }
         .navigationBarHidden(true)
         .onTapGesture {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            UIApplication.shared.dismissKeyboard()
         }
         .onAppear { viewModel.load() }
         .onPreferenceChange(CardFrameKey.self) { frame in

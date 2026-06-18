@@ -1,7 +1,9 @@
 import SwiftUI
 
 struct ExpandableStatCardView: View {
-    let card: HomeStatCardModel
+    let title: String
+    let primaryValue: String
+    let secondaryValue: String
     let isSelected: Bool
 
     var body: some View {
@@ -25,19 +27,19 @@ struct ExpandableStatCardView: View {
 
     private var compactContent: some View {
         VStack(alignment: .center, spacing: 6) {
-            Text(card.title)
+            Text(title)
                 .font(MindMoryTypography.titleSmall)
                 .foregroundStyle(MindMoryColors.Content.inverse.opacity(0.92))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
-            Text(card.primaryValue)
+            Text(primaryValue)
                 .font(MindMoryTypography.titleLarge)
                 .foregroundStyle(MindMoryColors.Content.inverse.opacity(0.95))
                 .lineLimit(1)
                 .minimumScaleFactor(0.55)
 
-            Text(card.secondaryValue)
+            Text(secondaryValue)
                 .font(MindMoryTypography.labelSmall)
                 .foregroundStyle(MindMoryColors.Content.inverse.opacity(0.9))
                 .lineLimit(1)
@@ -63,7 +65,7 @@ struct ExpandableStatCardView: View {
 #if DEBUG
 struct ExpandableStatCardView_Previews: PreviewProvider {
     static var previews: some View {
-        ExpandableStatCardView(card: HomeStatCardModel(stat: .captured, title: "Stats", primaryValue: "42", secondaryValue: "units", monthlyDetail: "12", yearlyDetail: "20"), isSelected: false)
+        ExpandableStatCardView(title: "Captured", primaryValue: "42", secondaryValue: "Moments", isSelected: false)
             .padding()
             .previewLayout(.sizeThatFits)
     }
@@ -71,7 +73,7 @@ struct ExpandableStatCardView_Previews: PreviewProvider {
 #endif
 
 #Preview {
-    ExpandableStatCardView(card: HomeStatCardModel(stat: .captured, title: "Stats", primaryValue: "42", secondaryValue: "units", monthlyDetail: "12", yearlyDetail: "20"), isSelected: false)
+    ExpandableStatCardView(title: "Captured", primaryValue: "42", secondaryValue: "Moments", isSelected: false)
         .frame(width: 300, height: 92)
         .padding()
         .background(MindMoryColors.Surface.background)

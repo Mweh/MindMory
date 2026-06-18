@@ -4,10 +4,13 @@ struct AppRootView: View {
     @StateObject private var container = DependencyContainer()
     @AppStorage("hasCompletedOnboarding") private var didCompleteOnboarding = false
     @Environment(\.scenePhase) private var scenePhase
+    @State private var isShowingSplash = true
 
     var body: some View {
         Group {
-            if didCompleteOnboarding {
+            if isShowingSplash {
+                SplashScreenView()
+            } else if didCompleteOnboarding {
                 NavigationStack {
                     MainTabView(container: container, router: container.appRouter)
                 }
@@ -21,6 +24,7 @@ struct AppRootView: View {
             if didCompleteOnboarding {
                 await container.startSmartMemoryNotifications()
             }
+            await hideSplashScreen()
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active, didCompleteOnboarding else { return }
@@ -34,6 +38,13 @@ struct AppRootView: View {
                 container.configureNotificationHandling()
                 await container.startSmartMemoryNotifications()
             }
+        }
+    }
+
+    private func hideSplashScreen() async {
+        try? await Task.sleep(nanoseconds: 900_000_000)
+        await MainActor.run {
+            isShowingSplash = false
         }
     }
 }

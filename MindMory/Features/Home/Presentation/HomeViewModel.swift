@@ -15,26 +15,9 @@ enum HomeViewState: Equatable {
     case error(String)
 }
 
-enum SelectedStatCard: CaseIterable, Equatable {
-    case captured
-    case visited
-    case reminder
-}
-
 enum MemoryCardSide: Equatable {
     case front
     case back
-}
-
-struct HomeStatCardModel: Identifiable, Equatable {
-    let stat: SelectedStatCard
-    let title: String
-    let primaryValue: String
-    let secondaryValue: String
-    let monthlyDetail: String
-    let yearlyDetail: String
-
-    var id: SelectedStatCard { stat }
 }
 
 @MainActor
@@ -45,8 +28,6 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var focusedMemory: Memory?
     @Published private(set) var contextualMemory: ContextualMemory?
     @Published private(set) var selectedAssetLocalIdentifier: String?
-    @Published private(set) var statCards: [HomeStatCardModel] = []
-    @Published var selectedStat: SelectedStatCard? = nil
     @Published var cardSide: MemoryCardSide = .front
     @Published var captionText = ""
     @Published var homeCardState: HomeCardState = .normal
@@ -151,15 +132,10 @@ final class HomeViewModel: ObservableObject {
     func load() {
         guard contextualDiscoveryTask == nil else { return }
         refreshHomeCardState()
-        statCards = makeStatCards()
 
         contextualDiscoveryTask = Task { [weak self] in
             await self?.loadContextualMemory()
         }
-    }
-
-    func selectStat(_ stat: SelectedStatCard) {
-        selectedStat = stat
     }
 
     func flipCard() {
@@ -190,7 +166,6 @@ final class HomeViewModel: ObservableObject {
         guard let context = await currentContext() else {
             await MainActor.run {
                 contextualState = .empty(.noContext)
-                statCards = makeStatCards()
                 contextualDiscoveryTask = nil
             }
             return
@@ -206,7 +181,6 @@ final class HomeViewModel: ObservableObject {
 
         await MainActor.run {
             contextualState = .loading
-            statCards = makeStatCards()
         }
         let result = await findContextualMemoryUseCase?.execute(now: context.now) ?? .empty(.noContext)
         await MainActor.run {
@@ -276,7 +250,6 @@ final class HomeViewModel: ObservableObject {
             ),
             focusedMemory
         )
-        statCards = makeStatCards()
     }
 
     func showContextualAsset(localIdentifier: String) {
@@ -326,7 +299,6 @@ final class HomeViewModel: ObservableObject {
     private func discoverContextualMemory() {
         contextualDiscoveryTask?.cancel()
         contextualState = .loading
-        statCards = makeStatCards()
 
         contextualDiscoveryTask = Task { [weak self] in
             let result = await self?.findContextualMemoryUseCase?.execute() ?? .empty(.noContext)
@@ -369,7 +341,6 @@ final class HomeViewModel: ObservableObject {
             break
         }
 
-        statCards = makeStatCards()
     }
 
     private func openAppSettings() {
@@ -388,51 +359,6 @@ final class HomeViewModel: ObservableObject {
         #endif
     }
 
-    private func makeStatCards() -> [HomeStatCardModel] {
-        switch contextualState {
-        case .idle, .loading:
-            return loadingStatCards()
-        case .empty, .error, .permissionRequired:
-            return zeroStatCards(placeName: "Unknown Place")
-        case .loaded(let contextualMemory):
-            let placeName = contextualMemory.locationName ?? contextualMemory.context.currentEvent?.location ?? contextualMemory.context.currentEvent?.title ?? "Unknown Place"
-            return [
-                HomeStatCardModel(stat: .captured, title: "Captured", primaryValue: "\(memories.count)", secondaryValue: "Moments", monthlyDetail: "", yearlyDetail: ""),
-                HomeStatCardModel(stat: .visited, title: "Visited", primaryValue: "\(visitCount(for: placeName)) times", secondaryValue: placeName, monthlyDetail: "", yearlyDetail: ""),
-                HomeStatCardModel(stat: .reminder, title: "Reminder", primaryValue: "0", secondaryValue: "Responded", monthlyDetail: "", yearlyDetail: "")
-            ]
-        }
-    }
-
-    private func loadingStatCards() -> [HomeStatCardModel] {
-        [
-            HomeStatCardModel(stat: .captured, title: "Captured", primaryValue: "--", secondaryValue: "Moments", monthlyDetail: "", yearlyDetail: ""),
-            HomeStatCardModel(stat: .visited, title: "Visited", primaryValue: "--", secondaryValue: "Place", monthlyDetail: "", yearlyDetail: ""),
-            HomeStatCardModel(stat: .reminder, title: "Reminder", primaryValue: "--", secondaryValue: "Responded", monthlyDetail: "", yearlyDetail: "")
-        ]
-    }
-
-    private func zeroStatCards(placeName: String) -> [HomeStatCardModel] {
-        [
-            HomeStatCardModel(stat: .captured, title: "Captured", primaryValue: "0", secondaryValue: "Moments", monthlyDetail: "", yearlyDetail: ""),
-            HomeStatCardModel(stat: .visited, title: "Visited", primaryValue: "0 times", secondaryValue: placeName, monthlyDetail: "", yearlyDetail: ""),
-            HomeStatCardModel(stat: .reminder, title: "Reminder", primaryValue: "0", secondaryValue: "Responded", monthlyDetail: "", yearlyDetail: "")
-        ]
-    }
-
-    private func visitCount(for placeName: String) -> Int {
-        let normalizedPlaceName = normalizedStatPlaceName(placeName)
-        guard normalizedPlaceName != normalizedStatPlaceName("Unknown Place") else { return 0 }
-
-        return memories.filter { memory in
-            guard let locationName = memory.locationName else { return false }
-            return normalizedStatPlaceName(locationName) == normalizedPlaceName
-        }.count
-    }
-
-    private func normalizedStatPlaceName(_ value: String) -> String {
-        value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-    }
 
     deinit {
         contextualDiscoveryTask?.cancel()

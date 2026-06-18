@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct InteractiveMemoryCardView: View {
     let memory: Memory
@@ -32,7 +33,7 @@ struct InteractiveMemoryCardView: View {
     private func flipCard() {
         guard !isFlipping else { return }
         isFlipping = true
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        UIApplication.shared.dismissKeyboard()
 
         withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
             flipRotation = 90

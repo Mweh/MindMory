@@ -28,6 +28,7 @@ struct ContextualMemoryAssetImageView: View {
                         .padding(MindMorySpacing.lg)
                 }
             }
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
             .task {
                 requestImage(for: proxy.size, scale: displayScale)
             }

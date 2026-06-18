@@ -17,18 +17,27 @@ struct OnboardingPageView: View {
     }
 
     private var illustrationImage: some View {
-        Image(page.imageName)
-            .resizable()
-            .scaledToFill()
-            .frame(maxWidth: .infinity)
-            .frame(height: 360)
-            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium)
-            )
-            .padding(
-                .horizontal,
-                page.imageName == "onboard3" ? 0 : MindMorySpacing.xl
-            )
-            .accessibilityHidden(true)
+        GeometryReader { proxy in
+            ZStack {
+                RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                    .fill(MindMoryColors.Surface.background)
+
+                Image(page.imageName)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .clipped()
+            }
+            .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+                    .stroke(MindMoryColors.Border.subtle, lineWidth: 1)
+            }
+        }
+        .frame(height: 360)
+        .padding(.horizontal, MindMorySpacing.xl)
+        .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 3)
+        .accessibilityHidden(true)
     }
 
     private var titleText: some View {
@@ -37,7 +46,8 @@ struct OnboardingPageView: View {
             .foregroundStyle(MindMoryColors.Content.primary)
             .multilineTextAlignment(.center)
             .lineSpacing(4)
-            .padding(.horizontal, MindMorySpacing.xl)
+            .lineLimit(3)
+            .padding(.horizontal, MindMorySpacing.lg)
     }
 }
 

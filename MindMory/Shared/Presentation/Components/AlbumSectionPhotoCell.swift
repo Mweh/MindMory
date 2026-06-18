@@ -7,15 +7,8 @@ struct AlbumSectionPhotoCell: View {
         ImagePlaceholder(
             image: image,
             imageName: nil,
-            subtitle: image == nil ? "Tap to add photo" : nil,
-            useBackground: false
+            placeholderStyle: image == nil ? .textOnly("Tap to add photo") : .standard
         )
-        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                .stroke(MindMoryColors.Border.subtle)
-        )
-        .contentShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
         .frame(maxWidth: .infinity)
     }
 }

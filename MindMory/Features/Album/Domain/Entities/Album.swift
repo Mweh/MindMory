@@ -5,7 +5,7 @@ enum AlbumCategory: String, Codable {
     case memory
 }
 
-struct Album: Identifiable, Codable, Equatable {
+struct Album: Identifiable, Codable, Equatable, Hashable {
     let id: UUID
     let name: String
     let note: String
@@ -16,5 +16,9 @@ struct Album: Identifiable, Codable, Equatable {
 
     var coverPhoto: AlbumPhoto? {
         photos.first
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }
