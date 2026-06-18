@@ -37,15 +37,43 @@ struct HomeMemoryFrameView: View {
     }
 
     private var thumbnailView: some View {
-        Image("onboard1")
-            .resizable()
-            .scaledToFill()
-            .frame(
-                width: compact ? 72 : 104,
-                height: compact ? 72 : 104
-            )
-            .clipShape(
-                RoundedRectangle(cornerRadius: MindMoryRadius.medium)
-            )
+        Group {
+            switch memory.imageSource {
+            case .assetLocalIdentifier(let id):
+                ContextualMemoryAssetImageView(assetLocalIdentifier: id)
+            case .assetName(let name):
+                Image(name)
+                    .resizable()
+                    .scaledToFill()
+            case .debugImageURL(let url):
+                if #available(iOS 15.0, *) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ImagePlaceholder(imageName: nil)
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        case .failure:
+                            ImagePlaceholder(imageName: nil)
+                        @unknown default:
+                            ImagePlaceholder(imageName: nil)
+                        }
+                    }
+                } else {
+                    ImagePlaceholder(imageName: nil)
+                }
+            case .placeholder:
+                ImagePlaceholder(imageName: nil)
+            }
+        }
+        .frame(
+            width: compact ? 72 : 104,
+            height: compact ? 72 : 104
+        )
+        .clipShape(
+            RoundedRectangle(cornerRadius: MindMoryRadius.medium)
+        )
     }
 }

@@ -29,6 +29,11 @@ struct HomeView: View {
         .onPreferenceChange(CardFrameKey.self) { frame in
             cardFrame = frame
         }
+        .onChange(of: viewModel.homeCardState) { _, newState in
+            if newState != .normal {
+                cardFrame = .zero
+            }
+        }
         .overlay {
             if !hasSeenTooltip && cardFrame != .zero && viewModel.cardSide == .front {
                 SpotlightTooltipView(cardFrame: cardFrame) {
@@ -62,24 +67,32 @@ struct HomeView: View {
             }
         case .permissionRequired(.photoLibrary):
             NoPermissionStateView(
-                title: "Photos access is required",
-                subtitle: "Allow photo access so MindMory can surface memories from nearby moments.",
+                title: "Allow photo access",
+                subtitle: "Let MindMory choose an image for a memory from your nearby moments.",
                 buttonTitle: "Allow Access",
                 iconName: "photo.on.rectangle.angled",
-                action: viewModel.didTapAllowPhotoAccess
+                action: viewModel.didTapAllowAccess
+            )
+        case .permissionRequired(.calendar):
+            NoPermissionStateView(
+                title: "Allow calendar access",
+                subtitle: "Let MindMory connect memories to events happening now.",
+                buttonTitle: "Allow Access",
+                iconName: "calendar",
+                action: viewModel.didTapAllowAccess
             )
         case .permissionRequired:
             NoPermissionStateView(
-                title: "Permission needed",
-                subtitle: "Allow access so MindMory can connect your current location with meaningful memories.",
+                title: "Enable location access",
+                subtitle: "Allow access so MindMory can surface a memory tied to your current place.",
                 buttonTitle: "Allow Access",
                 iconName: "location.fill",
-                action: viewModel.didTapAllowPhotoAccess
+                action: viewModel.didTapAllowAccess
             )
         case .empty:
             ContextualMemoryEmptyStateView(
-                title: "This might be your first memory here.",
-                subtitle: "We’ll help you keep this moment when it becomes worth remembering."
+                title: "No memory has surfaced yet.",
+                subtitle: "We’ll keep this screen ready for a moment that matches your location."
             )
         case .error:
             if let errorMessage = viewModel.contextualErrorMessage {
@@ -96,8 +109,8 @@ struct HomeView: View {
                 homeCard(for: memory)
             } else {
                 ContextualMemoryEmptyStateView(
-                    title: "This might be your first memory here.",
-                    subtitle: "We’ll help you keep this moment when it becomes worth remembering."
+                    title: "No memory has surfaced yet.",
+                    subtitle: "MindMory is ready to match a moment from this location."
                 )
             }
         }
@@ -129,30 +142,48 @@ struct HomeView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-            Text(viewModel.headerCopy.title)
-                .font(MindMoryTypography.headline)
-                .foregroundStyle(MindMoryColors.Content.primary)
-                .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            SectionTitle(
+                title: viewModel.headerCopy.title,
+                description: viewModel.headerCopy.subtitle,
+                size: .large
+            )
 
-            Text(viewModel.headerCopy.subtitle)
-                .font(MindMoryTypography.bodyMedium)
-                .foregroundStyle(MindMoryColors.Content.link)
+            locationBanner
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var favoriteHeader: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("A memory from this moment.")
-                .font(MindMoryTypography.titleMedium)
-                .foregroundStyle(MindMoryColors.Content.link)
-
-            Text("Look at this picture... and tap to flip it!")
-                .font(MindMoryTypography.bodySmall)
-                .foregroundStyle(MindMoryColors.Content.secondary)
-        }
+        SectionTitle(
+            title: "Current memory spotlight",
+            description: "Flip the card to revisit a moment that matches your current location.",
+            size: .medium
+        )
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var locationBanner: some View {
+        HStack(spacing: MindMorySpacing.md) {
+            Image(systemName: "location.fill")
+                .foregroundStyle(MindMoryColors.Content.link)
+                .font(.system(size: 14, weight: .semibold))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(viewModel.locationBannerTitle)
+                    .font(MindMoryTypography.bodyMedium)
+                    .foregroundStyle(MindMoryColors.Content.primary)
+
+                Text("A memory connected to where you are now")
+                    .font(MindMoryTypography.bodySmall)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
+            }
+
+            Spacer()
+        }
+        .padding(MindMorySpacing.md)
+        .background(MindMoryColors.Surface.surface)
+        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
     }
 
     private var loadingCard: some View {

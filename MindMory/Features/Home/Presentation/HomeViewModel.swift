@@ -60,33 +60,33 @@ final class HomeViewModel: ObservableObject {
             if let event = contextualMemory.context.currentEvent {
                 return MemoriesHeaderCopy(
                     title: "You’re in \(event.title).",
-                    subtitle: "Here’s a memory connected to this moment."
+                    subtitle: "A memory that connects to this moment."
                 )
             }
 
             return MemoriesHeaderCopy(
-                title: "You’ve been here before.",
-                subtitle: "A memory from around this place."
+                title: "This place holds a memory.",
+                subtitle: "A memory tied to your current location."
             )
         }
 
         if case .empty = contextualState {
             return MemoriesHeaderCopy(
-                title: "This might be your first memory here.",
-                subtitle: "We’ll help you keep this moment when it becomes worth remembering."
+                title: "No memory has surfaced yet.",
+                subtitle: "MindMory is ready to match a moment from this location."
             )
         }
 
         if case .permissionRequired = contextualState {
             return MemoriesHeaderCopy(
                 title: "Memories can meet you where you are.",
-                subtitle: "Allow access when you’re ready to rediscover nearby moments."
+                subtitle: "Allow access so MindMory can surface the best local moment."
             )
         }
 
         return MemoriesHeaderCopy(
-            title: "Finding a memory connected to this moment.",
-            subtitle: "Looking through moments that may relate to where you are."
+            title: "Finding a meaningful memory.",
+            subtitle: "Searching for a memory tied to where you are now."
         )
     }
 
@@ -104,6 +104,30 @@ final class HomeViewModel: ObservableObject {
             return message
         }
         return nil
+    }
+
+    var locationBannerTitle: String {
+        if let placemarkName = contextualMemory?.context.currentLocation?.placemarkName,
+           !placemarkName.isEmpty {
+            return placemarkName
+        }
+
+        if let eventLocation = contextualMemory?.context.currentEvent?.location,
+           !eventLocation.isEmpty {
+            return eventLocation
+        }
+
+        if let contextualLocationName = contextualMemory?.locationName,
+           !contextualLocationName.isEmpty {
+            return contextualLocationName
+        }
+
+        if let focusedLocationName = focusedMemory?.locationName,
+           !focusedLocationName.isEmpty {
+            return focusedLocationName
+        }
+
+        return "Memory matched to this location"
     }
 
     init(
@@ -150,12 +174,8 @@ final class HomeViewModel: ObservableObject {
         isShowingSharePreview = false
     }
 
-    func didTapAllowPhotoAccess() {
-        if case .permissionRequired(.photoLibrary) = contextualState {
-            discoverContextualMemory()
-        } else {
-            openAppSettings()
-        }
+    func didTapAllowAccess() {
+        discoverContextualMemory()
     }
 
     func retryContextualDiscovery() {
@@ -280,6 +300,7 @@ final class HomeViewModel: ObservableObject {
             notificationConfidenceScore: 0
         )
         focusedMemory = routedMemory
+        cardSide = .front
         self.contextualMemory = contextualMemory
         captionText = ""
         contextualState = .loaded(contextualMemory)

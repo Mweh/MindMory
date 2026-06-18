@@ -431,27 +431,31 @@ struct MemoryAlbumCreationView: View {
 
             VStack(spacing: MindMorySpacing.md) {
                 ForEach(albumTemplates) { template in
-                    MemoryAlbumTemplateCard(
-                        template: template,
-                        isSelected: template.id == selectedTemplateID
-                    ) {
-                        if selectedTemplateID == template.id {
-                            selectedTemplateID = nil
-                        } else {
+                        MemoryAlbumTemplateCard(
+                            template: template,
+                            isSelected: template.id == selectedTemplateID
+                        ) {
+                            // Make selection sticky: selecting a template always applies it
+                            // and we do not allow toggling back to a "no selection" state.
                             selectedTemplateID = template.id
                             viewModel.applyTemplate(
                                 note: template.note,
                                 sections: template.sections
                             )
                         }
-                    }
                 }
             }
         }
     }
 
     private var isDetailsStepDisabled: Bool {
-        viewModel.albumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.coverPhoto == nil
+        let missingNameOrCover = viewModel.albumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.coverPhoto == nil
+        // When creating (not editing), require a template to be selected as well
+        if !viewModel.isEditMode {
+            return missingNameOrCover || selectedTemplateID == nil
+        }
+
+        return missingNameOrCover
     }
 
     private var selectPhotosStep: some View {

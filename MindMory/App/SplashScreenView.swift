@@ -15,7 +15,7 @@ struct SplashScreenView: View {
 
                 Text("MindMory")
                     .font(MindMoryTypography.display)
-                    .foregroundStyle(MindMoryColors.Content.inverse)
+                    .foregroundStyle(MindMoryColors.Content.primary)
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, MindMorySpacing.xl)

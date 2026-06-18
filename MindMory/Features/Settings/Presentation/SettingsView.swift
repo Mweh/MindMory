@@ -48,20 +48,7 @@ struct SettingsView: View {
     }
 
     private var backgroundView: some View {
-        ZStack {
-            MindMoryColors.Surface.background
-
-            Circle()
-                .fill(MindMoryColors.Surface.elevated.opacity(0.9))
-                .frame(width: 240, height: 240)
-                .blur(radius: 6)
-                .offset(x: 170, y: -260)
-
-            Circle()
-                .fill(MindMoryColors.Surface.surface.opacity(0.95))
-                .frame(width: 220, height: 220)
-                .offset(x: -150, y: 360)
-        }
+        MindMoryColors.Surface.background
     }
 
     private var heroSection: some View {
@@ -78,16 +65,6 @@ struct SettingsView: View {
                         endPoint: .bottomTrailing
                     )
                 )
-
-            Circle()
-                .fill(MindMoryColors.Surface.primary.opacity(0.12))
-                .frame(width: 180, height: 180)
-                .offset(x: 120, y: -56)
-
-            Circle()
-                .fill(MindMoryColors.Content.secondary.opacity(0.10))
-                .frame(width: 120, height: 120)
-                .offset(x: 238, y: 18)
 
             VStack(alignment: .leading, spacing: MindMorySpacing.md) {
                 HStack(spacing: MindMorySpacing.xs) {

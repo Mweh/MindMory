@@ -15,8 +15,6 @@ struct OnboardingView: View {
             MindMoryColors.Surface.background
                 .ignoresSafeArea()
 
-            onboardingLeafBackground
-
             contentView
         }
         .alert(
