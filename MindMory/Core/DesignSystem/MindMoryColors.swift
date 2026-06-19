@@ -95,15 +95,27 @@ enum MindMoryColors {
 
     enum Surface {
 
-    static let background = Color(hex: Palette.white)
+        static let background = Color(hex: Palette.brand)
 
-    static let surface = Color(hex: Palette.gray50)
+        static var backgroundGradient: LinearGradient {
+            LinearGradient(
+                gradient: Gradient(stops: [
+                    .init(color: Color(hex: Palette.brandLighter), location: 0),
+                    .init(color: Color(hex: Palette.white), location: 0.3),
+                    .init(color: Color(hex: Palette.white), location: 1)
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
 
-    static let elevated = Color(hex: Palette.white)
+        static let surface = Color(hex: Palette.gray50)
 
-    static let primary = Color(hex: Palette.brand)
+        static let elevated = Color(hex: Palette.white)
 
-    static let disabled = Color(hex: Palette.gray200)
+        static let primary = Color(hex: Palette.brandLight)
+
+        static let disabled = Color(hex: Palette.gray200)
 }
 
     // ═══════════════════════════════════════════════════════════
@@ -138,6 +150,8 @@ enum MindMoryColors {
         static let disabled = Color(hex: Palette.gray200)
 
         static let inverse = Color(hex: Palette.white)
+
+        static let inverseSecondary = Color.white.opacity(0.8)
 
         static let link = Color(hex: Palette.brand)
     }

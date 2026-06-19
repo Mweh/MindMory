@@ -16,21 +16,15 @@ struct AlbumListView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            PageLayout(
-                padding: EdgeInsets(
-                    top: MindMorySpacing.lg,
-                    leading: MindMorySpacing.xl,
-                    bottom: MindMorySpacing.xl,
-                    trailing: MindMorySpacing.xl
-                )
-            ) {
-                content
-            }
-
-            floatingActionButton
-                .padding(.trailing, MindMorySpacing.xl)
-                .padding(.bottom, MindMorySpacing.xl)
+        CustomAlbumLayout(
+            padding: EdgeInsets(
+                top: MindMorySpacing.lg,
+                leading: MindMorySpacing.xl,
+                bottom: MindMorySpacing.xl,
+                trailing: MindMorySpacing.xl
+            )
+        ) {
+            content
         }
         .navigationDestination(isPresented: $isShowingCreateAlbum) {
             MemoryAlbumCreationView(
@@ -127,6 +121,12 @@ struct AlbumListView: View {
                 headerSection
                     .padding(.bottom, MindMorySpacing.lg)
 
+                AlbumPromoCardView(totalAlbums: viewModel.albums.count) {
+                    isShowingCreateAlbum = true
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, MindMorySpacing.lg)
+
                 LazyVStack(spacing: MindMorySpacing.lg) {
                     ForEach(viewModel.albums) { album in
                         albumItem(for: album)
@@ -137,14 +137,16 @@ struct AlbumListView: View {
         }
     }
 
+
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
             Text("Your albums")
-                .font(MindMoryTypography.headline)
+                .font(MindMoryTypography.displayLevel)
+                .foregroundStyle(MindMoryColors.Content.inverse)
 
             Text("Review recently created albums and add more memories when you are ready.")
                 .font(MindMoryTypography.bodyMedium)
-                .foregroundStyle(MindMoryColors.Content.secondary)
+                .foregroundStyle(MindMoryColors.Content.inverseSecondary)
         }
     }
 
@@ -152,41 +154,98 @@ struct AlbumListView: View {
         Button {
             selectedAlbum = album
         } label: {
-            VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
-                if let image = album.coverPhoto?.uiImage {
-                    ImagePlaceholder(image: image, imageName: nil)
-                        .frame(height: 190)
-                        .frame(maxWidth: .infinity)
-                } else {
-                    ImagePlaceholder(image: nil, imageName: nil)
-                        .frame(height: 190)
-                        .frame(maxWidth: .infinity)
-                }
+            ZStack(alignment: .bottomLeading) {
+                albumCoverImage(for: album)
+                    .frame(height: 230)
+                    .frame(maxWidth: .infinity)
+                    .overlay(albumCoverGradient)
+                    .clipped()
 
-                VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-                    Text(album.name)
-                        .font(MindMoryTypography.titleMedium)
-                        .foregroundStyle(MindMoryColors.Content.primary)
-
-                    HStack(spacing: MindMorySpacing.sm) {
-                        Spacer()
-
-                        Text(album.photos.isEmpty ? "No photos" : "\(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")")
-                            .font(MindMoryTypography.bodySmall)
-                            .foregroundStyle(MindMoryColors.Content.secondary)
-                    }
-                }
-                .padding(.top, MindMorySpacing.sm)
+                albumImageOverlay(for: album)
+                    .padding(MindMorySpacing.lg)
             }
-                .padding(MindMorySpacing.lg)
-                .background(MindMoryColors.Surface.background)
+            .background(MindMoryColors.Surface.surface)
             .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
                     .stroke(MindMoryColors.Border.subtle, lineWidth: 1)
             )
+            .shadow(color: MindMoryShadow.cardColor, radius: MindMoryShadow.softRadius, x: 0, y: MindMoryShadow.softY)
         }
         .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func albumCoverImage(for album: Album) -> some View {
+        if let image = album.coverPhoto?.uiImage {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+        } else {
+            albumCoverPlaceholder
+        }
+    }
+
+    private var albumCoverPlaceholder: some View {
+        ZStack {
+            MindMoryColors.Surface.surface
+
+            VStack(spacing: MindMorySpacing.sm) {
+                Image(systemName: "photo")
+                    .font(MindMoryTypography.titleLarge)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
+                    .padding(MindMorySpacing.lg)
+                    .background(
+                        Circle()
+                            .fill(MindMoryColors.Surface.background)
+                    )
+
+                Text("Album cover")
+                    .font(MindMoryTypography.titleSmall)
+                    .foregroundStyle(MindMoryColors.Content.primary)
+            }
+        }
+    }
+
+    private var albumCoverGradient: some View {
+        LinearGradient(
+            colors: [Color.black.opacity(0.46), Color.black.opacity(0.15), .clear],
+            startPoint: .bottom,
+            endPoint: .top
+        )
+    }
+
+    private func albumImageOverlay(for album: Album) -> some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
+            HStack(spacing: MindMorySpacing.sm) {
+                Badge(
+                    iconName: "photo.on.rectangle",
+                    text: album.photos.isEmpty ? "No photos" : "\(album.photos.count) photo\(album.photos.count == 1 ? "" : "s")",
+                    tint: MindMoryColors.Content.inverse,
+                    style: .iconText,
+                    cornerRadius: MindMoryRadius.pill
+                )
+                Spacer()
+
+                Text("Album")
+                    .font(MindMoryTypography.labelSmall)
+                    .foregroundStyle(MindMoryColors.Content.inverse)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .background(Color.black.opacity(0.32))
+                    .clipShape(Capsule())
+            }
+
+            Spacer()
+
+            Text(album.name)
+                .font(MindMoryTypography.titleLarge)
+                .fontWeight(.semibold)
+                .foregroundStyle(MindMoryColors.Content.inverse)
+                .lineLimit(2)
+                .shadow(color: Color.black.opacity(0.35), radius: 6, x: 0, y: 3)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

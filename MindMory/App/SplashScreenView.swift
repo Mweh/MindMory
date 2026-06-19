@@ -3,30 +3,32 @@ import SwiftUI
 struct SplashScreenView: View {
     var body: some View {
         ZStack {
-            MindMoryColors.Surface.background
+            MindMoryColors.Surface.primary
                 .ignoresSafeArea()
 
-            VStack(spacing: MindMorySpacing.lg) {
+            VStack(spacing: 24) {
                 Image("icon 1024")
                     .resizable()
-                    .renderingMode(.original)
+                    .renderingMode(.template)
                     .scaledToFit()
-                    .frame(width: 120, height: 120)
+                    .frame(width: 88, height: 88)
+                    .foregroundColor(.white)
 
                 Text("MindMory")
-                    .font(MindMoryTypography.display)
-                    .foregroundStyle(MindMoryColors.Content.primary)
+                    .font(.system(size: 34, weight: .bold, design: .default))
+                    .foregroundColor(.white)
+
+                Text("Memories that meet you where you are.")
+                    .font(.body)
+                    .foregroundColor(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
+                    .frame(maxWidth: 280)
             }
-            .padding(.horizontal, MindMorySpacing.xl)
+            .padding(.horizontal, 24)
         }
     }
 }
 
-#if DEBUG
-struct SplashScreenView_Previews: PreviewProvider {
-    static var previews: some View {
-        SplashScreenView()
-    }
+#Preview {
+    SplashScreenView()
 }
-#endif
