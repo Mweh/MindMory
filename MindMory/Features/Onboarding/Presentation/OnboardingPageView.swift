@@ -49,7 +49,7 @@ struct OnboardingPageView: View {
             .lineLimit(3)
             .truncationMode(.tail)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, MindMorySpacing.xl)
+            .padding(.horizontal, MindMorySpacing.lg)
     }
 }
 

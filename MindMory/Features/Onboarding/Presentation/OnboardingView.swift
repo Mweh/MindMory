@@ -20,60 +20,12 @@ struct OnboardingView: View {
             ),
             scrollable: false,
             background: {
-                ZStack {
-                    MindMoryColors.Surface.backgroundGradient
-                        .ignoresSafeArea()
-
-                    onboardingLeafBackground
-                }
+                MindMoryColors.Surface.backgroundGradient
+                    .ignoresSafeArea()
             }
         ) {
             contentView
         }
-        .alert(
-            alertTitle,
-            isPresented: Binding(
-                get: { viewModel.activeAlert != nil },
-                set: { isPresented in
-                    if !isPresented {
-                        viewModel.dismissPermissionAlert()
-                    }
-                }
-            ),
-            presenting: viewModel.activeAlert
-        ) { alert in
-            if settingsURL != nil {
-                Button("Open Settings") {
-                    openSettings()
-                }
-            }
-
-            Button("Continue") {
-                viewModel.continueAfterPermissionAlert()
-            }
-        } message: { alert in
-            Text(alertMessage(for: alert))
-        }
-    }
-
-    @ViewBuilder
-    private var onboardingLeafBackground: some View {
-        VStack {
-            Spacer()
-
-            HStack {
-                Spacer()
-
-                Image("element-leaf")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 100)
-                    .padding(.trailing, 0)
-            }
-            .padding(.bottom, 140)
-        }
-        .ignoresSafeArea()
-        .accessibilityHidden(true)
     }
 
     @ViewBuilder
@@ -126,34 +78,6 @@ struct OnboardingView: View {
         .padding(.bottom, MindMorySpacing.xl)
     }
 
-    private var alertTitle: String {
-        "Permission Needed"
-    }
-
-    private var settingsURL: URL? {
-#if canImport(UIKit)
-        URL(string: UIApplication.openSettingsURLString)
-#else
-        nil
-#endif
-    }
-
-    private func openSettings() {
-        guard let settingsURL else {
-            viewModel.dismissPermissionAlert()
-            return
-        }
-
-        openURL(settingsURL)
-        viewModel.dismissPermissionAlert()
-    }
-
-    private func alertMessage(for alert: OnboardingAlert) -> String {
-        switch alert {
-        case let .permissionDenied(permission):
-            return permission.deniedMessage
-        }
-    }
 }
 
 private struct PageDots: View {
