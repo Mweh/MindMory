@@ -91,24 +91,6 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    var locationBannerSubtitle: String {
-        if let placemarkName = contextualMemory?.context.currentLocation?.placemarkName,
-           !placemarkName.isEmpty {
-            return "Matched to your current Apple Maps location."
-        }
-
-        if let eventLocation = contextualMemory?.context.currentEvent?.location,
-           !eventLocation.isEmpty {
-            return "Matched to your current event location."
-        }
-
-        if case .loaded = contextualState {
-            return "A memory connected to where you are now."
-        }
-
-        return "A memory connected to where you are now."
-    }
-
     init(
         fetchRecentLocationPhotoUseCase: FetchRecentLocationPhotoUseCase? = nil,
         getCurrentLocationUseCase: GetCurrentLocationUseCase? = nil,
