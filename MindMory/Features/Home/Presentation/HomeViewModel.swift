@@ -8,6 +8,7 @@ struct MemoriesHeaderCopy: Equatable {
 }
 
 enum HomePhotoState: Equatable {
+    case idle
     case loading
     case loaded
     case empty(title: String, subtitle: String)
@@ -27,7 +28,7 @@ enum MemoryCardSide: Equatable {
 }
 
 private enum HomePhotoLoadResult {
-    case success(String)
+    case success(String?)
     case noPhotos
     case permissionRequired
     case failure(String)
@@ -36,15 +37,17 @@ private enum HomePhotoLoadResult {
 @MainActor
 final class HomeViewModel: ObservableObject {
 
-    @Published private(set) var photoState: HomePhotoState = .loading
+    @Published private(set) var photoState: HomePhotoState = .idle
     @Published private(set) var focusedMemory: Memory?
     @Published private(set) var selectedAssetLocalIdentifier: String?
+    @Published private(set) var peoplePhotoAssetIdentifiers: [String] = []
+    @Published private(set) var recentPhotoAssetIdentifiers: [String] = []
     @Published var cardSide: MemoryCardSide = .front
     @Published var captionText = ""
     @Published var homeCardState: HomeCardState = .normal
     @Published var isShowingSharePreview = false
 
-    private let fetchRecentLocationPhotoUseCase: FetchRecentLocationPhotoUseCase?
+    private let fetchLocationPhotoListsUseCase: FetchLocationPhotoListsUseCase?
     private let getCurrentLocationUseCase: GetCurrentLocationUseCase?
     private let qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
     private var loadTask: Task<Void, Never>?
@@ -99,15 +102,20 @@ final class HomeViewModel: ObservableObject {
                 title: "Finding a photo near you.",
                 subtitle: "Searching your gallery for the latest photo taken within 1 km."
             )
+        case .idle:
+            return MemoriesHeaderCopy(
+                title: "Checking your access permissions.",
+                subtitle: "Verifying location and photo library access before showing nearby memories."
+            )
         }
     }
 
     init(
-        fetchRecentLocationPhotoUseCase: FetchRecentLocationPhotoUseCase? = nil,
+        fetchLocationPhotoListsUseCase: FetchLocationPhotoListsUseCase? = nil,
         getCurrentLocationUseCase: GetCurrentLocationUseCase? = nil,
         qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
     ) {
-        self.fetchRecentLocationPhotoUseCase = fetchRecentLocationPhotoUseCase
+        self.fetchLocationPhotoListsUseCase = fetchLocationPhotoListsUseCase
         self.getCurrentLocationUseCase = getCurrentLocationUseCase
         self.qaDebugSettingsRepository = qaDebugSettingsRepository
 
@@ -123,9 +131,7 @@ final class HomeViewModel: ObservableObject {
     func load() {
         guard loadTask == nil else { return }
         refreshHomeCardState()
-        loadTask = Task { [weak self] in
-            await self?.loadPhotoFromCurrentLocation()
-        }
+        refreshState()
     }
 
     func flipCard() {
@@ -143,67 +149,170 @@ final class HomeViewModel: ObservableObject {
     func didTapAllowAccess() {
         loadTask?.cancel()
         loadTask = Task { [weak self] in
-            await self?.loadPhotoFromCurrentLocation()
+            await self?.requestMissingPermission()
         }
     }
 
     func retryContextualDiscovery() {
+        refreshState()
+    }
+
+    private func refreshState() {
         loadTask?.cancel()
         loadTask = Task { [weak self] in
-            await self?.loadPhotoFromCurrentLocation()
+            await self?.evaluateCurrentState()
         }
     }
 
-    private func loadPhotoFromCurrentLocation() async {
-        await MainActor.run {
-            photoState = .loading
+    private func evaluateCurrentState() async {
+        if Task.isCancelled { return }
+
+        guard let locationUseCase = getCurrentLocationUseCase else {
+            await updateState(.error("Location services are unavailable."), withMemory: nil)
+            return
         }
 
-        let currentLocation: CurrentLocationContext?
-        if let locationUseCase = getCurrentLocationUseCase {
-            currentLocation = try? await locationUseCase.execute()
-        } else {
-            currentLocation = nil
+        guard let photoUseCase = fetchLocationPhotoListsUseCase else {
+            await updateState(.error("Photo library access is unavailable."), withMemory: nil)
+            return
         }
 
-        guard let currentLocation = currentLocation else {
-            await MainActor.run {
-                photoState = .permissionRequired(.location)
-                loadTask = nil
-            }
+        let locationStatus = await locationUseCase.authorizationStatus()
+        let photoStatus = await photoUseCase.authorizationStatus()
+
+        if Task.isCancelled { return }
+
+        if let permissionState = permissionState(for: locationStatus, photoStatus: photoStatus) {
+            await updateState(permissionState, withMemory: nil)
+            return
+        }
+
+        await updateState(.loading, withMemory: nil)
+
+        guard let currentLocation = await fetchCurrentLocation(using: locationUseCase) else {
+            await updateState(
+                .error("Unable to determine your current location. Please check your device settings and try again."),
+                withMemory: nil
+            )
             return
         }
 
         let loadResult = await loadPhotoAsset(near: currentLocation)
 
-        await MainActor.run {
-            switch loadResult {
-            case .success(let assetLocalIdentifier):
-                selectedAssetLocalIdentifier = assetLocalIdentifier
-                focusedMemory = makeFocusedMemory(for: assetLocalIdentifier, locationName: currentLocation.placemarkName)
-                photoState = .loaded
-            case .noPhotos:
-                photoState = .empty(
+        if Task.isCancelled { return }
+
+        switch loadResult {
+        case .success(let assetLocalIdentifier):
+            if let assetLocalIdentifier {
+                let memory = makeFocusedMemory(for: assetLocalIdentifier, locationName: currentLocation.placemarkName)
+                await updateState(.loaded, withMemory: memory, assetIdentifier: assetLocalIdentifier)
+            } else {
+                await updateState(.loaded, withMemory: nil, assetIdentifier: nil)
+            }
+        case .noPhotos:
+            await updateState(
+                .empty(
                     title: "No nearby photo found.",
                     subtitle: "Try moving closer to a place where you took a photo."
-                )
-                focusedMemory = nil
-                selectedAssetLocalIdentifier = nil
-            case .permissionRequired:
-                photoState = .permissionDenied(.photoLibrary)
-                focusedMemory = nil
-                selectedAssetLocalIdentifier = nil
-            case .failure(let message):
-                photoState = .error(message)
-                focusedMemory = nil
-                selectedAssetLocalIdentifier = nil
+                ),
+                withMemory: nil
+            )
+        case .permissionRequired:
+            await updateState(.permissionDenied(.photoLibrary), withMemory: nil)
+        case .failure(let message):
+            await updateState(.error(message), withMemory: nil)
+        }
+    }
+
+    private func requestMissingPermission() async {
+        if Task.isCancelled { return }
+
+        let targetPermission: HomePermissionKind = {
+            switch photoState {
+            case .permissionRequired(let kind), .permissionDenied(let kind):
+                return kind
+            default:
+                return .location
+            }
+        }()
+
+        let permissionStatus: PermissionStatus
+        switch targetPermission {
+        case .location:
+            permissionStatus = await getCurrentLocationUseCase?.requestAuthorization() ?? .denied
+        case .photoLibrary:
+            permissionStatus = await fetchLocationPhotoListsUseCase?.requestAuthorization() ?? .denied
+        }
+
+        if Task.isCancelled { return }
+
+        await MainActor.run {
+            photoState = permissionStatus == .granted
+                ? .loading
+                : .permissionDenied(targetPermission)
+        }
+
+        if permissionStatus == .granted {
+            await evaluateCurrentState()
+        } else {
+            await MainActor.run { loadTask = nil }
+        }
+    }
+
+    private func fetchCurrentLocation(using locationUseCase: GetCurrentLocationUseCase) async -> CurrentLocationContext? {
+        await withTaskGroup(of: CurrentLocationContext?.self) { group in
+            group.addTask {
+                try? await locationUseCase.execute()
+            }
+
+            group.addTask {
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                return nil
+            }
+
+            let result = await group.next()
+            group.cancelAll()
+            return result ?? nil
+        }
+    }
+
+    private func permissionState(for locationStatus: PermissionStatus, photoStatus: PermissionStatus) -> HomePhotoState? {
+        if photoStatus == .denied {
+            return .permissionDenied(.photoLibrary)
+        }
+
+        if locationStatus == .denied {
+            return .permissionDenied(.location)
+        }
+
+        if locationStatus == .notDetermined {
+            return .permissionRequired(.location)
+        }
+
+        if photoStatus == .notDetermined {
+            return .permissionRequired(.photoLibrary)
+        }
+
+        return nil
+    }
+
+    private func updateState(_ state: HomePhotoState, withMemory memory: Memory?, assetIdentifier: String? = nil) async {
+        await MainActor.run {
+            photoState = state
+            focusedMemory = memory
+            selectedAssetLocalIdentifier = assetIdentifier
+            if case .loaded = state {
+                // preserve loaded photo lists until a non-loaded state replaces them
+            } else {
+                peoplePhotoAssetIdentifiers = []
+                recentPhotoAssetIdentifiers = []
             }
             loadTask = nil
         }
     }
 
     private func loadPhotoAsset(near location: CurrentLocationContext) async -> HomePhotoLoadResult {
-        guard let useCase = fetchRecentLocationPhotoUseCase else {
+        guard let useCase = fetchLocationPhotoListsUseCase else {
             return .failure("Location photo feature is unavailable.")
         }
 
@@ -211,19 +320,28 @@ final class HomeViewModel: ObservableObject {
         switch photoStatus {
         case .granted:
             break
-        case .notDetermined:
-            let requestStatus = await useCase.requestAuthorization()
-            if requestStatus != .granted {
-                return .permissionRequired
-            }
-        case .denied:
+        case .notDetermined, .denied:
             return .permissionRequired
         }
 
         do {
-            if let assetLocalIdentifier = try await useCase.execute(near: location) {
-                return .success(assetLocalIdentifier)
+            async let favoriteAsset = useCase.fetchFavoritePhotoAsset(near: location)
+            async let peopleAssets = useCase.fetchPeoplePhotoAssets(near: location)
+            async let recentAssets = useCase.fetchRecentPhotoAssets(near: location)
+
+            let favoriteIdentifier = try await favoriteAsset
+            let peopleIdentifiers = try await peopleAssets
+            let recentIdentifiers = try await recentAssets
+
+            await MainActor.run {
+                self.peoplePhotoAssetIdentifiers = peopleIdentifiers
+                self.recentPhotoAssetIdentifiers = recentIdentifiers
             }
+
+            if favoriteIdentifier != nil || !peopleIdentifiers.isEmpty || !recentIdentifiers.isEmpty {
+                return .success(favoriteIdentifier)
+            }
+
             return .noPhotos
         } catch {
             return .failure(error.localizedDescription)

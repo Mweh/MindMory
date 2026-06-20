@@ -91,11 +91,7 @@ struct MemoryCardBackView: View {
     }
 
     private var backBackground: some View {
-        LinearGradient(
-            colors: [MindMoryColors.Surface.surface, MindMoryColors.Surface.background, MindMoryColors.Surface.surface],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+        MindMoryColors.Surface.elevated
     }
 
     private var cardShape: RoundedRectangle {

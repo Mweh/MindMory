@@ -5,7 +5,6 @@ final class QADebugSettingsRepository: QADebugSettingsRepositoryProtocol {
     private enum Keys {
         static let qaDebugModeEnabled = "qaDebugModeEnabled"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
-        static let debugHomeCardImagePath = "debugHomeCardImagePath"
         static let qaHomeCardState = "qaHomeCardState"
     }
 
@@ -23,11 +22,6 @@ final class QADebugSettingsRepository: QADebugSettingsRepositoryProtocol {
     var hasCompletedOnboarding: Bool {
         get { userDefaults.bool(forKey: Keys.hasCompletedOnboarding) }
         set { userDefaults.set(newValue, forKey: Keys.hasCompletedOnboarding) }
-    }
-
-    var debugHomeCardImagePath: String? {
-        get { userDefaults.string(forKey: Keys.debugHomeCardImagePath) }
-        set { userDefaults.set(newValue, forKey: Keys.debugHomeCardImagePath) }
     }
 
     var qaHomeCardState: HomeCardState {
