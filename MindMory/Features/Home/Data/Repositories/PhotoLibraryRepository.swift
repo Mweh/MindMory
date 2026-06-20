@@ -1,6 +1,7 @@
 import Foundation
 import Photos
 
+@MainActor
 final class PhotoLibraryRepository: PhotoLibraryRepositoryProtocol {
     func authorizationStatus() async -> PermissionStatus {
         mapAuthorizationStatus(PHPhotoLibrary.authorizationStatus(for: .readWrite))
@@ -82,20 +83,6 @@ final class PhotoLibraryRepository: PhotoLibraryRepositoryProtocol {
         return identifiers.first
     }
 
-    func fetchPhotoAssetsWithPeople(near location: CurrentLocationContext, maxDistanceMeters: Double, limit: Int) async throws -> [String] {
-        guard mapAuthorizationStatus(PHPhotoLibrary.authorizationStatus(for: .readWrite)) == .granted else {
-            return []
-        }
-
-        return fetchNearbyPhotoAssetIdentifiers(
-            near: location,
-            maxDistanceMeters: maxDistanceMeters,
-            fetchLimit: limit
-        ) { asset in
-            self.assetContainsPeople(asset)
-        }
-    }
-
     func fetchRecentPhotoAssets(near location: CurrentLocationContext, maxDistanceMeters: Double, limit: Int) async throws -> [String] {
         guard mapAuthorizationStatus(PHPhotoLibrary.authorizationStatus(for: .readWrite)) == .granted else {
             return []
@@ -108,6 +95,83 @@ final class PhotoLibraryRepository: PhotoLibraryRepositoryProtocol {
         ) { _ in true }
     }
 
+    func fetchRecentPhotoAssetsWithPeople(near location: CurrentLocationContext, maxDistanceMeters: Double, limit: Int) async throws -> [String] {
+        guard mapAuthorizationStatus(PHPhotoLibrary.authorizationStatus(for: .readWrite)) == .granted else {
+            return []
+        }
+
+        guard let peopleAssets = fetchPeopleAssets() else {
+            return []
+        }
+
+        return fetchNearbyPhotoAssetIdentifiers(
+            near: location,
+            maxDistanceMeters: maxDistanceMeters,
+            fetchLimit: limit,
+            from: peopleAssets
+        )
+    }
+
+    private func fetchPeopleAssets() -> [PHAsset]? {
+        let collections = PHCollectionList.fetchCollectionLists(with: .smartFolder, subtype: .smartFolderFaces, options: nil)
+        guard let facesFolder = collections.firstObject else {
+            return nil
+        }
+
+        let assetCollections = PHCollectionList.fetchCollections(in: facesFolder, options: nil)
+        var peopleAssets: [PHAsset] = []
+
+        let options = PHFetchOptions()
+        options.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
+        options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+        options.includeHiddenAssets = false
+
+        assetCollections.enumerateObjects { collection, _, _ in
+            guard let assetCollection = collection as? PHAssetCollection else {
+                return
+            }
+
+            let assets = PHAsset.fetchAssets(in: assetCollection, options: options)
+            assets.enumerateObjects { asset, _, _ in
+                peopleAssets.append(asset)
+            }
+        }
+
+        return peopleAssets
+    }
+
+    private func fetchNearbyPhotoAssetIdentifiers(
+        near location: CurrentLocationContext,
+        maxDistanceMeters: Double,
+        fetchLimit: Int,
+        from assets: [PHAsset]
+    ) -> [String] {
+        var identifiers: [String] = []
+        identifiers.reserveCapacity(min(fetchLimit, 16))
+
+        for asset in assets {
+            autoreleasepool {
+                guard
+                    let assetLocation = asset.location,
+                    location.distance(from: ContextualMemoryLocation(
+                        latitude: assetLocation.coordinate.latitude,
+                        longitude: assetLocation.coordinate.longitude
+                    )) <= maxDistanceMeters
+                else {
+                    return
+                }
+
+                identifiers.append(asset.localIdentifier)
+            }
+
+            if identifiers.count >= fetchLimit {
+                break
+            }
+        }
+
+        return identifiers
+    }
+
     private func fetchNearbyPhotoAssetIdentifiers(
         near location: CurrentLocationContext,
         maxDistanceMeters: Double,
@@ -118,11 +182,10 @@ final class PhotoLibraryRepository: PhotoLibraryRepositoryProtocol {
         options.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
         options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
         options.includeHiddenAssets = false
-        options.fetchLimit = 500
 
         let assets = PHAsset.fetchAssets(with: .image, options: options)
         var identifiers: [String] = []
-        identifiers.reserveCapacity(min(fetchLimit, 20))
+        identifiers.reserveCapacity(min(fetchLimit, 16))
 
         assets.enumerateObjects { asset, _, stop in
             autoreleasepool {
@@ -145,16 +208,6 @@ final class PhotoLibraryRepository: PhotoLibraryRepositoryProtocol {
         }
 
         return identifiers
-    }
-
-    private func assetContainsPeople(_ asset: PHAsset) -> Bool {
-        if #available(iOS 16, *) {
-            if let peopleIdentifiers = asset.value(forKey: "personLocalIdentifiers") as? [String] {
-                return !peopleIdentifiers.isEmpty
-            }
-        }
-
-        return false
     }
 
     private func makePredicate(for context: ContextualMemoryContext) -> NSPredicate {

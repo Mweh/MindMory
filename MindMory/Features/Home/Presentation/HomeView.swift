@@ -36,11 +36,6 @@ struct HomeView: View {
         .onPreferenceChange(CardFrameKey.self) { frame in
             cardFrame = frame
         }
-        .onChange(of: viewModel.homeCardState) { _, newState in
-            if newState != .normal {
-                cardFrame = .zero
-            }
-        }
         .overlay {
             if !hasSeenTooltip && cardFrame != .zero && viewModel.cardSide == .front {
                 SpotlightTooltipView(cardFrame: cardFrame) {
@@ -106,12 +101,20 @@ struct HomeView: View {
                 action: viewModel.didTapAllowAccess
             )
         case .empty(let title, let subtitle):
-            ContextualMemoryEmptyStateView(
-                title: title,
-                subtitle: subtitle
-            )
+            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                ContextualMemoryEmptyStateView(
+                    title: title,
+                    subtitle: subtitle
+                )
+
+                locationPhotoSections(for: viewModel.photoState)
+            }
         case .error(let message):
-            ErrorStateView(message: message, retryAction: viewModel.retryContextualDiscovery)
+            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                ErrorStateView(message: message, retryAction: viewModel.retryContextualDiscovery)
+
+                locationPhotoSections(for: viewModel.photoState)
+            }
         case .loaded:
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 if let memory = viewModel.focusedMemory {
@@ -124,34 +127,29 @@ struct HomeView: View {
                     )
                 }
 
-                locationPhotoSections
+                locationPhotoSections(for: viewModel.photoState)
             }
         }
     }
 
     @ViewBuilder
     private func homeCard(for memory: Memory) -> some View {
-        switch viewModel.homeCardState {
-        case .normal:
-            InteractiveMemoryCardView(
-                memory: memory,
-                imageSource: viewModel.focusedImageSource,
-                side: $viewModel.cardSide,
-                captionText: $viewModel.captionText,
-                flipAction: viewModel.flipCard,
-                shareAction: viewModel.showSharePreview
-            )
-            .overlay(
-                GeometryReader { geo in
-                    Color.clear.preference(
-                        key: CardFrameKey.self,
-                        value: geo.frame(in: .global)
-                    )
-                }
-            )
-        case .firstReminderPrepared:
-            FirstReminderPreparedCardView()
-        }
+        InteractiveMemoryCardView(
+            memory: memory,
+            imageSource: viewModel.focusedImageSource,
+            side: $viewModel.cardSide,
+            captionText: $viewModel.captionText,
+            flipAction: viewModel.flipCard,
+            shareAction: viewModel.showSharePreview
+        )
+        .overlay(
+            GeometryReader { geo in
+                Color.clear.preference(
+                    key: CardFrameKey.self,
+                    value: geo.frame(in: .global)
+                )
+            }
+        )
     }
 
     private var header: some View {
@@ -169,57 +167,105 @@ struct HomeView: View {
     }
 
     private var favoriteHeader: some View {
-        SectionTitle(
-            title: "Current memory spotlight",
-            description: "Flip the card to revisit a moment that matches your current location.",
-            size: .medium
-        )
-        .frame(maxWidth: .infinity, alignment: .leading)
+        Text("Flip the card to revisit a moment that matches your current location.")
+            .font(MindMoryTypography.bodyMedium)
+            .foregroundStyle(MindMoryColors.Content.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var locationPhotoSections: some View {
+    private func locationPhotoSections(for photoState: HomePhotoState) -> some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-            if !viewModel.peoplePhotoAssetIdentifiers.isEmpty {
-                SectionTitle(
-                    title: "People nearby",
-                    description: "Photos from this location that include people.",
-                    size: .medium
-                )
-                recentPhotoRow(for: viewModel.peoplePhotoAssetIdentifiers, placeholderText: "No people photos found nearby.")
-            }
+            SectionTitle(
+                title: "Recent captures",
+                description: "Latest photos taken within 1 km of your current location.",
+                size: .medium
+            )
 
-            if !viewModel.recentPhotoAssetIdentifiers.isEmpty {
-                SectionTitle(
-                    title: "Recent captures",
-                    description: "Latest photos taken within 1 km of your current location.",
-                    size: .medium
-                )
-                recentPhotoRow(for: viewModel.recentPhotoAssetIdentifiers, placeholderText: "No recent nearby photos available.")
-            }
-        }
-    }
-
-    private func recentPhotoRow(for assetIdentifiers: [String], placeholderText: String) -> some View {
-        if assetIdentifiers.isEmpty {
-            return AnyView(
+            switch photoState {
+            case .loading, .idle:
+                loadingRecentPhotoSection
+            case .permissionRequired, .permissionDenied:
+                recentPhotoSection(for: [], debugPlaceholderCount: viewModel.qaDebugPlaceholderCount)
+            case .empty:
                 ContextualMemoryEmptyStateView(
-                    title: placeholderText,
+                    title: "No recent nearby photos available.",
                     subtitle: "Try moving closer to a place where you took a photo."
                 )
-            )
-        }
+            case .error:
+                ErrorStateView(
+                    message: "Recent photos could not be loaded.",
+                    retryAction: viewModel.retryContextualDiscovery
+                )
+            case .loaded:
+                recentPhotoSection(for: viewModel.recentPhotoAssetIdentifiers, debugPlaceholderCount: viewModel.qaDebugPlaceholderCount)
+            }
 
-        return AnyView(
+            SectionTitle(
+                title: "Captures with people",
+                description: "Photos within 1 km from your current location that contain people.",
+                size: .medium
+            )
+
+            switch photoState {
+            case .loading, .idle:
+                loadingRecentPhotoSection
+            case .permissionRequired, .permissionDenied:
+                recentPhotoSection(for: [], debugPlaceholderCount: viewModel.qaDebugPlaceholderCount)
+            case .empty:
+                ContextualMemoryEmptyStateView(
+                    title: "No nearby people captures.",
+                    subtitle: "Try moving closer to a place where you took a photo with people."
+                )
+            case .error:
+                ErrorStateView(
+                    message: "Filtered photos could not be loaded.",
+                    retryAction: viewModel.retryContextualDiscovery
+                )
+            case .loaded:
+                recentPhotoSection(for: viewModel.peoplePhotoAssetIdentifiers, debugPlaceholderCount: viewModel.qaDebugPlaceholderCount)
+            }
+        }
+    }
+
+    private var loadingRecentPhotoSection: some View {
+        HStack(spacing: MindMorySpacing.sm) {
+            ForEach(0..<3, id: \.self) { _ in
+                ImagePlaceholder(imageName: nil)
+                    .frame(width: 132, height: 132)
+                    .redacted(reason: .placeholder)
+            }
+        }
+        .padding(.vertical, MindMorySpacing.sm)
+    }
+
+    @ViewBuilder
+    private func recentPhotoSection(for assetIdentifiers: [String], debugPlaceholderCount: Int = 0) -> some View {
+        if debugPlaceholderCount > 0 {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: MindMorySpacing.sm) {
-                    ForEach(assetIdentifiers, id: \.self) { identifier in
+                    ForEach(0..<debugPlaceholderCount, id: \.self) { _ in
+                        ImagePlaceholder(imageName: nil)
+                            .frame(width: 132, height: 132)
+                    }
+                }
+                .padding(.vertical, MindMorySpacing.sm)
+            }
+        } else if assetIdentifiers.isEmpty {
+            ContextualMemoryEmptyStateView(
+                title: "No recent nearby photos available.",
+                subtitle: "Try moving closer to a place where you took a photo."
+            )
+        } else {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: MindMorySpacing.sm) {
+                    ForEach(Array(assetIdentifiers.prefix(3)), id: \.self) { identifier in
                         ContextualMemoryAssetImageView(assetLocalIdentifier: identifier)
                             .frame(width: 132, height: 132)
                     }
                 }
                 .padding(.vertical, MindMorySpacing.sm)
             }
-        )
+        }
     }
 
     private func openSettings() {

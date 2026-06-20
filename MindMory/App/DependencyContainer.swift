@@ -13,12 +13,14 @@ final class DependencyContainer: ObservableObject {
     private let locationRepository: LocationRepositoryProtocol
     private let eventRepository: EventRepositoryProtocol
     private let photoLibraryRepository: PhotoLibraryRepositoryProtocol
+    private let qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
     private let smartMemoryNotificationDelegate: SmartMemoryNotificationDelegate
     private let smartMemoryNotificationStore: SmartMemoryNotificationCooldownStore
     private let smartMemoryNotificationCoordinator: SmartMemoryNotificationCoordinator
     private let calendarNotificationCoordinator: CalendarNotificationCoordinator
 
     convenience init() {
+        let qaDebugRepository = QADebugSettingsRepository()
         self.init(
             memoryRepository: MockMemoryRepository(),
             reminderRepository: MockReminderRepository(),
@@ -26,7 +28,8 @@ final class DependencyContainer: ObservableObject {
             contextRepository: MockContextRepository(),
             locationRepository: CoreLocationRepository(),
             eventRepository: EventKitRepository(),
-            photoLibraryRepository: PhotoLibraryRepository()
+            photoLibraryRepository: PhotoLibraryRepository(),
+            qaDebugSettingsRepository: qaDebugRepository
         )
     }
 
@@ -37,7 +40,8 @@ final class DependencyContainer: ObservableObject {
         contextRepository: ContextRepositoryProtocol,
         locationRepository: LocationRepositoryProtocol,
         eventRepository: EventRepositoryProtocol,
-        photoLibraryRepository: PhotoLibraryRepositoryProtocol
+        photoLibraryRepository: PhotoLibraryRepositoryProtocol,
+        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
     ) {
         self.appRouter = AppRouter()
         self.memoryRepository = memoryRepository
@@ -47,6 +51,7 @@ final class DependencyContainer: ObservableObject {
         self.locationRepository = locationRepository
         self.eventRepository = eventRepository
         self.photoLibraryRepository = photoLibraryRepository
+        self.qaDebugSettingsRepository = qaDebugSettingsRepository
         self.smartMemoryNotificationDelegate = SmartMemoryNotificationDelegate(appRouter: appRouter)
         self.smartMemoryNotificationStore = SmartMemoryNotificationCooldownStore()
         self.smartMemoryNotificationCoordinator = SmartMemoryNotificationCoordinator(
@@ -91,7 +96,7 @@ final class DependencyContainer: ObservableObject {
         HomeViewModel(
             fetchLocationPhotoListsUseCase: FetchLocationPhotoListsUseCase(repository: photoLibraryRepository),
             getCurrentLocationUseCase: GetCurrentLocationUseCase(repository: locationRepository),
-            qaDebugSettingsRepository: QADebugSettingsRepository()
+            qaDebugSettingsRepository: qaDebugSettingsRepository
         )
     }
 
@@ -121,7 +126,7 @@ final class DependencyContainer: ObservableObject {
             requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: permissionRepository),
             requestLocationPermissionUseCase: RequestLocationPermissionUseCase(repository: permissionRepository),
             requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase(repository: permissionRepository),
-            qaDebugSettingsRepository: QADebugSettingsRepository()
+            qaDebugSettingsRepository: qaDebugSettingsRepository
         )
     }
 
