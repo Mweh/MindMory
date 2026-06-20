@@ -35,7 +35,7 @@ struct TextFieldComponent<Content: View>: View {
             }
             .padding(MindMorySpacing.md)
             .frame(maxWidth: .infinity)
-            .background(MindMoryColors.Surface.background)
+            .background(MindMoryColors.Surface.surface)
             .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: MindMoryRadius.small, style: .continuous)

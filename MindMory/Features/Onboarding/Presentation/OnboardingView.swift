@@ -11,10 +11,23 @@ struct OnboardingView: View {
     let onComplete: () -> Void
 
     var body: some View {
-        ZStack {
-            MindMoryColors.Surface.background
-                .ignoresSafeArea()
+        PageLayout(
+            padding: EdgeInsets(
+                top: MindMorySpacing.xl,
+                leading: MindMorySpacing.xl,
+                bottom: MindMorySpacing.xl,
+                trailing: MindMorySpacing.xl
+            ),
+            scrollable: false,
+            background: {
+                ZStack {
+                    MindMoryColors.Surface.backgroundGradient
+                        .ignoresSafeArea()
 
+                    onboardingLeafBackground
+                }
+            }
+        ) {
             contentView
         }
         .alert(

@@ -45,7 +45,7 @@ struct ImagePlaceholder: View {
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
             .clipped()
-            .background(MindMoryColors.Surface.surface)
+            .background(image == nil && (imageName == nil || imageName?.isEmpty == true) ? MindMoryColors.Surface.elevated : MindMoryColors.Surface.surface)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -58,18 +58,18 @@ struct ImagePlaceholder: View {
 
     private var placeholderContent: some View {
         ZStack {
-            MindMoryColors.Surface.surface
+            MindMoryColors.Surface.disabled
 
             VStack(spacing: MindMorySpacing.sm) {
                 switch placeholderStyle {
                 case .standard:
                     Image(systemName: "photo")
                         .font(MindMoryTypography.titleLarge)
-                        .foregroundStyle(MindMoryColors.Content.secondary)
+                        .foregroundStyle(MindMoryColors.Content.inverse)
                         .padding(MindMorySpacing.lg)
                         .background(
                             Circle()
-                                .fill(MindMoryColors.Surface.background)
+                                .fill(MindMoryColors.Surface.primary)
                         )
                         .padding(MindMorySpacing.sm)
 
@@ -92,13 +92,13 @@ struct ImagePlaceholder: View {
                 case .iconOnly:
                     Image(systemName: "photo")
                         .font(MindMoryTypography.titleLarge)
-                        .foregroundStyle(MindMoryColors.Content.secondary)
+                        .foregroundStyle(MindMoryColors.Content.inverse)
 
                 case .textOnly(let text):
                     VStack(spacing: MindMorySpacing.sm) {
                         Image(systemName: "photo")
                             .font(MindMoryTypography.titleLarge)
-                            .foregroundStyle(MindMoryColors.Content.secondary)
+                            .foregroundStyle(MindMoryColors.Content.inverse)
 
                         Text(text)
                             .font(MindMoryTypography.bodySmall)

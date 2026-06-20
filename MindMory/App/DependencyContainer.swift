@@ -13,7 +13,6 @@ final class DependencyContainer: ObservableObject {
     private let locationRepository: LocationRepositoryProtocol
     private let eventRepository: EventRepositoryProtocol
     private let photoLibraryRepository: PhotoLibraryRepositoryProtocol
-    private let contextualMemoryCacheRepository: ContextualMemoryCacheRepositoryProtocol
     private let smartMemoryNotificationDelegate: SmartMemoryNotificationDelegate
     private let smartMemoryNotificationStore: SmartMemoryNotificationCooldownStore
     private let smartMemoryNotificationCoordinator: SmartMemoryNotificationCoordinator
@@ -26,8 +25,7 @@ final class DependencyContainer: ObservableObject {
             contextRepository: MockContextRepository(),
             locationRepository: CoreLocationRepository(),
             eventRepository: EventKitRepository(),
-            photoLibraryRepository: PhotoLibraryRepository(),
-            contextualMemoryCacheRepository: UserDefaultsContextualMemoryCacheRepository()
+            photoLibraryRepository: PhotoLibraryRepository()
         )
     }
 
@@ -38,8 +36,7 @@ final class DependencyContainer: ObservableObject {
         contextRepository: ContextRepositoryProtocol,
         locationRepository: LocationRepositoryProtocol,
         eventRepository: EventRepositoryProtocol,
-        photoLibraryRepository: PhotoLibraryRepositoryProtocol,
-        contextualMemoryCacheRepository: ContextualMemoryCacheRepositoryProtocol
+        photoLibraryRepository: PhotoLibraryRepositoryProtocol
     ) {
         self.appRouter = AppRouter()
         self.memoryRepository = memoryRepository
@@ -49,7 +46,6 @@ final class DependencyContainer: ObservableObject {
         self.locationRepository = locationRepository
         self.eventRepository = eventRepository
         self.photoLibraryRepository = photoLibraryRepository
-        self.contextualMemoryCacheRepository = contextualMemoryCacheRepository
         self.smartMemoryNotificationDelegate = SmartMemoryNotificationDelegate(appRouter: appRouter)
         self.smartMemoryNotificationStore = SmartMemoryNotificationCooldownStore()
         self.smartMemoryNotificationCoordinator = SmartMemoryNotificationCoordinator(
@@ -83,15 +79,8 @@ final class DependencyContainer: ObservableObject {
 
     func makeHomeViewModel() -> HomeViewModel {
         HomeViewModel(
-            memories: memoryRepository.fetchMemories(),
-            findContextualMemoryUseCase: Self.makeFindContextualMemoryUseCase(
-                locationRepository: locationRepository,
-                eventRepository: eventRepository,
-                photoLibraryRepository: photoLibraryRepository
-            ),
+            fetchRecentLocationPhotoUseCase: FetchRecentLocationPhotoUseCase(repository: photoLibraryRepository),
             getCurrentLocationUseCase: GetCurrentLocationUseCase(repository: locationRepository),
-            getCurrentEventUseCase: GetCurrentEventUseCase(repository: eventRepository),
-            contextualMemoryCacheRepository: contextualMemoryCacheRepository,
             qaDebugSettingsRepository: QADebugSettingsRepository()
         )
     }
