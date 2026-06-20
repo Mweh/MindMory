@@ -12,6 +12,7 @@ enum HomePhotoState: Equatable {
     case loaded
     case empty(title: String, subtitle: String)
     case permissionRequired(HomePermissionKind)
+    case permissionDenied(HomePermissionKind)
     case error(String)
 }
 
@@ -72,6 +73,16 @@ final class HomeViewModel: ObservableObject {
             return MemoriesHeaderCopy(
                 title: "Allow photo access",
                 subtitle: "Let MindMory show a nearby photo from your gallery."
+            )
+        case .permissionDenied(.photoLibrary):
+            return MemoriesHeaderCopy(
+                title: "Photo access denied",
+                subtitle: "Open Settings to grant photo access and continue seeing nearby memories."
+            )
+        case .permissionDenied(.location):
+            return MemoriesHeaderCopy(
+                title: "Location access denied",
+                subtitle: "Open Settings to grant location access so MindMory can find nearby memories."
             )
         case .permissionRequired(.location):
             return MemoriesHeaderCopy(
@@ -179,7 +190,7 @@ final class HomeViewModel: ObservableObject {
                 focusedMemory = nil
                 selectedAssetLocalIdentifier = nil
             case .permissionRequired:
-                photoState = .permissionRequired(.photoLibrary)
+                photoState = .permissionDenied(.photoLibrary)
                 focusedMemory = nil
                 selectedAssetLocalIdentifier = nil
             case .failure(let message):

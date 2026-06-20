@@ -3,6 +3,7 @@ import UIKit
 
 struct HomeView: View {
     @StateObject var viewModel: HomeViewModel
+    @Environment(\.openURL) private var openURL
     @AppStorage("hasSeenTooltip") private var hasSeenTooltip = false
     @State private var cardFrame: CGRect = .zero
 
@@ -72,6 +73,22 @@ struct HomeView: View {
                 buttonTitle: "Allow Access",
                 iconName: "photo.on.rectangle.angled",
                 action: viewModel.didTapAllowAccess
+            )
+        case .permissionDenied(.photoLibrary):
+            NoPermissionStateView(
+                title: "Photo access denied",
+                subtitle: "Open Settings to grant photo permission so MindMory can surface nearby memories.",
+                buttonTitle: "Open Settings",
+                iconName: "photo.on.rectangle.angled",
+                action: openSettings
+            )
+        case .permissionDenied(.location):
+            NoPermissionStateView(
+                title: "Location access denied",
+                subtitle: "Open Settings to grant location access so MindMory can find nearby memories.",
+                buttonTitle: "Open Settings",
+                iconName: "location.fill",
+                action: openSettings
             )
         case .permissionRequired(.location):
             NoPermissionStateView(
@@ -147,6 +164,13 @@ struct HomeView: View {
             size: .medium
         )
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func openSettings() {
+#if canImport(UIKit)
+        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(settingsURL)
+#endif
     }
 
     private var loadingCard: some View {
