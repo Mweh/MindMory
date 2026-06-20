@@ -7,12 +7,17 @@ struct MemoriesHeaderCopy: Equatable {
     let subtitle: String
 }
 
-enum HomeViewState: Equatable {
+enum HomePhotoState: Equatable {
     case loading
-    case positive(Reminder, Memory?)
-    case empty
-    case permissionRequired
+    case loaded
+    case empty(title: String, subtitle: String)
+    case permissionRequired(HomePermissionKind)
     case error(String)
+}
+
+enum HomePermissionKind: Equatable {
+    case location
+    case photoLibrary
 }
 
 enum MemoryCardSide: Equatable {
@@ -20,130 +25,81 @@ enum MemoryCardSide: Equatable {
     case back
 }
 
+private enum HomePhotoLoadResult {
+    case success(String)
+    case noPhotos
+    case permissionRequired
+    case failure(String)
+}
+
 @MainActor
 final class HomeViewModel: ObservableObject {
 
-    @Published private(set) var state: HomeViewState = .loading
-    @Published private(set) var contextualState: ContextualMemoryState = .idle
+    @Published private(set) var photoState: HomePhotoState = .loading
     @Published private(set) var focusedMemory: Memory?
-    @Published private(set) var contextualMemory: ContextualMemory?
     @Published private(set) var selectedAssetLocalIdentifier: String?
     @Published var cardSide: MemoryCardSide = .front
     @Published var captionText = ""
     @Published var homeCardState: HomeCardState = .normal
     @Published var isShowingSharePreview = false
 
-    private let memories: [Memory]
-    private let findContextualMemoryUseCase: FindContextualMemoryUseCase?
+    private let fetchRecentLocationPhotoUseCase: FetchRecentLocationPhotoUseCase?
     private let getCurrentLocationUseCase: GetCurrentLocationUseCase?
-    private let getCurrentEventUseCase: GetCurrentEventUseCase?
-    private let contextualMemoryCacheRepository: ContextualMemoryCacheRepositoryProtocol?
     private let qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
-    private let cacheExpirationInterval: TimeInterval = 12 * 60 * 60
-    private var contextualDiscoveryTask: Task<Void, Never>?
+    private var loadTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
-
-    var eventName: String {
-        focusedMemory?.locationName ?? focusedMemory?.title ?? "this moment"
-    }
 
     var focusedImageSource: MemoryImageSource {
         if let selectedAssetLocalIdentifier {
             return .assetLocalIdentifier(selectedAssetLocalIdentifier)
         }
-
         return focusedMemory?.imageSource ?? .placeholder
     }
 
     var headerCopy: MemoriesHeaderCopy {
-        if case .loaded(let contextualMemory) = contextualState {
-            if let event = contextualMemory.context.currentEvent {
-                return MemoriesHeaderCopy(
-                    title: "You’re in \(event.title).",
-                    subtitle: "A memory that connects to this moment."
-                )
-            }
-
+        switch photoState {
+        case .loaded:
             return MemoriesHeaderCopy(
-                title: "This place holds a memory.",
-                subtitle: "A memory tied to your current location."
+                title: "A recent photo from this location",
+                subtitle: "Latest photo within 1 km of where you are now."
+            )
+        case .empty:
+            return MemoriesHeaderCopy(
+                title: "No nearby photos found.",
+                subtitle: "MindMory is ready to show a photo from your current location."
+            )
+        case .permissionRequired(.photoLibrary):
+            return MemoriesHeaderCopy(
+                title: "Allow photo access",
+                subtitle: "Let MindMory show a nearby photo from your gallery."
+            )
+        case .permissionRequired(.location):
+            return MemoriesHeaderCopy(
+                title: "Enable location access",
+                subtitle: "MindMory uses your current location to surface a nearby photo."
+            )
+        case .error:
+            return MemoriesHeaderCopy(
+                title: "Photo discovery failed.",
+                subtitle: "Something went wrong while loading a nearby photo."
+            )
+        case .loading:
+            return MemoriesHeaderCopy(
+                title: "Finding a photo near you.",
+                subtitle: "Searching your gallery for the latest photo taken within 1 km."
             )
         }
-
-        if case .empty = contextualState {
-            return MemoriesHeaderCopy(
-                title: "No memory has surfaced yet.",
-                subtitle: "MindMory is ready to match a moment from this location."
-            )
-        }
-
-        if case .permissionRequired = contextualState {
-            return MemoriesHeaderCopy(
-                title: "Memories can meet you where you are.",
-                subtitle: "Allow access so MindMory can surface the best local moment."
-            )
-        }
-
-        return MemoriesHeaderCopy(
-            title: "Finding a meaningful memory.",
-            subtitle: "Searching for a memory tied to where you are now."
-        )
-    }
-
-    var shouldShowContextualEmptyState: Bool {
-        switch contextualState {
-        case .empty, .error:
-            return true
-        default:
-            return false
-        }
-    }
-
-    var contextualErrorMessage: String? {
-        if case let .error(message) = contextualState {
-            return message
-        }
-        return nil
-    }
-
-    var locationBannerTitle: String {
-        if let placemarkName = contextualMemory?.context.currentLocation?.placemarkName,
-           !placemarkName.isEmpty {
-            return placemarkName
-        }
-
-        if let eventLocation = contextualMemory?.context.currentEvent?.location,
-           !eventLocation.isEmpty {
-            return eventLocation
-        }
-
-        if let contextualLocationName = contextualMemory?.locationName,
-           !contextualLocationName.isEmpty {
-            return contextualLocationName
-        }
-
-        if let focusedLocationName = focusedMemory?.locationName,
-           !focusedLocationName.isEmpty {
-            return focusedLocationName
-        }
-
-        return "Memory matched to this location"
     }
 
     init(
-        memories: [Memory],
-        findContextualMemoryUseCase: FindContextualMemoryUseCase? = nil,
+        fetchRecentLocationPhotoUseCase: FetchRecentLocationPhotoUseCase? = nil,
         getCurrentLocationUseCase: GetCurrentLocationUseCase? = nil,
-        getCurrentEventUseCase: GetCurrentEventUseCase? = nil,
-        contextualMemoryCacheRepository: ContextualMemoryCacheRepositoryProtocol? = nil,
         qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
     ) {
-        self.memories = memories
-        self.findContextualMemoryUseCase = findContextualMemoryUseCase
+        self.fetchRecentLocationPhotoUseCase = fetchRecentLocationPhotoUseCase
         self.getCurrentLocationUseCase = getCurrentLocationUseCase
-        self.getCurrentEventUseCase = getCurrentEventUseCase
-        self.contextualMemoryCacheRepository = contextualMemoryCacheRepository
         self.qaDebugSettingsRepository = qaDebugSettingsRepository
+
         NotificationCenter.default.publisher(for: .qaDebugHomeCardStateDidChange)
             .sink { [weak self] _ in
                 Task { @MainActor in
@@ -154,11 +110,10 @@ final class HomeViewModel: ObservableObject {
     }
 
     func load() {
-        guard contextualDiscoveryTask == nil else { return }
+        guard loadTask == nil else { return }
         refreshHomeCardState()
-
-        contextualDiscoveryTask = Task { [weak self] in
-            await self?.loadContextualMemory()
+        loadTask = Task { [weak self] in
+            await self?.loadPhotoFromCurrentLocation()
         }
     }
 
@@ -175,201 +130,107 @@ final class HomeViewModel: ObservableObject {
     }
 
     func didTapAllowAccess() {
-        discoverContextualMemory()
+        loadTask?.cancel()
+        loadTask = Task { [weak self] in
+            await self?.loadPhotoFromCurrentLocation()
+        }
     }
 
     func retryContextualDiscovery() {
-        discoverContextualMemory()
+        loadTask?.cancel()
+        loadTask = Task { [weak self] in
+            await self?.loadPhotoFromCurrentLocation()
+        }
     }
 
-    private func loadContextualMemory() async {
-        guard let context = await currentContext() else {
+    private func loadPhotoFromCurrentLocation() async {
+        await MainActor.run {
+            photoState = .loading
+        }
+
+        let currentLocation: CurrentLocationContext?
+        if let locationUseCase = getCurrentLocationUseCase {
+            currentLocation = try? await locationUseCase.execute()
+        } else {
+            currentLocation = nil
+        }
+
+        guard let currentLocation = currentLocation else {
             await MainActor.run {
-                contextualState = .empty(.noContext)
-                contextualDiscoveryTask = nil
+                photoState = .permissionRequired(.location)
+                loadTask = nil
             }
             return
         }
 
-        if let cache = contextualMemoryCacheRepository?.load(), isCache(cache, validFor: context) {
-            await MainActor.run {
-                applyCachedMemory(cache, context: context)
-                contextualDiscoveryTask = nil
-            }
-            return
-        }
+        let loadResult = await loadPhotoAsset(near: currentLocation)
 
         await MainActor.run {
-            contextualState = .loading
-        }
-        let result = await findContextualMemoryUseCase?.execute(now: context.now) ?? .empty(.noContext)
-        await MainActor.run {
-            applyContextualMemoryState(result)
-            contextualDiscoveryTask = nil
+            switch loadResult {
+            case .success(let assetLocalIdentifier):
+                selectedAssetLocalIdentifier = assetLocalIdentifier
+                focusedMemory = makeFocusedMemory(for: assetLocalIdentifier, locationName: currentLocation.placemarkName)
+                photoState = .loaded
+            case .noPhotos:
+                photoState = .empty(
+                    title: "No nearby photo found.",
+                    subtitle: "Try moving closer to a place where you took a photo."
+                )
+                focusedMemory = nil
+                selectedAssetLocalIdentifier = nil
+            case .permissionRequired:
+                photoState = .permissionRequired(.photoLibrary)
+                focusedMemory = nil
+                selectedAssetLocalIdentifier = nil
+            case .failure(let message):
+                photoState = .error(message)
+                focusedMemory = nil
+                selectedAssetLocalIdentifier = nil
+            }
+            loadTask = nil
         }
     }
 
-    private func currentContext(now: Date = Date()) async -> ContextualMemoryContext? {
+    private func loadPhotoAsset(near location: CurrentLocationContext) async -> HomePhotoLoadResult {
+        guard let useCase = fetchRecentLocationPhotoUseCase else {
+            return .failure("Location photo feature is unavailable.")
+        }
+
+        let photoStatus = await useCase.authorizationStatus()
+        switch photoStatus {
+        case .granted:
+            break
+        case .notDetermined:
+            let requestStatus = await useCase.requestAuthorization()
+            if requestStatus != .granted {
+                return .permissionRequired
+            }
+        case .denied:
+            return .permissionRequired
+        }
+
         do {
-            async let currentLocation = getCurrentLocationUseCase?.execute()
-            async let currentEvent = getCurrentEventUseCase?.execute(at: now)
-            let context = try await ContextualMemoryContext(
-                now: now,
-                currentLocation: currentLocation ?? nil,
-                currentEvent: currentEvent ?? nil
-            )
-            return context.hasSignal ? context : nil
+            if let assetLocalIdentifier = try await useCase.execute(near: location) {
+                return .success(assetLocalIdentifier)
+            }
+            return .noPhotos
         } catch {
-            return nil
+            return .failure(error.localizedDescription)
         }
     }
 
-    private func isCache(_ cache: ContextualMemoryCache, validFor context: ContextualMemoryContext, now: Date = Date()) -> Bool {
-        guard now.timeIntervalSince(cache.discoveredAt) < cacheExpirationInterval else { return false }
-        guard isEventCache(cache, validFor: context.currentEvent) else { return false }
-        return isLocationCache(cache, validFor: context.currentLocation)
-    }
-
-    private func isEventCache(_ cache: ContextualMemoryCache, validFor event: CurrentEventContext?) -> Bool {
-        cache.eventIdentifier == event?.id
-    }
-
-    private func isLocationCache(_ cache: ContextualMemoryCache, validFor location: CurrentLocationContext?) -> Bool {
-        guard let cachedLatitude = cache.latitude,
-              let cachedLongitude = cache.longitude,
-              let location else {
-            return cache.latitude == nil && cache.longitude == nil && location == nil
-        }
-
-        if let cachedKey = cache.locationKey,
-           let currentKey = location.cacheKey,
-           !cachedKey.isEmpty,
-           !currentKey.isEmpty,
-           cachedKey != currentKey {
-            return false
-        }
-
-        return location.distance(from: ContextualMemoryLocation(latitude: cachedLatitude, longitude: cachedLongitude)) <= 1_000
-    }
-
-    private func applyCachedMemory(_ cache: ContextualMemoryCache, context: ContextualMemoryContext) {
-        let cachedContextualMemory = cache.contextualMemory(context: context)
-        contextualMemory = cachedContextualMemory
-        focusedMemory = cache.memory
-        selectedAssetLocalIdentifier = cache.assetLocalIdentifier
-        captionText = cache.journalText ?? ""
-        contextualState = .loaded(cachedContextualMemory)
-        homeCardState = .normal
-        state = .positive(
-            Reminder(
-                id: UUID(),
-                title: cache.title,
-                message: cache.subtitle,
-                context: .none,
-                imageName: nil
-            ),
-            focusedMemory
-        )
-    }
-
-    func showContextualAsset(localIdentifier: String) {
-        selectedAssetLocalIdentifier = localIdentifier
-        let routedMemory = Memory(
+    private func makeFocusedMemory(for assetIdentifier: String, locationName: String?) -> Memory {
+        Memory(
             id: UUID(),
-            title: "A memory is nearby",
-            subtitle: "You’re near a place connected to this photo.",
-            dateText: "Memory",
-            locationName: nil,
+            title: "A nearby moment",
+            subtitle: "Latest photo taken near your current location.",
+            dateText: "Recent photo",
+            locationName: locationName,
             imageName: "",
             journalText: nil,
             isFavorite: false,
-            tags: ["Nearby"]
+            tags: []
         )
-        let contextualMemory = ContextualMemory(
-            id: routedMemory.id,
-            title: routedMemory.title,
-            subtitle: routedMemory.subtitle,
-            dateText: routedMemory.dateText,
-            locationName: routedMemory.locationName,
-            assetLocalIdentifier: localIdentifier,
-            journalText: routedMemory.journalText,
-            tags: routedMemory.tags,
-            context: ContextualMemoryContext(now: Date(), currentLocation: nil, currentEvent: nil),
-            score: 0,
-            distanceMeters: nil,
-            notificationConfidenceScore: 0
-        )
-        focusedMemory = routedMemory
-        cardSide = .front
-        self.contextualMemory = contextualMemory
-        captionText = ""
-        contextualState = .loaded(contextualMemory)
-        homeCardState = .normal
-        state = .positive(
-            Reminder(
-                id: UUID(),
-                title: routedMemory.title,
-                message: routedMemory.subtitle,
-                context: .none,
-                imageName: nil
-            ),
-            routedMemory
-        )
-    }
-
-    private func discoverContextualMemory() {
-        contextualDiscoveryTask?.cancel()
-        contextualState = .loading
-
-        contextualDiscoveryTask = Task { [weak self] in
-            let result = await self?.findContextualMemoryUseCase?.execute() ?? .empty(.noContext)
-            guard !Task.isCancelled else { return }
-
-            await MainActor.run {
-                self?.applyContextualMemoryState(result)
-                self?.contextualDiscoveryTask = nil
-            }
-        }
-    }
-
-    private func applyContextualMemoryState(_ newState: ContextualMemoryState) {
-        contextualState = newState
-
-        switch newState {
-        case .loaded(let contextualMemory):
-            self.contextualMemory = contextualMemory
-            focusedMemory = contextualMemory.asMemory
-            selectedAssetLocalIdentifier = contextualMemory.assetLocalIdentifier
-            contextualMemoryCacheRepository?.save(contextualMemory.makeCache())
-            captionText = contextualMemory.journalText ?? ""
-            state = .positive(
-                Reminder(
-                    id: UUID(),
-                    title: contextualMemory.title,
-                    message: contextualMemory.subtitle,
-                    context: .none,
-                    imageName: nil
-                ),
-                focusedMemory
-            )
-        case .permissionRequired(.photoLibrary):
-            contextualMemory = nil
-            selectedAssetLocalIdentifier = nil
-        case .empty, .error:
-            contextualMemory = nil
-            selectedAssetLocalIdentifier = nil
-        case .idle, .loading, .permissionRequired:
-            break
-        }
-
-    }
-
-    private func openAppSettings() {
-        guard let url = URL(string: UIApplication.openSettingsURLString) else {
-            return
-        }
-
-        UIApplication.shared.open(url)
     }
 
     private func refreshHomeCardState() {
@@ -380,8 +241,7 @@ final class HomeViewModel: ObservableObject {
         #endif
     }
 
-
     deinit {
-        contextualDiscoveryTask?.cancel()
+        loadTask?.cancel()
     }
 }

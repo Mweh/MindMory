@@ -52,6 +52,37 @@ final class PhotoLibraryRepository: PhotoLibraryRepositoryProtocol {
         return candidates
     }
 
+    func fetchLatestPhotoAsset(near location: CurrentLocationContext, maxDistanceMeters: Double) async throws -> String? {
+        guard mapAuthorizationStatus(PHPhotoLibrary.authorizationStatus(for: .readWrite)) == .granted else {
+            return nil
+        }
+
+        let options = PHFetchOptions()
+        options.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
+        options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+        options.fetchLimit = 500
+
+        let assets = PHAsset.fetchAssets(with: .image, options: options)
+        var matchingIdentifier: String?
+
+        assets.enumerateObjects { asset, _, stop in
+            guard
+                let assetLocation = asset.location,
+                location.distance(from: ContextualMemoryLocation(
+                    latitude: assetLocation.coordinate.latitude,
+                    longitude: assetLocation.coordinate.longitude
+                )) <= maxDistanceMeters
+            else {
+                return
+            }
+
+            matchingIdentifier = asset.localIdentifier
+            stop.pointee = true
+        }
+
+        return matchingIdentifier
+    }
+
     private func makePredicate(for context: ContextualMemoryContext) -> NSPredicate {
         var predicates: [NSPredicate] = []
         predicates.append(NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue))
@@ -83,28 +114,3 @@ final class PhotoLibraryRepository: PhotoLibraryRepositoryProtocol {
     }
 }
 
-final class UserDefaultsContextualMemoryCacheRepository: ContextualMemoryCacheRepositoryProtocol {
-    private enum Keys {
-        static let cache = "contextualMemory.cache"
-    }
-
-    private let userDefaults: UserDefaults
-
-    init(userDefaults: UserDefaults = .standard) {
-        self.userDefaults = userDefaults
-    }
-
-    func load() -> ContextualMemoryCache? {
-        guard let data = userDefaults.data(forKey: Keys.cache) else { return nil }
-        return try? JSONDecoder().decode(ContextualMemoryCache.self, from: data)
-    }
-
-    func save(_ cache: ContextualMemoryCache) {
-        guard let data = try? JSONEncoder().encode(cache) else { return }
-        userDefaults.set(data, forKey: Keys.cache)
-    }
-
-    func clear() {
-        userDefaults.removeObject(forKey: Keys.cache)
-    }
-}

@@ -5,7 +5,6 @@ struct AppRootView: View {
     @State private var isShowingSplash = true
     @AppStorage("hasCompletedOnboarding") private var didCompleteOnboarding = false
     @Environment(\.scenePhase) private var scenePhase
-    @State private var isShowingSplash = true
 
     var body: some View {
         ZStack {

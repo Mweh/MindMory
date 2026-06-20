@@ -58,7 +58,7 @@ struct HomeView: View {
 
     @ViewBuilder
     private var contextualContent: some View {
-        switch viewModel.contextualState {
+        switch viewModel.photoState {
         case .loading:
             loadingCard
             if let memory = viewModel.focusedMemory {
@@ -68,49 +68,34 @@ struct HomeView: View {
         case .permissionRequired(.photoLibrary):
             NoPermissionStateView(
                 title: "Allow photo access",
-                subtitle: "Let MindMory choose an image for a memory from your nearby moments.",
+                subtitle: "Let MindMory show a nearby photo from your gallery.",
                 buttonTitle: "Allow Access",
                 iconName: "photo.on.rectangle.angled",
                 action: viewModel.didTapAllowAccess
             )
-        case .permissionRequired(.calendar):
-            NoPermissionStateView(
-                title: "Allow calendar access",
-                subtitle: "Let MindMory connect memories to events happening now.",
-                buttonTitle: "Allow Access",
-                iconName: "calendar",
-                action: viewModel.didTapAllowAccess
-            )
-        case .permissionRequired:
+        case .permissionRequired(.location):
             NoPermissionStateView(
                 title: "Enable location access",
-                subtitle: "Allow access so MindMory can surface a memory tied to your current place.",
+                subtitle: "Allow access so MindMory can surface a nearby photo from your current location.",
                 buttonTitle: "Allow Access",
                 iconName: "location.fill",
                 action: viewModel.didTapAllowAccess
             )
-        case .empty:
+        case .empty(let title, let subtitle):
             ContextualMemoryEmptyStateView(
-                title: "No memory has surfaced yet.",
-                subtitle: "We’ll keep this screen ready for a moment that matches your location."
+                title: title,
+                subtitle: subtitle
             )
-        case .error:
-            if let errorMessage = viewModel.contextualErrorMessage {
-                ErrorStateView(
-                    message: errorMessage,
-                    retryAction: viewModel.retryContextualDiscovery
-                )
-            } else {
-                ErrorStateView(message: "Something went wrong.", retryAction: viewModel.retryContextualDiscovery)
-            }
-        case .loaded, .idle:
+        case .error(let message):
+            ErrorStateView(message: message, retryAction: viewModel.retryContextualDiscovery)
+        case .loaded:
             if let memory = viewModel.focusedMemory {
                 favoriteHeader
                 homeCard(for: memory)
             } else {
                 ContextualMemoryEmptyStateView(
-                    title: "No memory has surfaced yet.",
-                    subtitle: "MindMory is ready to match a moment from this location."
+                    title: "No nearby photo available.",
+                    subtitle: "MindMory could not load the most recent photo for your location."
                 )
             }
         }
@@ -162,29 +147,6 @@ struct HomeView: View {
             size: .medium
         )
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var locationBanner: some View {
-        HStack(spacing: MindMorySpacing.md) {
-            Image(systemName: "location.fill")
-                .foregroundStyle(MindMoryColors.Content.link)
-                .font(.system(size: 14, weight: .semibold))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(viewModel.locationBannerTitle)
-                    .font(MindMoryTypography.bodyMedium)
-                    .foregroundStyle(MindMoryColors.Content.primary)
-
-                Text("A memory connected to where you are now")
-                    .font(MindMoryTypography.bodySmall)
-                    .foregroundStyle(MindMoryColors.Content.secondary)
-            }
-
-            Spacer()
-        }
-        .padding(MindMorySpacing.md)
-        .background(MindMoryColors.Surface.surface)
-        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
     }
 
     private var loadingCard: some View {
