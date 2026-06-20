@@ -4,6 +4,7 @@ import UIKit
 struct HomeView: View {
     @StateObject var viewModel: HomeViewModel
     @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasSeenTooltip") private var hasSeenTooltip = false
     @State private var cardFrame: CGRect = .zero
 
@@ -27,6 +28,11 @@ struct HomeView: View {
             UIApplication.shared.dismissKeyboard()
         }
         .onAppear { viewModel.load() }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                viewModel.retryContextualDiscovery()
+            }
+        }
         .onPreferenceChange(CardFrameKey.self) { frame in
             cardFrame = frame
         }
@@ -60,6 +66,8 @@ struct HomeView: View {
     @ViewBuilder
     private var contextualContent: some View {
         switch viewModel.photoState {
+        case .idle:
+            idleStateView
         case .loading:
             loadingCard
             if let memory = viewModel.focusedMemory {
@@ -106,14 +114,18 @@ struct HomeView: View {
         case .error(let message):
             ErrorStateView(message: message, retryAction: viewModel.retryContextualDiscovery)
         case .loaded:
-            if let memory = viewModel.focusedMemory {
-                favoriteHeader
-                homeCard(for: memory)
-            } else {
-                ContextualMemoryEmptyStateView(
-                    title: "No nearby photo available.",
-                    subtitle: "MindMory could not load the most recent photo for your location."
-                )
+            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+                if let memory = viewModel.focusedMemory {
+                    favoriteHeader
+                    homeCard(for: memory)
+                } else {
+                    ContextualMemoryEmptyStateView(
+                        title: "No favorite nearby photo",
+                        subtitle: "MindMory is still showing nearby photos for this location."
+                    )
+                }
+
+                locationPhotoSections
             }
         }
     }
@@ -166,11 +178,64 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private var locationPhotoSections: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+            if !viewModel.peoplePhotoAssetIdentifiers.isEmpty {
+                SectionTitle(
+                    title: "People nearby",
+                    description: "Photos from this location that include people.",
+                    size: .medium
+                )
+                recentPhotoRow(for: viewModel.peoplePhotoAssetIdentifiers, placeholderText: "No people photos found nearby.")
+            }
+
+            if !viewModel.recentPhotoAssetIdentifiers.isEmpty {
+                SectionTitle(
+                    title: "Recent captures",
+                    description: "Latest photos taken within 1 km of your current location.",
+                    size: .medium
+                )
+                recentPhotoRow(for: viewModel.recentPhotoAssetIdentifiers, placeholderText: "No recent nearby photos available.")
+            }
+        }
+    }
+
+    private func recentPhotoRow(for assetIdentifiers: [String], placeholderText: String) -> some View {
+        if assetIdentifiers.isEmpty {
+            return AnyView(
+                ContextualMemoryEmptyStateView(
+                    title: placeholderText,
+                    subtitle: "Try moving closer to a place where you took a photo."
+                )
+            )
+        }
+
+        return AnyView(
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: MindMorySpacing.sm) {
+                    ForEach(assetIdentifiers, id: \.self) { identifier in
+                        ContextualMemoryAssetImageView(assetLocalIdentifier: identifier)
+                            .frame(width: 132, height: 132)
+                    }
+                }
+                .padding(.vertical, MindMorySpacing.sm)
+            }
+        )
+    }
+
     private func openSettings() {
 #if canImport(UIKit)
         guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
         openURL(settingsURL)
 #endif
+    }
+
+    private var idleStateView: some View {
+        ContextualMemoryEmptyStateView(
+            title: "Checking permissions...",
+            subtitle: "MindMory is verifying location and photo access before showing nearby memories.",
+            systemImage: "hourglass"
+        )
     }
 
     private var loadingCard: some View {

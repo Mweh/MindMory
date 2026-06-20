@@ -57,30 +57,104 @@ final class PhotoLibraryRepository: PhotoLibraryRepositoryProtocol {
             return nil
         }
 
+        let identifiers = fetchNearbyPhotoAssetIdentifiers(
+            near: location,
+            maxDistanceMeters: maxDistanceMeters,
+            fetchLimit: 1
+        ) { _ in true }
+
+        return identifiers.first
+    }
+
+    func fetchLatestFavoritePhotoAsset(near location: CurrentLocationContext, maxDistanceMeters: Double) async throws -> String? {
+        guard mapAuthorizationStatus(PHPhotoLibrary.authorizationStatus(for: .readWrite)) == .granted else {
+            return nil
+        }
+
+        let identifiers = fetchNearbyPhotoAssetIdentifiers(
+            near: location,
+            maxDistanceMeters: maxDistanceMeters,
+            fetchLimit: 1
+        ) { asset in
+            asset.isFavorite
+        }
+
+        return identifiers.first
+    }
+
+    func fetchPhotoAssetsWithPeople(near location: CurrentLocationContext, maxDistanceMeters: Double, limit: Int) async throws -> [String] {
+        guard mapAuthorizationStatus(PHPhotoLibrary.authorizationStatus(for: .readWrite)) == .granted else {
+            return []
+        }
+
+        return fetchNearbyPhotoAssetIdentifiers(
+            near: location,
+            maxDistanceMeters: maxDistanceMeters,
+            fetchLimit: limit
+        ) { asset in
+            self.assetContainsPeople(asset)
+        }
+    }
+
+    func fetchRecentPhotoAssets(near location: CurrentLocationContext, maxDistanceMeters: Double, limit: Int) async throws -> [String] {
+        guard mapAuthorizationStatus(PHPhotoLibrary.authorizationStatus(for: .readWrite)) == .granted else {
+            return []
+        }
+
+        return fetchNearbyPhotoAssetIdentifiers(
+            near: location,
+            maxDistanceMeters: maxDistanceMeters,
+            fetchLimit: limit
+        ) { _ in true }
+    }
+
+    private func fetchNearbyPhotoAssetIdentifiers(
+        near location: CurrentLocationContext,
+        maxDistanceMeters: Double,
+        fetchLimit: Int,
+        filter: @escaping (PHAsset) -> Bool
+    ) -> [String] {
         let options = PHFetchOptions()
         options.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
         options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+        options.includeHiddenAssets = false
         options.fetchLimit = 500
 
         let assets = PHAsset.fetchAssets(with: .image, options: options)
-        var matchingIdentifier: String?
+        var identifiers: [String] = []
+        identifiers.reserveCapacity(min(fetchLimit, 20))
 
         assets.enumerateObjects { asset, _, stop in
-            guard
-                let assetLocation = asset.location,
-                location.distance(from: ContextualMemoryLocation(
-                    latitude: assetLocation.coordinate.latitude,
-                    longitude: assetLocation.coordinate.longitude
-                )) <= maxDistanceMeters
-            else {
-                return
-            }
+            autoreleasepool {
+                guard
+                    let assetLocation = asset.location,
+                    location.distance(from: ContextualMemoryLocation(
+                        latitude: assetLocation.coordinate.latitude,
+                        longitude: assetLocation.coordinate.longitude
+                    )) <= maxDistanceMeters,
+                    filter(asset)
+                else {
+                    return
+                }
 
-            matchingIdentifier = asset.localIdentifier
-            stop.pointee = true
+                identifiers.append(asset.localIdentifier)
+                if identifiers.count >= fetchLimit {
+                    stop.pointee = true
+                }
+            }
         }
 
-        return matchingIdentifier
+        return identifiers
+    }
+
+    private func assetContainsPeople(_ asset: PHAsset) -> Bool {
+        if #available(iOS 16, *) {
+            if let peopleIdentifiers = asset.value(forKey: "personLocalIdentifiers") as? [String] {
+                return !peopleIdentifiers.isEmpty
+            }
+        }
+
+        return false
     }
 
     private func makePredicate(for context: ContextualMemoryContext) -> NSPredicate {

@@ -79,7 +79,7 @@ final class DependencyContainer: ObservableObject {
 
     func makeHomeViewModel() -> HomeViewModel {
         HomeViewModel(
-            fetchRecentLocationPhotoUseCase: FetchRecentLocationPhotoUseCase(repository: photoLibraryRepository),
+            fetchLocationPhotoListsUseCase: FetchLocationPhotoListsUseCase(repository: photoLibraryRepository),
             getCurrentLocationUseCase: GetCurrentLocationUseCase(repository: locationRepository),
             qaDebugSettingsRepository: QADebugSettingsRepository()
         )
@@ -111,8 +111,7 @@ final class DependencyContainer: ObservableObject {
             requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: permissionRepository),
             requestLocationPermissionUseCase: RequestLocationPermissionUseCase(repository: permissionRepository),
             requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase(repository: permissionRepository),
-            qaDebugSettingsRepository: QADebugSettingsRepository(),
-            debugImageStorageService: DebugImageStorageService()
+            qaDebugSettingsRepository: QADebugSettingsRepository()
         )
     }
 

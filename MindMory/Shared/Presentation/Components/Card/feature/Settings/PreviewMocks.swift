@@ -14,7 +14,6 @@ private final class PreviewMockPermissionRepository: PermissionRepositoryProtoco
 private final class PreviewMockQADebugSettingsRepository: QADebugSettingsRepositoryProtocol {
     var qaDebugModeEnabled: Bool = false
     var hasCompletedOnboarding: Bool = true
-    var debugHomeCardImagePath: String? = nil
     var qaHomeCardState: HomeCardState = .normal
 }
 
@@ -34,8 +33,7 @@ extension SettingsViewModel {
             requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase(repository: repo),
             requestLocationPermissionUseCase: RequestLocationPermissionUseCase(repository: repo),
             requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase(repository: repo),
-            qaDebugSettingsRepository: PreviewMockQADebugSettingsRepository(),
-            debugImageStorageService: DebugImageStorageService()
+            qaDebugSettingsRepository: PreviewMockQADebugSettingsRepository()
         )
     }
 }

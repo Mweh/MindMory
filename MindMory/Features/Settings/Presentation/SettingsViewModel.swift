@@ -23,7 +23,6 @@ final class SettingsViewModel: ObservableObject {
     private let requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase
 
     private let qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
-    private let debugImageStorageService: DebugImageStorageService
 
     var qaDebugModeEnabled: Bool {
         get { qaDebugSettingsRepository.qaDebugModeEnabled }
@@ -34,10 +33,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func makeQADebugToolsViewModel() -> QADebugToolsViewModel {
-        QADebugToolsViewModel(
-            repository: qaDebugSettingsRepository,
-            imageStorageService: debugImageStorageService
-        )
+        QADebugToolsViewModel(repository: qaDebugSettingsRepository)
     }
 
     var allAccessGranted: Bool {
@@ -105,15 +101,13 @@ final class SettingsViewModel: ObservableObject {
         requestNotificationPermissionUseCase: RequestNotificationPermissionUseCase,
         requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
         requestCalendarPermissionUseCase: RequestCalendarPermissionUseCase,
-        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol,
-        debugImageStorageService: DebugImageStorageService
+        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
     ) {
         self.permissionRepository = permissionRepository
         self.requestNotificationPermissionUseCase = requestNotificationPermissionUseCase
         self.requestLocationPermissionUseCase = requestLocationPermissionUseCase
         self.requestCalendarPermissionUseCase = requestCalendarPermissionUseCase
         self.qaDebugSettingsRepository = qaDebugSettingsRepository
-        self.debugImageStorageService = debugImageStorageService
         self.permissionRows = Self.defaultPermissionRows
 
         Task {
