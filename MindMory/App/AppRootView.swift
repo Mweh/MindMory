@@ -22,12 +22,14 @@ struct AppRootView: View {
                 container.configureNotificationHandling()
                 if didCompleteOnboarding {
                     await container.startSmartMemoryNotifications()
+                    await container.syncCalendarNotifications()
                 }
             }
             .onChange(of: scenePhase) { _, newPhase in
                 guard newPhase == .active, didCompleteOnboarding else { return }
                 Task {
                     await container.startSmartMemoryNotifications()
+                    await container.syncCalendarNotifications()
                 }
             }
             .onChange(of: didCompleteOnboarding) { _, completed in
@@ -35,6 +37,7 @@ struct AppRootView: View {
                 Task {
                     container.configureNotificationHandling()
                     await container.startSmartMemoryNotifications()
+                    await container.syncCalendarNotifications()
                 }
             }
 

@@ -16,6 +16,7 @@ final class DependencyContainer: ObservableObject {
     private let smartMemoryNotificationDelegate: SmartMemoryNotificationDelegate
     private let smartMemoryNotificationStore: SmartMemoryNotificationCooldownStore
     private let smartMemoryNotificationCoordinator: SmartMemoryNotificationCoordinator
+    private let calendarNotificationCoordinator: CalendarNotificationCoordinator
 
     convenience init() {
         self.init(
@@ -58,6 +59,11 @@ final class DependencyContainer: ObservableObject {
             ),
             cooldownStore: smartMemoryNotificationStore
         )
+        let calendarRepository: CalendarRepositoryProtocol = CalendarRepository()
+        self.calendarNotificationCoordinator = CalendarNotificationCoordinator(
+            permissionRepository: permissionRepository,
+            fetchUpcomingCalendarEventsUseCase: FetchUpcomingCalendarEventsUseCase(repository: calendarRepository)
+        )
     }
 
     func configureNotificationHandling() {
@@ -66,6 +72,10 @@ final class DependencyContainer: ObservableObject {
 
     func startSmartMemoryNotifications() async {
         await smartMemoryNotificationCoordinator.evaluateAndScheduleIfNeeded()
+    }
+    
+    func syncCalendarNotifications() async {
+        await calendarNotificationCoordinator.scheduleUpcomingEventNotifications()
     }
 
     func makeOnboardingViewModel() -> OnboardingViewModel {
