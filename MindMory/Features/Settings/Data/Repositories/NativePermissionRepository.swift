@@ -91,7 +91,7 @@ final class NativePermissionRepository: NSObject, PermissionRepositoryProtocol {
 
     fileprivate static func mapLocationStatus(_ status: CLAuthorizationStatus) -> PermissionStatus {
         switch status {
-        case .authorizedAlways, .authorizedWhenInUse:
+        case .authorized, .authorizedAlways, .authorizedWhenInUse:
             return .granted
         case .denied, .restricted:
             return .denied

@@ -14,7 +14,10 @@ private final class PreviewMockPermissionRepository: PermissionRepositoryProtoco
 private final class PreviewMockQADebugSettingsRepository: QADebugSettingsRepositoryProtocol {
     var qaDebugModeEnabled: Bool = false
     var hasCompletedOnboarding: Bool = true
-    var qaHomeCardState: HomeCardState = .normal
+    var qaHomeState: QADebugHomeState = .none
+    var qaRecentState: QADebugHomeState = .none
+    var qaLocationPermissionState: QADebugHomeState = .none
+    var qaPhotoLibraryPermissionState: QADebugHomeState = .none
 }
 
 private final class PreviewMockContextRepository: ContextRepositoryProtocol {

@@ -8,13 +8,20 @@ struct QADebugToolsView: View {
         PageLayout {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 SectionTitle(
-                    title: "QA Debug Tools",
-                    description: "Use this debug view to verify onboarding and force specific Home card states during testing.",
-                    size: .large
+                    title: "Onboarding",
+                    description: "Reset or re-enable the first-run flow so QA can verify onboarding screens again.",
+                    size: .medium
                 )
 
                 onboardingSection
-                homeCardStateSection
+
+                SectionTitle(
+                    title: "Home debugging",
+                    description: "Force specific Home states and permission flows when QA Debug Mode is enabled.",
+                    size: .medium
+                )
+
+                qaHomeStateSection
 
                 if let statusMessage = viewModel.statusMessage {
                     statusSection(message: statusMessage)
@@ -29,12 +36,6 @@ struct QADebugToolsView: View {
     private var onboardingSection: some View {
         AppCard {
             VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                SectionTitle(
-                    title: "Onboarding",
-                    description: "Reset or re-enable the first-run flow so QA can verify onboarding screens again.",
-                    size: .medium
-                )
-
                 Toggle(isOn: $viewModel.skipOnboarding) {
                     VStack(alignment: .leading, spacing: MindMorySpacing.xxs) {
                         Text("Skip onboarding")
@@ -63,21 +64,187 @@ struct QADebugToolsView: View {
         }
     }
 
-    private var homeCardStateSection: some View {
+    private var recentImageOptions: [QADebugHomeState] {
+        [.loadedOne, .loadedTwo, .loadedThree, .empty, .error]
+    }
+
+    private var favoriteImageOptions: [QADebugHomeState] {
+        [.loadedFavorite, .empty, .error]
+    }
+
+    private var photoLibraryPermissionOptions: [QADebugHomeState] {
+        [.permissionGrantedPhotoLibrary, .permissionRequiredPhotoLibrary, .permissionDeniedPhotoLibrary]
+    }
+
+    private var locationPermissionOptions: [QADebugHomeState] {
+        [.permissionGrantedLocation, .permissionRequiredLocation, .permissionDeniedLocation]
+    }
+
+    private var qaHomeStateSection: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
+            photoLibraryPermissionCard
+            locationPermissionCard
+            homeStateCard
+        }
+    }
+
+    private var isBlockingPermissionOverrideActive: Bool {
+        viewModel.selectedLocationPermissionState.isBlocking ||
+        viewModel.selectedPhotoLibraryPermissionState.isBlocking
+    }
+
+    private var homeStateCard: some View {
         AppCard {
-            VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                SectionTitle(
-                    title: "Home card state",
-                    description: "Force a specific Home card scenario for QA playback and UI verification.",
-                    size: .medium
-                )
+            if isBlockingPermissionOverrideActive {
+                permissionOverrideNotice
+            } else {
+                recentImageSection
+                favoriteImageSection
+            }
+        }
+    }
 
-                Text("The selected state will be reflected in the Home screen after return.")
-                    .font(MindMoryTypography.bodySmall)
-                    .foregroundStyle(MindMoryColors.Content.secondary)
+    private var permissionOverrideNotice: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            SectionTitle(
+                title: "QA home state blocked",
+                description: "A permission override is active, so the Home debug state will not be applied.",
+                size: .small
+            )
 
-                HomeCardStatePickerView(selectedState: $viewModel.homeCardState)
-                    .padding(.top, MindMorySpacing.sm)
+            Text("Clear the current permission override to enable Home state selection.")
+                .font(MindMoryTypography.bodySmall)
+                .foregroundStyle(MindMoryColors.Content.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button(action: clearPermissionOverrides) {
+                Text("Clear permission override")
+                    .font(MindMoryTypography.bodyMedium)
+                    .foregroundStyle(MindMoryColors.Surface.primary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, MindMorySpacing.sm)
+                    .background(MindMoryColors.Surface.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, MindMorySpacing.md)
+    }
+
+    private func clearPermissionOverrides() {
+        viewModel.clearBlockingPermissionOverrides()
+    }
+
+    private var permissionDeniedNotice: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            SectionTitle(
+                title: "Recent image state",
+                description: "Recent image and favorite state controls are disabled while a permission is denied.",
+                size: .small
+            )
+
+            Text("Enable both location and photo library permissions before changing the recent/favorite debug states.")
+                .font(MindMoryTypography.bodySmall)
+                .foregroundStyle(MindMoryColors.Content.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, MindMorySpacing.md)
+    }
+
+    private var photoLibraryPermissionCard: some View {
+        AppCard {
+            photoLibraryPermissionSection
+        }
+    }
+
+    private var locationPermissionCard: some View {
+        AppCard {
+            locationPermissionSection
+        }
+    }
+
+    private var recentImageSection: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            SectionTitle(
+                title: "Recent image state",
+                description: "Force the recent photo section to show one, two, or three debug placeholders.",
+                size: .small
+            )
+
+            VStack(spacing: MindMorySpacing.sm) {
+                ForEach(recentImageOptions) { state in
+                    RadioSelectionRow(
+                        title: state.title,
+                        subtitle: state.description,
+                        isSelected: viewModel.selectedRecentState == state,
+                        action: { viewModel.selectedRecentState = state }
+                    )
+                }
+            }
+        }
+    }
+
+    private var favoriteImageSection: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            SectionTitle(
+                title: "Favorite image state",
+                description: "Force the Home card to display a favorite debug memory or a QA empty/error state.",
+                size: .small
+            )
+
+            VStack(spacing: MindMorySpacing.sm) {
+                ForEach(favoriteImageOptions) { state in
+                    RadioSelectionRow(
+                        title: state.title,
+                        subtitle: state.description,
+                        isSelected: viewModel.selectedHomeState == state,
+                        action: { viewModel.selectedHomeState = state }
+                    )
+                }
+            }
+        }
+    }
+
+    private var photoLibraryPermissionSection: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            SectionTitle(
+                title: "Photo library permission",
+                description: "Debug the Home flow when access to the photo library is required.",
+                size: .small
+            )
+
+            VStack(spacing: MindMorySpacing.sm) {
+                ForEach(photoLibraryPermissionOptions) { state in
+                    RadioSelectionRow(
+                        title: state.title,
+                        subtitle: state.description,
+                        isSelected: viewModel.selectedPhotoLibraryPermissionState == state,
+                        action: { viewModel.selectedPhotoLibraryPermissionState = state }
+                    )
+                }
+            }
+        }
+    }
+
+    private var locationPermissionSection: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            SectionTitle(
+                title: "Location permission",
+                description: "Debug the Home flow when location permission is missing or denied.",
+                size: .small
+            )
+
+            VStack(spacing: MindMorySpacing.sm) {
+                ForEach(locationPermissionOptions) { state in
+                    RadioSelectionRow(
+                        title: state.title,
+                        subtitle: state.description,
+                        isSelected: viewModel.selectedLocationPermissionState == state,
+                        action: { viewModel.selectedLocationPermissionState = state }
+                    )
+                }
             }
         }
     }
