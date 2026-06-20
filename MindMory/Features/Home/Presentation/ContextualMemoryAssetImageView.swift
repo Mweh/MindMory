@@ -46,9 +46,10 @@ struct ContextualMemoryAssetImageView: View {
         }
 
         isUnavailable = false
+        image = nil
+
         let assets = PHAsset.fetchAssets(withLocalIdentifiers: [assetLocalIdentifier], options: nil)
         guard let asset = assets.firstObject else {
-            image = nil
             isUnavailable = true
             return
         }

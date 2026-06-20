@@ -28,9 +28,10 @@ enum MemoryCardSide: Equatable {
 }
 
 private enum HomePhotoLoadResult {
-    case success(String?)
+    case success(String)
     case noPhotos
-    case permissionRequired
+    case permissionRequired(HomePermissionKind)
+    case permissionDenied(HomePermissionKind)
     case failure(String)
 }
 
@@ -40,20 +41,25 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var photoState: HomePhotoState = .idle
     @Published private(set) var focusedMemory: Memory?
     @Published private(set) var selectedAssetLocalIdentifier: String?
-    @Published private(set) var peoplePhotoAssetIdentifiers: [String] = []
     @Published private(set) var recentPhotoAssetIdentifiers: [String] = []
+    @Published private(set) var peoplePhotoAssetIdentifiers: [String] = []
+    @Published private(set) var qaDebugPlaceholderCount: Int = 0
     @Published var cardSide: MemoryCardSide = .front
     @Published var captionText = ""
-    @Published var homeCardState: HomeCardState = .normal
     @Published var isShowingSharePreview = false
 
     private let fetchLocationPhotoListsUseCase: FetchLocationPhotoListsUseCase?
     private let getCurrentLocationUseCase: GetCurrentLocationUseCase?
-    private let qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
+    private let qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol?
     private var loadTask: Task<Void, Never>?
+    private var qaDebugObserver: NSObjectProtocol?
     private var cancellables = Set<AnyCancellable>()
 
     var focusedImageSource: MemoryImageSource {
+        if qaDebugModeEnabled {
+            return .placeholder
+        }
+
         if let selectedAssetLocalIdentifier {
             return .assetLocalIdentifier(selectedAssetLocalIdentifier)
         }
@@ -113,24 +119,23 @@ final class HomeViewModel: ObservableObject {
     init(
         fetchLocationPhotoListsUseCase: FetchLocationPhotoListsUseCase? = nil,
         getCurrentLocationUseCase: GetCurrentLocationUseCase? = nil,
-        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
+        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol? = nil
     ) {
         self.fetchLocationPhotoListsUseCase = fetchLocationPhotoListsUseCase
         self.getCurrentLocationUseCase = getCurrentLocationUseCase
         self.qaDebugSettingsRepository = qaDebugSettingsRepository
 
-        NotificationCenter.default.publisher(for: .qaDebugHomeCardStateDidChange)
-            .sink { [weak self] _ in
-                Task { @MainActor in
-                    self?.refreshHomeCardState()
-                }
-            }
-            .store(in: &cancellables)
+        qaDebugObserver = NotificationCenter.default.addObserver(
+            forName: .qaDebugSettingsDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.refreshState()
+        }
     }
 
     func load() {
         guard loadTask == nil else { return }
-        refreshHomeCardState()
         refreshState()
     }
 
@@ -159,13 +164,95 @@ final class HomeViewModel: ObservableObject {
 
     private func refreshState() {
         loadTask?.cancel()
+        Task { @MainActor in
+            photoState = .idle
+            focusedMemory = nil
+            selectedAssetLocalIdentifier = nil
+            recentPhotoAssetIdentifiers = []
+            peoplePhotoAssetIdentifiers = []
+        }
         loadTask = Task { [weak self] in
             await self?.evaluateCurrentState()
         }
     }
 
+    private var qaDebugModeEnabled: Bool {
+        qaDebugSettingsRepository?.qaDebugModeEnabled == true
+    }
+
+    private var qaDebugFavoriteState: QADebugHomeState {
+        if let locationPermissionState = qaDebugSettingsRepository?.qaLocationPermissionState,
+           locationPermissionState != .none {
+            if locationPermissionState == .permissionGrantedLocation {
+                // A granted permission override should not block home debug states.
+            } else {
+                return locationPermissionState
+            }
+        }
+
+        if let photoLibraryPermissionState = qaDebugSettingsRepository?.qaPhotoLibraryPermissionState,
+           photoLibraryPermissionState != .none {
+            if photoLibraryPermissionState == .permissionGrantedPhotoLibrary {
+                // A granted permission override should not block home debug states.
+            } else {
+                return photoLibraryPermissionState
+            }
+        }
+
+        let state = qaDebugSettingsRepository?.qaHomeState ?? .none
+        switch state {
+        case .loadedFavorite, .empty, .error, .permissionRequiredLocation, .permissionRequiredPhotoLibrary, .permissionDeniedLocation, .permissionDeniedPhotoLibrary, .permissionGrantedLocation, .permissionGrantedPhotoLibrary:
+            return state
+        default:
+            return .none
+        }
+    }
+
+    private var qaDebugRecentState: QADebugHomeState {
+        let state = qaDebugSettingsRepository?.qaRecentState ?? .none
+        switch state {
+        case .loadedOne, .loadedTwo, .loadedThree, .empty, .error:
+            return state
+        default:
+            return .none
+        }
+    }
+
+    private var qaDebugPermissionState: HomePhotoState? {
+        if let locationPermissionState = qaDebugSettingsRepository?.qaLocationPermissionState,
+           locationPermissionState.isBlocking {
+            switch locationPermissionState {
+            case .permissionRequiredLocation:
+                return .permissionRequired(.location)
+            case .permissionDeniedLocation:
+                return .permissionDenied(.location)
+            default:
+                break
+            }
+        }
+
+        if let photoLibraryPermissionState = qaDebugSettingsRepository?.qaPhotoLibraryPermissionState,
+           photoLibraryPermissionState.isBlocking {
+            switch photoLibraryPermissionState {
+            case .permissionRequiredPhotoLibrary:
+                return .permissionRequired(.photoLibrary)
+            case .permissionDeniedPhotoLibrary:
+                return .permissionDenied(.photoLibrary)
+            default:
+                break
+            }
+        }
+
+        return nil
+    }
+
     private func evaluateCurrentState() async {
         if Task.isCancelled { return }
+
+        if qaDebugModeEnabled, let permissionState = qaDebugPermissionState {
+            await updateState(permissionState, withMemory: nil, debugPlaceholderCount: debugPlaceholderCount(for: qaDebugRecentState))
+            return
+        }
 
         guard let locationUseCase = getCurrentLocationUseCase else {
             await updateState(.error("Location services are unavailable."), withMemory: nil)
@@ -197,51 +284,71 @@ final class HomeViewModel: ObservableObject {
             return
         }
 
-        let loadResult = await loadPhotoAsset(near: currentLocation)
+        let loadResult = await loadPhotoAssets(near: currentLocation)
 
         if Task.isCancelled { return }
 
+        let recentQAState = qaDebugModeEnabled ? qaDebugRecentState : .none
+        let favoriteQAState = qaDebugModeEnabled ? qaDebugFavoriteState : .none
+
         switch loadResult {
         case .success(let assetLocalIdentifier):
-            if let assetLocalIdentifier {
-                let memory = makeFocusedMemory(for: assetLocalIdentifier, locationName: currentLocation.placemarkName)
-                await updateState(.loaded, withMemory: memory, assetIdentifier: assetLocalIdentifier)
+            let memory = makeFocusedMemory(for: assetLocalIdentifier, locationName: currentLocation.placemarkName)
+            if favoriteQAState != .none {
+                await updateStateFromQAFavorite(favoriteQAState, recentQAState)
             } else {
-                await updateState(.loaded, withMemory: nil, assetIdentifier: nil)
+                await updateState(.loaded, withMemory: memory, assetIdentifier: assetLocalIdentifier,
+                                  debugPlaceholderCount: debugPlaceholderCount(for: recentQAState))
             }
         case .noPhotos:
-            await updateState(
-                .empty(
-                    title: "No nearby photo found.",
-                    subtitle: "Try moving closer to a place where you took a photo."
-                ),
-                withMemory: nil
-            )
-        case .permissionRequired:
-            await updateState(.permissionDenied(.photoLibrary), withMemory: nil)
+            if favoriteQAState != .none {
+                await updateStateFromQAFavorite(favoriteQAState, recentQAState)
+            } else {
+                await updateState(
+                    .empty(
+                        title: "No nearby photos found.",
+                        subtitle: "Try moving closer to a place where you took a photo."
+                    ),
+                    withMemory: nil,
+                    debugPlaceholderCount: debugPlaceholderCount(for: recentQAState)
+                )
+            }
+        case .permissionRequired(let permissionKind):
+            await updateState(.permissionRequired(permissionKind), withMemory: nil,
+                              debugPlaceholderCount: debugPlaceholderCount(for: recentQAState))
+        case .permissionDenied(let permissionKind):
+            await updateState(.permissionDenied(permissionKind), withMemory: nil,
+                              debugPlaceholderCount: debugPlaceholderCount(for: recentQAState))
         case .failure(let message):
-            await updateState(.error(message), withMemory: nil)
+            await updateState(.error(message), withMemory: nil,
+                              debugPlaceholderCount: debugPlaceholderCount(for: recentQAState))
         }
     }
 
     private func requestMissingPermission() async {
         if Task.isCancelled { return }
 
-        let targetPermission: HomePermissionKind = {
-            switch photoState {
-            case .permissionRequired(let kind), .permissionDenied(let kind):
-                return kind
-            default:
-                return .location
-            }
-        }()
+        guard let locationUseCase = getCurrentLocationUseCase,
+              let photoUseCase = fetchLocationPhotoListsUseCase else {
+            await updateState(.error("Unable to request access at this time."), withMemory: nil)
+            return
+        }
+
+        let locationStatus = await locationUseCase.authorizationStatus()
+        let photoStatus = await photoUseCase.authorizationStatus()
+        let targetPermission = permissionToRequest(locationStatus: locationStatus, photoStatus: photoStatus)
+
+        guard let permission = targetPermission else {
+            await refreshState()
+            return
+        }
 
         let permissionStatus: PermissionStatus
-        switch targetPermission {
+        switch permission {
         case .location:
-            permissionStatus = await getCurrentLocationUseCase?.requestAuthorization() ?? .denied
+            permissionStatus = await locationUseCase.requestAuthorization()
         case .photoLibrary:
-            permissionStatus = await fetchLocationPhotoListsUseCase?.requestAuthorization() ?? .denied
+            permissionStatus = await photoUseCase.requestAuthorization()
         }
 
         if Task.isCancelled { return }
@@ -249,7 +356,7 @@ final class HomeViewModel: ObservableObject {
         await MainActor.run {
             photoState = permissionStatus == .granted
                 ? .loading
-                : .permissionDenied(targetPermission)
+                : .permissionDenied(permission)
         }
 
         if permissionStatus == .granted {
@@ -266,7 +373,7 @@ final class HomeViewModel: ObservableObject {
             }
 
             group.addTask {
-                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
                 return nil
             }
 
@@ -277,12 +384,12 @@ final class HomeViewModel: ObservableObject {
     }
 
     private func permissionState(for locationStatus: PermissionStatus, photoStatus: PermissionStatus) -> HomePhotoState? {
-        if photoStatus == .denied {
-            return .permissionDenied(.photoLibrary)
-        }
-
         if locationStatus == .denied {
             return .permissionDenied(.location)
+        }
+
+        if photoStatus == .denied {
+            return .permissionDenied(.photoLibrary)
         }
 
         if locationStatus == .notDetermined {
@@ -296,22 +403,70 @@ final class HomeViewModel: ObservableObject {
         return nil
     }
 
-    private func updateState(_ state: HomePhotoState, withMemory memory: Memory?, assetIdentifier: String? = nil) async {
+    private func permissionToRequest(locationStatus: PermissionStatus, photoStatus: PermissionStatus) -> HomePermissionKind? {
+        if locationStatus == .notDetermined {
+            return .location
+        }
+
+        if photoStatus == .notDetermined {
+            return .photoLibrary
+        }
+
+        if locationStatus == .denied {
+            return .location
+        }
+
+        if photoStatus == .denied {
+            return .photoLibrary
+        }
+
+        return nil
+    }
+
+    private func updateState(_ state: HomePhotoState, withMemory memory: Memory?, assetIdentifier: String? = nil, debugPlaceholderCount: Int = 0) async {
         await MainActor.run {
             photoState = state
             focusedMemory = memory
             selectedAssetLocalIdentifier = assetIdentifier
+            qaDebugPlaceholderCount = debugPlaceholderCount
+
             if case .loaded = state {
-                // preserve loaded photo lists until a non-loaded state replaces them
+                if debugPlaceholderCount > 0 {
+                    recentPhotoAssetIdentifiers = []
+                    peoplePhotoAssetIdentifiers = []
+                }
             } else {
-                peoplePhotoAssetIdentifiers = []
                 recentPhotoAssetIdentifiers = []
+                peoplePhotoAssetIdentifiers = []
             }
             loadTask = nil
         }
     }
 
-    private func loadPhotoAsset(near location: CurrentLocationContext) async -> HomePhotoLoadResult {
+    private func updateStateFromQAFavorite(_ favoriteState: QADebugHomeState, _ recentState: QADebugHomeState) async {
+        let configuration = debugQAStateConfiguration(for: favoriteState)
+        await updateState(
+            configuration.photoState,
+            withMemory: configuration.memory,
+            assetIdentifier: configuration.assetIdentifier,
+            debugPlaceholderCount: debugPlaceholderCount(for: recentState)
+        )
+    }
+
+    private func debugPlaceholderCount(for state: QADebugHomeState) -> Int {
+        switch state {
+        case .loadedOne:
+            return 1
+        case .loadedTwo:
+            return 2
+        case .loadedThree:
+            return 3
+        default:
+            return 0
+        }
+    }
+
+    private func loadPhotoAssets(near location: CurrentLocationContext) async -> HomePhotoLoadResult {
         guard let useCase = fetchLocationPhotoListsUseCase else {
             return .failure("Location photo feature is unavailable.")
         }
@@ -320,26 +475,32 @@ final class HomeViewModel: ObservableObject {
         switch photoStatus {
         case .granted:
             break
-        case .notDetermined, .denied:
-            return .permissionRequired
+        case .notDetermined:
+            return .permissionRequired(.photoLibrary)
+        case .denied:
+            return .permissionDenied(.photoLibrary)
         }
 
         do {
             async let favoriteAsset = useCase.fetchFavoritePhotoAsset(near: location)
-            async let peopleAssets = useCase.fetchPeoplePhotoAssets(near: location)
             async let recentAssets = useCase.fetchRecentPhotoAssets(near: location)
+            async let peopleAssets = useCase.fetchRecentPhotoAssetsWithPeople(near: location)
 
             let favoriteIdentifier = try await favoriteAsset
-            let peopleIdentifiers = try await peopleAssets
             let recentIdentifiers = try await recentAssets
+            let peopleIdentifiers = try await peopleAssets
 
             await MainActor.run {
-                self.peoplePhotoAssetIdentifiers = peopleIdentifiers
                 self.recentPhotoAssetIdentifiers = recentIdentifiers
+                self.peoplePhotoAssetIdentifiers = peopleIdentifiers
             }
 
-            if favoriteIdentifier != nil || !peopleIdentifiers.isEmpty || !recentIdentifiers.isEmpty {
+            if let favoriteIdentifier = favoriteIdentifier {
                 return .success(favoriteIdentifier)
+            }
+
+            if let recentIdentifier = recentIdentifiers.first {
+                return .success(recentIdentifier)
             }
 
             return .noPhotos
@@ -362,15 +523,62 @@ final class HomeViewModel: ObservableObject {
         )
     }
 
-    private func refreshHomeCardState() {
-        #if DEBUG
-        homeCardState = qaDebugSettingsRepository.qaHomeCardState
-        #else
-        homeCardState = .normal
-        #endif
+    private func makeDebugMemory(isFavorite: Bool = false) -> Memory {
+        Memory(
+            id: UUID(),
+            title: isFavorite ? "Favorite nearby moment" : "Nearby memory",
+            subtitle: isFavorite ? "This is a QA favorite preview." : "This is a QA debug preview.",
+            dateText: "Recent photo",
+            locationName: "QA debug location",
+            imageName: "",
+            journalText: nil,
+            isFavorite: isFavorite,
+            tags: []
+        )
+    }
+
+    private func debugQAStateConfiguration(for state: QADebugHomeState) -> (photoState: HomePhotoState, memory: Memory?, assetIdentifier: String?, debugPlaceholderCount: Int) {
+        switch state {
+        case .none:
+            return (.idle, nil, nil, 0)
+        case .loadedOne:
+            return (.loaded, makeDebugMemory(), nil, 1)
+        case .loadedTwo:
+            return (.loaded, makeDebugMemory(), nil, 2)
+        case .loadedThree:
+            return (.loaded, makeDebugMemory(), nil, 3)
+        case .loadedFavorite:
+            return (.loaded, makeDebugMemory(isFavorite: true), nil, 0)
+        case .empty:
+            return (
+                .empty(
+                    title: "No nearby photos found.",
+                    subtitle: "QA debug empty state generated."
+                ),
+                nil,
+                nil,
+                0
+            )
+        case .error:
+            return (.error("QA debug error state."), nil, nil, 0)
+        case .permissionRequiredLocation:
+            return (.permissionRequired(.location), nil, nil, 0)
+        case .permissionRequiredPhotoLibrary:
+            return (.permissionRequired(.photoLibrary), nil, nil, 0)
+        case .permissionDeniedLocation:
+            return (.permissionDenied(.location), nil, nil, 0)
+        case .permissionDeniedPhotoLibrary:
+            return (.permissionDenied(.photoLibrary), nil, nil, 0)
+        case .permissionGrantedLocation,
+             .permissionGrantedPhotoLibrary:
+            return (.idle, nil, nil, 0)
+        }
     }
 
     deinit {
         loadTask?.cancel()
+        if let qaDebugObserver {
+            NotificationCenter.default.removeObserver(qaDebugObserver)
+        }
     }
 }
