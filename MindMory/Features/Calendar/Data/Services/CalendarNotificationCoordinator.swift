@@ -29,21 +29,26 @@ final class CalendarNotificationCoordinator {
         do {
             let events = try await fetchUpcomingCalendarEventsUseCase.execute()
             for event in events {
-                guard event.startDate > Date.now else { continue }
-                await scheduleNotification(for: event)
+                // Remind 15 minutes before the event starts
+                let reminderDate = event.startDate.addingTimeInterval(0)
+                guard reminderDate > Date.now else { continue }
+                await scheduleNotification(for: event, at: reminderDate)
             }
         } catch {
             print("Failed to fetch events for notification: \(error)")
         }
     }
 
-    private func scheduleNotification(for event: CalendarEvent) async {
+    private func scheduleNotification(for event: CalendarEvent, at date: Date) async {
         let content = UNMutableNotificationContent()
         content.title = "Upcoming Event"
-        content.body = "You have \(event.title) coming up, don't forget to capture it."
+        content.body = "\"\(event.title)\" starts in 15 minutes. A great moment to capture!"
         content.sound = .default
 
-        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: event.startDate)
+        let components = Calendar.current.dateComponents(
+            [.year, .month, .day, .hour, .minute],
+            from: date
+        )
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         let identifier = "calendarEvent.\(event.id)"
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)

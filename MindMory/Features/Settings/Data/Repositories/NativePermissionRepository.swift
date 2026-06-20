@@ -4,7 +4,11 @@ import Foundation
 import UserNotifications
 
 final class NativePermissionRepository: NSObject, PermissionRepositoryProtocol {
-    private let eventStore = EKEventStore()
+    private let eventStore: EKEventStore
+
+    init(eventStore: EKEventStore = EKEventStore()) {
+        self.eventStore = eventStore
+    }
 
     func notificationStatus() async -> PermissionStatus {
         let settings = await UNUserNotificationCenter.current().notificationSettings()

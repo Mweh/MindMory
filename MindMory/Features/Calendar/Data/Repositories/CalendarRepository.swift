@@ -8,15 +8,22 @@
 import EventKit
 
 final class CalendarRepository: CalendarRepositoryProtocol {
-    private let store = EKEventStore()
+    private let store: EKEventStore
 
     enum CalendarError: Error {
         case accessDenied
     }
 
+    init(store: EKEventStore = EKEventStore()) {
+        self.store = store
+    }
+
     func fetchUpcomingEvents() async throws -> [CalendarEvent] {
-        let granted = try await store.requestFullAccessToEvents()
-        guard granted else { throw CalendarError.accessDenied }
+        // Only check status — don't request permission here.
+        // Permission is requested during onboarding via NativePermissionRepository.
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
+            throw CalendarError.accessDenied
+        }
 
         let now = Date.now
         let sevenDaysAhead = Calendar.current.date(byAdding: .day, value: 7, to: now)!

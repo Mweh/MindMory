@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import EventKit
 import UserNotifications
 
 @MainActor
@@ -20,16 +21,19 @@ final class DependencyContainer: ObservableObject {
     private let calendarNotificationCoordinator: CalendarNotificationCoordinator
 
     convenience init() {
+        // One shared store so permission state is consistent across all repos.
+        let sharedEventStore = EKEventStore()
         let qaDebugRepository = QADebugSettingsRepository()
         self.init(
             memoryRepository: MockMemoryRepository(),
             reminderRepository: MockReminderRepository(),
-            permissionRepository: NativePermissionRepository(),
+            permissionRepository: NativePermissionRepository(eventStore: sharedEventStore),
             contextRepository: MockContextRepository(),
             locationRepository: CoreLocationRepository(),
             eventRepository: EventKitRepository(),
             photoLibraryRepository: PhotoLibraryRepository(),
-            qaDebugSettingsRepository: qaDebugRepository
+            qaDebugSettingsRepository: qaDebugRepository,
+            calendarRepository: CalendarRepository(store: sharedEventStore)
         )
     }
 
@@ -41,7 +45,8 @@ final class DependencyContainer: ObservableObject {
         locationRepository: LocationRepositoryProtocol,
         eventRepository: EventRepositoryProtocol,
         photoLibraryRepository: PhotoLibraryRepositoryProtocol,
-        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
+        qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol,
+        calendarRepository: CalendarRepositoryProtocol = CalendarRepository()
     ) {
         self.appRouter = AppRouter()
         self.memoryRepository = memoryRepository
@@ -69,6 +74,7 @@ final class DependencyContainer: ObservableObject {
             permissionRepository: permissionRepository,
             fetchUpcomingCalendarEventsUseCase: FetchUpcomingCalendarEventsUseCase(repository: calendarRepository)
         )
+
     }
 
     func configureNotificationHandling() {
