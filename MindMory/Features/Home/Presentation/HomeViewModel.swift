@@ -1,6 +1,7 @@
 import Combine
 import SwiftUI
 import UIKit
+import Photos
 
 struct MemoriesHeaderCopy: Equatable {
     let title: String
@@ -42,7 +43,7 @@ final class HomeViewModel: ObservableObject {
     @Published private(set) var focusedMemory: Memory?
     @Published private(set) var selectedAssetLocalIdentifier: String?
     @Published private(set) var recentPhotoAssetIdentifiers: [String] = []
-    @Published private(set) var peoplePhotoAssetIdentifiers: [String] = []
+    @Published var peoplePhotos: [PHAsset] = []
     @Published private(set) var qaDebugPlaceholderCount: Int = 0
     @Published var cardSide: MemoryCardSide = .front
     @Published var captionText = ""
@@ -169,7 +170,7 @@ final class HomeViewModel: ObservableObject {
             focusedMemory = nil
             selectedAssetLocalIdentifier = nil
             recentPhotoAssetIdentifiers = []
-            peoplePhotoAssetIdentifiers = []
+            peoplePhotos = []
         }
         loadTask = Task { [weak self] in
             await self?.evaluateCurrentState()
@@ -433,11 +434,11 @@ final class HomeViewModel: ObservableObject {
             if case .loaded = state {
                 if debugPlaceholderCount > 0 {
                     recentPhotoAssetIdentifiers = []
-                    peoplePhotoAssetIdentifiers = []
+                    peoplePhotos = []
                 }
             } else {
                 recentPhotoAssetIdentifiers = []
-                peoplePhotoAssetIdentifiers = []
+                peoplePhotos = []
             }
             loadTask = nil
         }
@@ -484,15 +485,36 @@ final class HomeViewModel: ObservableObject {
         do {
             async let favoriteAsset = useCase.fetchFavoritePhotoAsset(near: location)
             async let recentAssets = useCase.fetchRecentPhotoAssets(near: location)
-            async let peopleAssets = useCase.fetchRecentPhotoAssetsWithPeople(near: location)
+            // Fetch more nearby assets for Vision analysis
+            async let assetsForVision = useCase.fetchRecentPhotoAssets(near: location, maxDistanceMeters: 1000, limit: 30)
 
             let favoriteIdentifier = try await favoriteAsset
             let recentIdentifiers = try await recentAssets
-            let peopleIdentifiers = try await peopleAssets
+            let visionIdentifiers = try await assetsForVision
+            
+            let fetchOptions = PHFetchOptions()
+            let fetchedAssets = PHAsset.fetchAssets(withLocalIdentifiers: visionIdentifiers, options: fetchOptions)
+            
+            var validPeoplePhotos: [PHAsset] = []
+            let analysisService = DefaultPhotoAnalysisService()
+            
+            for i in 0..<fetchedAssets.count {
+                let asset = fetchedAssets.object(at: i)
+                do {
+                    let faceCount = try await analysisService.analyzeFaces(in: asset)
+                    if faceCount > 0 {
+                        validPeoplePhotos.append(asset)
+                    }
+                } catch {
+                    print("Failed to analyze asset", asset.localIdentifier, error)
+                }
+            }
+            
+            print("People Photos Final Count:", validPeoplePhotos.count)
 
             await MainActor.run {
                 self.recentPhotoAssetIdentifiers = recentIdentifiers
-                self.peoplePhotoAssetIdentifiers = peopleIdentifiers
+                self.peoplePhotos = validPeoplePhotos
             }
 
             if let favoriteIdentifier = favoriteIdentifier {
