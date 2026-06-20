@@ -222,7 +222,7 @@ struct HomeView: View {
                     retryAction: viewModel.retryContextualDiscovery
                 )
             case .loaded:
-                recentPhotoSection(for: viewModel.peoplePhotoAssetIdentifiers, debugPlaceholderCount: viewModel.qaDebugPlaceholderCount)
+                recentPhotoSection(for: viewModel.peoplePhotos.map(\.localIdentifier), debugPlaceholderCount: viewModel.qaDebugPlaceholderCount)
             }
         }
     }
