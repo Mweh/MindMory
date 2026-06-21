@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AppRootView: View {
-    @StateObject private var container = DependencyContainer()
+    @ObservedObject var container: DependencyContainer
     @State private var isShowingSplash = true
     @AppStorage("hasCompletedOnboarding") private var didCompleteOnboarding = false
     @Environment(\.scenePhase) private var scenePhase
@@ -17,27 +17,28 @@ struct AppRootView: View {
                     OnboardingView(viewModel: container.makeOnboardingViewModel()) { didCompleteOnboarding = true }
                 }
             }
+            .environmentObject(container)
             .background(MindMoryColors.Surface.backgroundGradient.ignoresSafeArea())
             .task {
                 container.configureNotificationHandling()
                 if didCompleteOnboarding {
-                    await container.startSmartMemoryNotifications()
                     await container.syncCalendarNotifications()
+                    await container.startDistanceReminders()
                 }
             }
             .onChange(of: scenePhase) { _, newPhase in
                 guard newPhase == .active, didCompleteOnboarding else { return }
                 Task {
-                    await container.startSmartMemoryNotifications()
                     await container.syncCalendarNotifications()
+                    await container.startDistanceReminders()
                 }
             }
             .onChange(of: didCompleteOnboarding) { _, completed in
                 guard completed else { return }
                 Task {
                     container.configureNotificationHandling()
-                    await container.startSmartMemoryNotifications()
                     await container.syncCalendarNotifications()
+                    await container.startDistanceReminders()
                 }
             }
 
@@ -65,4 +66,4 @@ struct AppRootView: View {
     }
 }
 
-#Preview { AppRootView() }
+#Preview { AppRootView(container: DependencyContainer()) }

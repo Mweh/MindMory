@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
 
+    @EnvironmentObject var container: DependencyContainer
     @StateObject var viewModel: SettingsViewModel
 
     var body: some View {
@@ -301,5 +302,7 @@ struct RadioSelectionRow<SecondaryContent: View>: View {
 }
 
 #Preview {
-    SettingsView(viewModel: DependencyContainer().makeSettingsViewModel())
+    let container = DependencyContainer()
+    SettingsView(viewModel: container.makeSettingsViewModel())
+        .environmentObject(container)
 }

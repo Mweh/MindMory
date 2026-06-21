@@ -112,6 +112,43 @@ final class PhotoLibraryRepository: PhotoLibraryRepositoryProtocol {
         )
     }
 
+    func fetchTopMemoryLocations(limit: Int) async throws -> [ContextualMemoryLocation] {
+        guard mapAuthorizationStatus(PHPhotoLibrary.authorizationStatus(for: .readWrite)) == .granted else {
+            return []
+        }
+
+        let options = PHFetchOptions()
+        options.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
+        options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+        options.fetchLimit = 500
+
+        let assets = PHAsset.fetchAssets(with: .image, options: options)
+        var locations: [ContextualMemoryLocation] = []
+        var seenCoordinates: Set<String> = []
+
+        assets.enumerateObjects { asset, _, stop in
+            if let location = asset.location {
+                let latBucket = String(format: "%.3f", location.coordinate.latitude)
+                let lonBucket = String(format: "%.3f", location.coordinate.longitude)
+                let key = "\(latBucket),\(lonBucket)"
+
+                if !seenCoordinates.contains(key) {
+                    seenCoordinates.insert(key)
+                    locations.append(ContextualMemoryLocation(
+                        latitude: location.coordinate.latitude,
+                        longitude: location.coordinate.longitude
+                    ))
+
+                    if locations.count >= limit {
+                        stop.pointee = true
+                    }
+                }
+            }
+        }
+
+        return locations
+    }
+
     private func fetchPeopleAssets() -> [PHAsset]? {
         let collections = PHCollectionList.fetchCollectionLists(with: .smartFolder, subtype: .smartFolderFaces, options: nil)
         guard let facesFolder = collections.firstObject else {

@@ -12,13 +12,15 @@ final class SmartMemoryNotificationDelegate: NSObject, UNUserNotificationCenterD
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        [.banner, .list, .sound]
+        print("Notification delivered")
+        return [.banner, .list, .sound]
     }
 
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
+        print("Notification tapped")
         guard let payload = SmartMemoryNotificationPayload(
             userInfo: response.notification.request.content.userInfo
         ) else { return }

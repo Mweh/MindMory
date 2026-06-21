@@ -16,7 +16,9 @@ final class CoreLocationRepository: NSObject, LocationRepositoryProtocol, CLLoca
     }
 
     func authorizationStatus() async -> PermissionStatus {
-        mapAuthorizationStatus(locationManager.authorizationStatus)
+        let status = locationManager.authorizationStatus
+        print("Authorization status:", status.rawValue)
+        return mapAuthorizationStatus(status)
     }
 
     func requestAuthorization() async -> PermissionStatus {
@@ -32,6 +34,23 @@ final class CoreLocationRepository: NSObject, LocationRepositoryProtocol, CLLoca
             authorizationContinuation = continuation
             Task { @MainActor in
                 locationManager.requestWhenInUseAuthorization()
+            }
+        }
+    }
+
+    func requestAlwaysAuthorization() async -> PermissionStatus {
+        let status = await Task.detached { [locationManager] in
+            locationManager.authorizationStatus
+        }.value
+
+        if status == .authorizedAlways {
+            return .granted
+        }
+
+        return await withCheckedContinuation { continuation in
+            authorizationContinuation = continuation
+            Task { @MainActor in
+                locationManager.requestAlwaysAuthorization()
             }
         }
     }
@@ -55,17 +74,28 @@ final class CoreLocationRepository: NSObject, LocationRepositoryProtocol, CLLoca
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let continuation = locationContinuation else { return }
         let bestLocation = locations
             .filter { $0.horizontalAccuracy >= 0 }
             .sorted(by: { $0.horizontalAccuracy < $1.horizontalAccuracy })
             .first
 
+        print("locationManager(_:didUpdateLocations:) fired. Received \(locations.count) locations. Best accuracy: \(bestLocation?.horizontalAccuracy ?? -1)")
+
         guard let location = bestLocation else {
-            locationContinuation = nil
-            continuation.resume(returning: nil)
+            if let continuation = locationContinuation {
+                locationContinuation = nil
+                continuation.resume(returning: nil)
+            }
             return
         }
+
+        NotificationCenter.default.post(
+            name: NSNotification.Name("SignificantLocationChanged"),
+            object: nil,
+            userInfo: ["location": location]
+        )
+
+        guard let continuation = locationContinuation else { return }
 
         locationContinuation = nil
         Task { @MainActor in
@@ -74,7 +104,7 @@ final class CoreLocationRepository: NSObject, LocationRepositoryProtocol, CLLoca
 
         Task { [weak self] in
             guard let self else { return }
-            let placemarkName = await self.reverseGeocodeName(for: location)
+            let placemarkName = await self.getPlacemarkName(for: location)
             guard !Task.isCancelled else { return }
             continuation.resume(returning: CurrentLocationContext(
                 latitude: location.coordinate.latitude,
@@ -97,7 +127,7 @@ final class CoreLocationRepository: NSObject, LocationRepositoryProtocol, CLLoca
            let location = locationManager.location, isRecent(location) {
             Task { [weak self] in
                 guard let self else { return }
-                let placemarkName = await self.reverseGeocodeName(for: location)
+                let placemarkName = await self.getPlacemarkName(for: location)
                 guard !Task.isCancelled else { return }
                 continuation.resume(returning: CurrentLocationContext(
                     latitude: location.coordinate.latitude,
@@ -111,6 +141,35 @@ final class CoreLocationRepository: NSObject, LocationRepositoryProtocol, CLLoca
         }
 
         continuation.resume(throwing: error)
+    }
+
+    func startMonitoringSignificantLocationChanges() {
+        guard CLLocationManager.significantLocationChangeMonitoringAvailable() else {
+            print("Significant location changes are not available on this device.")
+            return
+        }
+        Task { @MainActor in
+            #if DEBUG
+            locationManager.distanceFilter = 100
+            locationManager.startUpdatingLocation()
+            print("Started DEBUG location updates (distanceFilter = 100)")
+            #else
+            locationManager.startMonitoringSignificantLocationChanges()
+            print("Started monitoring significant location changes")
+            #endif
+        }
+    }
+
+    func stopMonitoringSignificantLocationChanges() {
+        Task { @MainActor in
+            #if DEBUG
+            locationManager.stopUpdatingLocation()
+            print("Stopped DEBUG location updates")
+            #else
+            locationManager.stopMonitoringSignificantLocationChanges()
+            print("Stopped monitoring significant location changes")
+            #endif
+        }
     }
 
     private func requestLocationUpdate(timeout: TimeInterval) async throws -> CurrentLocationContext? {
@@ -153,11 +212,11 @@ final class CoreLocationRepository: NSObject, LocationRepositoryProtocol, CLLoca
             longitude: location.coordinate.longitude,
             horizontalAccuracy: location.horizontalAccuracy,
             timestamp: location.timestamp,
-            placemarkName: await reverseGeocodeName(for: location)
+            placemarkName: await getPlacemarkName(for: location)
         )
     }
 
-    private func reverseGeocodeName(for location: CLLocation) async -> String? {
+    func getPlacemarkName(for location: CLLocation) async -> String? {
         let localGeocoder = CLGeocoder()
         return await withCheckedContinuation { continuation in
             localGeocoder.reverseGeocodeLocation(location) { placemarks, _ in
