@@ -16,7 +16,7 @@ struct CustomAlbumLayout<Content: View, Background: View>: View {
         ),
         scrollable: Bool = true,
         alignment: Alignment = .topLeading,
-        @ViewBuilder background: @escaping () -> Background = { Color.white.ignoresSafeArea() },
+        @ViewBuilder background: @escaping () -> Background = { MindMoryColors.Surface.backgroundGradient.ignoresSafeArea() },
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.padding = padding
@@ -33,7 +33,7 @@ struct CustomAlbumLayout<Content: View, Background: View>: View {
             GeometryReader { geometry in
                 VStack(spacing: .zero) {
                     AlbumTopCurveShape()
-                        .fill(MindMoryColors.Surface.background)
+                        .fill(MindMoryColors.Surface.backgroundTop)
                         .frame(height: geometry.size.height * 0.37 + geometry.safeAreaInsets.top + 32)
                         .ignoresSafeArea(edges: .top)
 

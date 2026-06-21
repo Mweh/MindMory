@@ -39,7 +39,7 @@ enum MindMoryColors {
         // BRAND
         // ──────────────────────────────────────────────────────
 
-        static let brandLighter = "7FA08E"
+        static let brandLighter = "88BDA4"
         static let brandLight   = "4A7A64"
         static let brand        = "235B43"
         static let brandDark    = "1B4936"
@@ -95,7 +95,8 @@ enum MindMoryColors {
 
     enum Surface {
 
-        static let background = Color(hex: Palette.brand)
+        static let background = Color(hex: Palette.brandLight)
+        static let backgroundTop = Color(hex: Palette.brandLighter)
 
         static var backgroundGradient: LinearGradient {
             LinearGradient(

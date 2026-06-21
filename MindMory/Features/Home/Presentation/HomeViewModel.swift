@@ -49,6 +49,18 @@ final class HomeViewModel: ObservableObject {
     @Published var captionText = ""
     @Published var isShowingSharePreview = false
 
+    var currentLocationName: String? {
+        focusedMemory?.locationName
+    }
+
+    var latestNearbyPhotoDateText: String? {
+        focusedMemory?.dateText
+    }
+
+    var nearbyPhotoCount: Int {
+        recentPhotoAssetIdentifiers.count
+    }
+
     private let fetchLocationPhotoListsUseCase: FetchLocationPhotoListsUseCase?
     private let getCurrentLocationUseCase: GetCurrentLocationUseCase?
     private let qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol?

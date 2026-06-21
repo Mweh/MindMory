@@ -12,7 +12,7 @@ struct CustomSettingsLayout<Content: View, Background: View>: View {
         ),
         scrollable: Bool = true,
         alignment: Alignment = .topLeading,
-        @ViewBuilder background: @escaping () -> Background = { Color.white.ignoresSafeArea() },
+        @ViewBuilder background: @escaping () -> Background = { MindMoryColors.Surface.backgroundGradient.ignoresSafeArea() },
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.layout = CustomMemoriesLayout(

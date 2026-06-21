@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Photos
 
 struct HomeView: View {
     @StateObject var viewModel: HomeViewModel
@@ -19,6 +20,12 @@ struct HomeView: View {
         ) {
             VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
                 header
+
+                locationSummaryCards
+
+                if let memory = viewModel.focusedMemory {
+                    homeCard(for: memory)
+                }
 
                 contextualContent
             }
@@ -73,9 +80,6 @@ struct HomeView: View {
             idleStateView
         case .loading:
             loadingCard
-            if let memory = viewModel.focusedMemory {
-                homeCard(for: memory)
-            }
         case .permissionRequired(.photoLibrary):
             NoPermissionStateView(
                 title: "Allow photo access",
@@ -124,11 +128,8 @@ struct HomeView: View {
                 locationPhotoSections(for: viewModel.photoState)
             }
         case .loaded:
-            VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-                if let memory = viewModel.focusedMemory {
-                    favoriteHeader
-                    homeCard(for: memory)
-                } else {
+            VStack(alignment: .leading, spacing: MindMorySpacing.xxl) {
+                if viewModel.focusedMemory == nil {
                     ContextualMemoryEmptyStateView(
                         title: "No favorite nearby photo",
                         subtitle: "MindMory is still showing nearby photos for this location."
@@ -175,117 +176,202 @@ struct HomeView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
-            Text(viewModel.headerCopy.title)
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            Text("Your memories")
                 .font(MindMoryTypography.displayLevel)
-                .foregroundStyle(MindMoryColors.Content.inverse)
+                .foregroundStyle(MindMoryColors.Content.primary)
                 .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(viewModel.headerCopy.subtitle)
-                .font(MindMoryTypography.bodyMedium)
-                .foregroundStyle(MindMoryColors.Content.inverseSecondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var favoriteHeader: some View {
-        Text("Flip the card to revisit a moment that matches your current location.")
+            (
+                Text("Showing nearby photos from ") +
+                Text(viewModel.currentLocationName ?? "your current location")
+                    .fontWeight(.semibold) +
+                Text(".")
+            )
             .font(MindMoryTypography.bodyMedium)
             .foregroundStyle(MindMoryColors.Content.secondary)
+            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var locationSummaryCards: some View {
+        HStack(spacing: MindMorySpacing.md) {
+            lastPhotoCard
+            totalPhotosCard
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var lastPhotoCard: some View {
+        let cardShape = RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+
+        return ZStack(alignment: .topTrailing) {
+            VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
+                Text("Last photo here")
+                    .font(MindMoryTypography.titleSmall)
+                    .foregroundStyle(MindMoryColors.Content.inverseSecondary)
+
+                Text(viewModel.latestNearbyPhotoDateText ?? "No recent photo")
+                    .font(MindMoryTypography.titleLarge)
+                    .foregroundStyle(MindMoryColors.Content.inverse)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(MindMorySpacing.lg)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                cardShape.fill(MindMoryColors.Surface.primary)
+            )
+            .clipShape(cardShape)
+            .overlay(
+                cardShape.stroke(MindMoryColors.Border.subtle.opacity(0.75), lineWidth: 1)
+            )
+            .shadow(color: MindMoryShadow.cardColor.opacity(0.16), radius: 18, x: 0, y: 12)
+
+            Circle()
+                .fill(MindMoryColors.Surface.elevated)
+                .frame(width: 40, height: 40)
+                .overlay(
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(MindMoryColors.Content.primary)
+                        .rotationEffect(.degrees(-15))
+                )
+                .overlay(
+                    Circle()
+                        .stroke(MindMoryColors.Content.primary, lineWidth: 1)
+                )
+                .shadow(color: MindMoryShadow.cardColor.opacity(0.12), radius: 6, x: 0, y: 4)
+                .offset(x: MindMorySpacing.xs, y: -MindMorySpacing.sm)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var totalPhotosCard: some View {
+        let cardShape = RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
+
+        return VStack(alignment: .leading, spacing: MindMorySpacing.xs) {
+            Text("Total photos")
+                .font(MindMoryTypography.titleSmall)
+                .foregroundStyle(MindMoryColors.Content.inverseSecondary)
+
+            Text("\(viewModel.nearbyPhotoCount)")
+                .font(MindMoryTypography.titleLarge)
+                .foregroundStyle(MindMoryColors.Content.inverse)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: true)
+        }
+        .padding(MindMorySpacing.lg)
+        .background(
+            cardShape.fill(MindMoryColors.Surface.primary)
+        )
+        .clipShape(cardShape)
+        .overlay(
+            cardShape.stroke(MindMoryColors.Border.subtle.opacity(0.75), lineWidth: 1)
+        )
+        .shadow(color: MindMoryShadow.cardColor.opacity(0.12), radius: 12, x: 0, y: 6)
+        .fixedSize()
+    }
+
+    private var homeMemoryTipCard: some View {
+        VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
+            Badge(
+                iconName: "sparkles",
+                text: "Memory tip",
+                tint: MindMoryColors.Content.inverse,
+                style: .iconText
+            )
+
+            Text("\"Life moves fast. Most moments are forgotten within a week unless we make a home for them.\"")
+                .font(MindMoryTypography.titleMedium)
+                .foregroundStyle(MindMoryColors.Content.inverse)
+                .italic()
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(MindMorySpacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MindMoryColors.Surface.primary)
+        .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
+        .shadow(color: MindMoryShadow.cardColor.opacity(0.16), radius: 14, x: 0, y: 6)
+        .overlay(
+            RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
+                .stroke(MindMoryColors.Content.inverse, lineWidth: 1)
+        )
+        .overlay(alignment: .topTrailing) {
+            Circle()
+                .fill(MindMoryColors.Content.inverse)
+                .frame(width: 50, height: 50)
+                .overlay(
+                    Image(systemName: "sparkles")
+                        .font(.title2)
+                        .foregroundColor(MindMoryColors.Content.primary)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(MindMoryColors.Content.primary, lineWidth: 1)
+                )
+                .shadow(color: MindMoryShadow.cardColor.opacity(0.12), radius: 8, x: 0, y: 4)
+                .offset(x: MindMorySpacing.sm, y: -MindMorySpacing.sm)
+        }
     }
 
     private func locationPhotoSections(for photoState: HomePhotoState) -> some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-            SectionTitle(
-                title: "Recent captures",
-                description: "Latest photos taken within 1 km of your current location.",
-                size: .medium
+            HomePhotoSectionView(
+                title: "Faces Along the Way",
+                subtitle: "",
+                assetIdentifiers: viewModel.peoplePhotos.map(\.localIdentifier),
+                photoState: photoState,
+                debugPlaceholderCount: viewModel.qaDebugPlaceholderCount,
+                bodySpacing: MindMorySpacing.xxs,
+                headerBottomSpacing: 0,
+                contentTopPadding: 0,
+                emptyTitle: "No nearby people captures.",
+                emptySubtitle: "Try moving closer to a place where you took a photo with people.",
+                errorMessage: "Filtered photos could not be loaded.",
+                isCarousel: true,
+                showPictureTakenOverlay: true,
+                descriptionText: "\"How beautiful life becomes through the people we meet along the way, turning ordinary moments into lasting memories\"",
+                retryAction: viewModel.retryContextualDiscovery
             )
 
             switch photoState {
-            case .loading, .idle:
-                loadingRecentPhotoSection
-            case .permissionRequired, .permissionDenied:
-                recentPhotoSection(for: [], debugPlaceholderCount: viewModel.qaDebugPlaceholderCount)
-            case .empty:
-                ContextualMemoryEmptyStateView(
-                    title: "No recent nearby photos available.",
-                    subtitle: "Try moving closer to a place where you took a photo."
-                )
-            case .error:
-                ErrorStateView(
-                    message: "Recent photos could not be loaded.",
+            case .loaded:
+                if viewModel.recentPhotoAssetIdentifiers.isEmpty {
+                    ContextualMemoryEmptyStateView(
+                        title: "No recent nearby photos available.",
+                        subtitle: "Try moving closer to a place where you took a photo."
+                    )
+                } else {
+                    HomePhotoSectionView(
+                        title: "Recent captures",
+                        subtitle: "Latest photos taken within 1 km of your current location.",
+                        assetIdentifiers: viewModel.recentPhotoAssetIdentifiers,
+                        photoState: .loaded,
+                        debugPlaceholderCount: viewModel.qaDebugPlaceholderCount,
+                        emptyTitle: "No recent nearby photos available.",
+                        emptySubtitle: "Try moving closer to a place where you took a photo.",
+                        errorMessage: "Recent photos could not be loaded.",
+                        isCarousel: true,
+                        retryAction: viewModel.retryContextualDiscovery
+                    )
+                }
+            default:
+                HomePhotoSectionView(
+                    title: "Recent captures",
+                    subtitle: "Latest photos taken within 1 km of your current location.",
+                    assetIdentifiers: viewModel.recentPhotoAssetIdentifiers,
+                    photoState: photoState,
+                    debugPlaceholderCount: viewModel.qaDebugPlaceholderCount,
+                    emptyTitle: "No recent nearby photos available.",
+                    emptySubtitle: "Try moving closer to a place where you took a photo.",
+                    errorMessage: "Recent photos could not be loaded.",
+                    isCarousel: true,
                     retryAction: viewModel.retryContextualDiscovery
                 )
-            case .loaded:
-                recentPhotoSection(for: viewModel.recentPhotoAssetIdentifiers, debugPlaceholderCount: viewModel.qaDebugPlaceholderCount)
-            }
-
-            SectionTitle(
-                title: "Captures with people",
-                description: "Photos within 1 km from your current location that contain people.",
-                size: .medium
-            )
-
-            switch photoState {
-            case .loading, .idle:
-                loadingRecentPhotoSection
-            case .permissionRequired, .permissionDenied:
-                recentPhotoSection(for: [], debugPlaceholderCount: viewModel.qaDebugPlaceholderCount)
-            case .empty:
-                ContextualMemoryEmptyStateView(
-                    title: "No nearby people captures.",
-                    subtitle: "Try moving closer to a place where you took a photo with people."
-                )
-            case .error:
-                ErrorStateView(
-                    message: "Filtered photos could not be loaded.",
-                    retryAction: viewModel.retryContextualDiscovery
-                )
-            case .loaded:
-                recentPhotoSection(for: viewModel.peoplePhotos.map(\.localIdentifier), debugPlaceholderCount: viewModel.qaDebugPlaceholderCount)
-            }
-        }
-    }
-
-    private var loadingRecentPhotoSection: some View {
-        HStack(spacing: MindMorySpacing.sm) {
-            ForEach(0..<3, id: \.self) { _ in
-                ImagePlaceholder(imageName: nil)
-                    .frame(width: 132, height: 132)
-                    .redacted(reason: .placeholder)
-            }
-        }
-        .padding(.vertical, MindMorySpacing.sm)
-    }
-
-    @ViewBuilder
-    private func recentPhotoSection(for assetIdentifiers: [String], debugPlaceholderCount: Int = 0) -> some View {
-        if debugPlaceholderCount > 0 {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: MindMorySpacing.sm) {
-                    ForEach(0..<debugPlaceholderCount, id: \.self) { _ in
-                        ImagePlaceholder(imageName: nil)
-                            .frame(width: 132, height: 132)
-                    }
-                }
-                .padding(.vertical, MindMorySpacing.sm)
-            }
-        } else if assetIdentifiers.isEmpty {
-            ContextualMemoryEmptyStateView(
-                title: "No recent nearby photos available.",
-                subtitle: "Try moving closer to a place where you took a photo."
-            )
-        } else {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: MindMorySpacing.sm) {
-                    ForEach(Array(assetIdentifiers.prefix(3)), id: \.self) { identifier in
-                        ContextualMemoryAssetImageView(assetLocalIdentifier: identifier)
-                            .frame(width: 132, height: 132)
-                    }
-                }
-                .padding(.vertical, MindMorySpacing.sm)
             }
         }
     }
@@ -317,6 +403,42 @@ struct HomeView: View {
         .padding(MindMorySpacing.md)
         .background(MindMoryColors.Surface.surface)
         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+    }
+}
+
+private struct TopRoundedRectangle: Shape {
+    let radius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 0, y: rect.maxY))
+        path.addLine(to: CGPoint(x: 0, y: radius))
+        path.addQuadCurve(
+            to: CGPoint(x: radius, y: 0),
+            control: CGPoint(x: 0, y: 0)
+        )
+        path.addLine(to: CGPoint(x: rect.maxX - radius, y: 0))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX, y: radius),
+            control: CGPoint(x: rect.maxX, y: 0)
+        )
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.closeSubpath()
+        return path
+    }
+}
+
+private struct RoundedCorners: Shape {
+    let radius: CGFloat
+    let corners: UIRectCorner
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(
+            roundedRect: rect,
+            byRoundingCorners: corners,
+            cornerRadii: CGSize(width: radius, height: radius)
+        )
+        return Path(path.cgPath)
     }
 }
 

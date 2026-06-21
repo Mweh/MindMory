@@ -23,7 +23,7 @@ struct MemoryCardFrontView: View {
     private var imageContent: some View {
         switch imageSource {
         case .assetLocalIdentifier(let localIdentifier):
-            ContextualMemoryAssetImageView(assetLocalIdentifier: localIdentifier)
+            AssetImageView(assetLocalIdentifier: localIdentifier)
         case .assetName(let assetName):
             ImagePlaceholder(imageName: assetName)
         case .debugImageURL(let url):
