@@ -42,11 +42,11 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
                 Text("Settings")
                     .font(MindMoryTypography.displayLevel)
-                    .foregroundStyle(MindMoryColors.Content.inverse)
+                    .foregroundStyle(MindMoryColors.Content.primary)
 
                 Text("A few small adjustments can help MindMory deliver better reminders and make it easier to preserve the moments you'd otherwise forget.")
                     .font(MindMoryTypography.bodyMedium)
-                    .foregroundStyle(MindMoryColors.Content.inverseSecondary)
+                    .foregroundStyle(MindMoryColors.Content.secondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -144,7 +144,7 @@ struct SettingsHeroBadge: View {
     let title: String
 
     var body: some View {
-        Badge(iconName: nil, text: title, tint: MindMoryColors.Content.inverse, style: .textOnly, cornerRadius: MindMoryRadius.medium)
+        Badge(iconName: nil, text: title, tint: MindMoryColors.Content.primary, style: .textOnly, cornerRadius: MindMoryRadius.medium)
     }
 }
 

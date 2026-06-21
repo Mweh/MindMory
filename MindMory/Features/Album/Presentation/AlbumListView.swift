@@ -71,13 +71,21 @@ struct AlbumListView: View {
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.isLoading {
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if !viewModel.albums.isEmpty {
-            albumList
-        } else {
-            emptyState
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                headerSection
+                    .padding(.bottom, MindMorySpacing.lg)
+
+                if viewModel.isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, minHeight: 220)
+                } else if !viewModel.albums.isEmpty {
+                    albumList
+                } else {
+                    emptyState
+                }
+            }
+            .padding(.bottom, 140)
         }
     }
 
@@ -116,37 +124,30 @@ struct AlbumListView: View {
     }
 
     private var albumList: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                headerSection
-                    .padding(.bottom, MindMorySpacing.lg)
+        VStack(alignment: .leading, spacing: 0) {
+            AlbumPromoCardView(totalAlbums: viewModel.albums.count) {
+                isShowingCreateAlbum = true
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, MindMorySpacing.lg)
 
-                AlbumPromoCardView(totalAlbums: viewModel.albums.count) {
-                    isShowingCreateAlbum = true
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, MindMorySpacing.lg)
-
-                LazyVStack(spacing: MindMorySpacing.lg) {
-                    ForEach(viewModel.albums) { album in
-                        albumItem(for: album)
-                    }
+            LazyVStack(spacing: MindMorySpacing.lg) {
+                ForEach(viewModel.albums) { album in
+                    albumItem(for: album)
                 }
             }
-            .padding(.bottom, 140)
         }
     }
-
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.sm) {
             Text("Your albums")
                 .font(MindMoryTypography.displayLevel)
-                .foregroundStyle(MindMoryColors.Content.inverse)
+                .foregroundStyle(MindMoryColors.Content.primary)
 
             Text("Review recently created albums and add more memories when you are ready.")
                 .font(MindMoryTypography.bodyMedium)
-                .foregroundStyle(MindMoryColors.Content.inverseSecondary)
+                .foregroundStyle(MindMoryColors.Content.secondary)
         }
     }
 
