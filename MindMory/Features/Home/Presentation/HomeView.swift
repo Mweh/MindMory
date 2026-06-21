@@ -34,10 +34,18 @@ struct HomeView: View {
             }
         }
         .onPreferenceChange(CardFrameKey.self) { frame in
-            cardFrame = frame
+            // NOTE: CardFrameKey is still used but as a fallback.
+            // Primary frame capture is done via onGeometryChange inside homeCard.
+            if cardFrame == .zero { cardFrame = frame }
         }
         .overlay {
-            if !hasSeenTooltip && cardFrame != .zero && viewModel.cardSide == .front {
+            // Show as soon as there is a visible card on front side.
+            // cardFrame is used only for spotlight position — not to gate visibility.
+            let cardIsVisible = viewModel.photoState == .loaded
+                && viewModel.focusedMemory != nil
+                && viewModel.cardSide == .front
+
+            if !hasSeenTooltip && cardIsVisible {
                 SpotlightTooltipView(cardFrame: cardFrame) {
                     hasSeenTooltip = true
                 }
@@ -142,6 +150,20 @@ struct HomeView: View {
             flipAction: viewModel.flipCard,
             shareAction: viewModel.showSharePreview
         )
+        // Use onGeometryChange to directly write the frame, bypassing ScrollView
+        // which swallows PreferenceKey propagation.
+        .background(
+            GeometryReader { geo in
+                Color.clear
+                    .onAppear {
+                        cardFrame = geo.frame(in: .global)
+                    }
+                    .onChange(of: geo.frame(in: .global)) { _, newFrame in
+                        cardFrame = newFrame
+                    }
+            }
+        )
+        // Keep PreferenceKey as a secondary mechanism
         .overlay(
             GeometryReader { geo in
                 Color.clear.preference(
