@@ -41,8 +41,8 @@ final class CalendarNotificationCoordinator {
 
     private func scheduleNotification(for event: CalendarEvent, at date: Date) async {
         let content = UNMutableNotificationContent()
-        content.title = "Upcoming Event"
-        content.body = "\"\(event.title)\" starts in 15 minutes. A great moment to capture!"
+        content.title = "Your event is starting!"
+        content.body = "\"\(event.title)\" started. A great moment to capture!"
         content.sound = .default
 
         let components = Calendar.current.dateComponents(
