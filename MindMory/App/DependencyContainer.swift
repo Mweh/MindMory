@@ -16,8 +16,7 @@ final class DependencyContainer: ObservableObject {
     private let photoLibraryRepository: PhotoLibraryRepositoryProtocol
     private let qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol
     private let smartMemoryNotificationDelegate: SmartMemoryNotificationDelegate
-    private let smartMemoryNotificationStore: SmartMemoryNotificationCooldownStore
-    private let smartMemoryNotificationCoordinator: SmartMemoryNotificationCoordinator
+    private let distanceReminderCoordinator: DistanceReminderCoordinator
     private let calendarNotificationCoordinator: CalendarNotificationCoordinator
 
     convenience init() {
@@ -58,16 +57,9 @@ final class DependencyContainer: ObservableObject {
         self.photoLibraryRepository = photoLibraryRepository
         self.qaDebugSettingsRepository = qaDebugSettingsRepository
         self.smartMemoryNotificationDelegate = SmartMemoryNotificationDelegate(appRouter: appRouter)
-        self.smartMemoryNotificationStore = SmartMemoryNotificationCooldownStore()
-        self.smartMemoryNotificationCoordinator = SmartMemoryNotificationCoordinator(
+        self.distanceReminderCoordinator = DistanceReminderCoordinator(
             permissionRepository: permissionRepository,
-            contextRepository: contextRepository,
-            findContextualMemoryUseCase: Self.makeFindContextualMemoryUseCase(
-                locationRepository: locationRepository,
-                eventRepository: eventRepository,
-                photoLibraryRepository: photoLibraryRepository
-            ),
-            cooldownStore: smartMemoryNotificationStore
+            locationRepository: locationRepository
         )
         let calendarRepository: CalendarRepositoryProtocol = CalendarRepository()
         self.calendarNotificationCoordinator = CalendarNotificationCoordinator(
@@ -81,14 +73,14 @@ final class DependencyContainer: ObservableObject {
         UNUserNotificationCenter.current().delegate = smartMemoryNotificationDelegate
     }
 
-    func startSmartMemoryNotifications() async {
-        await smartMemoryNotificationCoordinator.evaluateAndScheduleIfNeeded()
+    func startDistanceReminders() async {
+        await distanceReminderCoordinator.startMonitoringIfEnabled()
     }
-    
+
     func syncCalendarNotifications() async {
         await calendarNotificationCoordinator.scheduleUpcomingEventNotifications()
     }
-
+    
     func makeOnboardingViewModel() -> OnboardingViewModel {
         OnboardingViewModel(
             pages: OnboardingPageCatalog.pages,
