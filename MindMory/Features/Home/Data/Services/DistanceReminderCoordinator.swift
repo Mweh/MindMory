@@ -64,16 +64,14 @@ final class DistanceReminderCoordinator {
             print("Cooldown status: \(timeSinceLastReminder / 60) minutes elapsed (needs 30 minutes)")
             
             let isDistanceMet = distance >= 1000
-//            let isCooldownMet = timeSinceLastReminder >= 30 * 60
+            let isCooldownMet = timeSinceLastReminder >= 30 * 60
             
-            if isDistanceMet {
-//            if isDistanceMet && isCooldownMet {
+            if isDistanceMet && isCooldownMet {
                 print("Notification scheduling attempted: YES")
                 let placemarkName = await locationRepository.getPlacemarkName(for: location)
                 await scheduleMovementNotification(for: location, locationName: placemarkName)
             } else {
-                print("Notification scheduling attempted: NO (DistanceMet: \(isDistanceMet))")
-//                print("Notification scheduling attempted: NO (DistanceMet: \(isDistanceMet), CooldownMet: \(isCooldownMet))")
+                print("Notification scheduling attempted: NO (DistanceMet: \(isDistanceMet), CooldownMet: \(isCooldownMet))")
             }
             print("---------------------------")
         } else {
