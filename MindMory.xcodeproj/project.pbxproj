@@ -262,7 +262,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "MindMory uses your calendar to turn upcoming plans and events into reminders to capture meaningful moments";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "MindMory uses your location to adapt reminders to the places where your moments are happening";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "MindMory uses background location to send reminder notifications when you arrive near meaningful places.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "MindMory uses your current location to find nearby photos and personalize memory reminders.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "MindMory needs photo access to show your previous memories.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -314,7 +315,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "MindMory uses your calendar to turn upcoming plans and events into reminders to capture meaningful moments";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "MindMory uses your location to adapt reminders to the places where your moments are happening";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "MindMory uses background location to send reminder notifications when you arrive near meaningful places.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "MindMory uses your current location to find nearby photos and personalize memory reminders.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "MindMory needs photo access to show your previous memories.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
