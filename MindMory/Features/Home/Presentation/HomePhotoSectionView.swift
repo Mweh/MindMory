@@ -215,6 +215,7 @@ struct HomePhotoSectionView: View {
         let maxVerticalOffset: CGFloat = 16
         let visibleHeight = cardHeight + maxVerticalOffset
         let itemSpacing: CGFloat = -24
+        let swipeThreshold: CGFloat = 80
 
         return VStack(spacing: 0) {
             GeometryReader { geometry in
@@ -238,6 +239,25 @@ struct HomePhotoSectionView: View {
                 .offset(x: -CGFloat(selectedIndex) * (cardWidth + itemSpacing))
                 .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.85, blendDuration: 0), value: selectedIndex)
                 .frame(width: width, height: visibleHeight, alignment: .leading)
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 20)
+                        .onEnded { value in
+                            guard assetIdentifiers.count > 1 else { return }
+                            let horizontalDistance = abs(value.translation.width)
+                            let verticalDistance = abs(value.translation.height)
+
+                            guard horizontalDistance > verticalDistance,
+                                  horizontalDistance > swipeThreshold else {
+                                return
+                            }
+
+                            if value.translation.width < 0 {
+                                goToNext()
+                            } else {
+                                goToPrevious()
+                            }
+                        }
+                )
             }
             .frame(height: visibleHeight)
         }
