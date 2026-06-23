@@ -143,13 +143,33 @@ final class HomeViewModel: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.refreshState()
+            Task { @MainActor [weak self] in
+                self?.refreshState()
+            }
         }
     }
 
     func load() {
         guard loadTask == nil else { return }
+        guard case .idle = photoState else { return }
         refreshState()
+    }
+
+    func loadIfNeeded() {
+        guard loadTask == nil else { return }
+        guard case .idle = photoState else { return }
+        refreshState()
+    }
+
+    func refreshIfNeeded() {
+        guard loadTask == nil else { return }
+
+        switch photoState {
+        case .idle, .loading, .permissionRequired, .permissionDenied, .error:
+            refreshState()
+        case .loaded, .empty:
+            break
+        }
     }
 
     func flipCard() {
@@ -178,11 +198,7 @@ final class HomeViewModel: ObservableObject {
     private func refreshState() {
         loadTask?.cancel()
         Task { @MainActor in
-            photoState = .idle
-            focusedMemory = nil
-            selectedAssetLocalIdentifier = nil
-            recentPhotoAssetIdentifiers = []
-            peoplePhotos = []
+            photoState = .loading
         }
         loadTask = Task { [weak self] in
             await self?.evaluateCurrentState()
@@ -352,7 +368,7 @@ final class HomeViewModel: ObservableObject {
         let targetPermission = permissionToRequest(locationStatus: locationStatus, photoStatus: photoStatus)
 
         guard let permission = targetPermission else {
-            await refreshState()
+            refreshState()
             return
         }
 
@@ -438,17 +454,22 @@ final class HomeViewModel: ObservableObject {
 
     private func updateState(_ state: HomePhotoState, withMemory memory: Memory?, assetIdentifier: String? = nil, debugPlaceholderCount: Int = 0) async {
         await MainActor.run {
+            let clearingArrays: Bool
+            switch state {
+            case .loaded:
+                clearingArrays = debugPlaceholderCount > 0
+            case .loading:
+                clearingArrays = false
+            default:
+                clearingArrays = true
+            }
+
             photoState = state
             focusedMemory = memory
             selectedAssetLocalIdentifier = assetIdentifier
             qaDebugPlaceholderCount = debugPlaceholderCount
 
-            if case .loaded = state {
-                if debugPlaceholderCount > 0 {
-                    recentPhotoAssetIdentifiers = []
-                    peoplePhotos = []
-                }
-            } else {
+            if clearingArrays {
                 recentPhotoAssetIdentifiers = []
                 peoplePhotos = []
             }

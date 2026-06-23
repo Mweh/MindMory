@@ -35,9 +35,5 @@ struct ContextualMemoryEmptyStateView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(MindMoryColors.Surface.surface)
         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                .stroke(MindMoryColors.Border.subtle, lineWidth: 1)
-        }
     }
 }

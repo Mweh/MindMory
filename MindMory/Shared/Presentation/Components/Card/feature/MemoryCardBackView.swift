@@ -25,9 +25,10 @@ struct MemoryCardBackView: View {
                         if captionText.isEmpty {
                             Text("Write a little note about this photo.")
                                 .font(MindMoryTypography.bodyMedium)
-                                    .foregroundStyle(MindMoryColors.Content.secondary.opacity(0.65))
+                                .foregroundStyle(MindMoryColors.Content.secondary.opacity(0.65))
                                 .padding(.top, 8)
                                 .padding(.leading, 5)
+                                .allowsHitTesting(false)
                         }
 
                         TextEditor(text: $captionText)

@@ -20,7 +20,7 @@ public final class PeopleMemoriesViewModel: ObservableObject {
         case permissionDenied
     }
     
-    public struct MemoryItem: Identifiable, Equatable {
+    public nonisolated struct MemoryItem: Identifiable, Equatable {
         public var id: String { asset.localIdentifier }
         public let asset: PHAsset
         public let score: MemoryScore
@@ -69,15 +69,19 @@ public final class PeopleMemoriesViewModel: ObservableObject {
                 
                 print("DEBUG: Fetched assets:", assets.count)
                 
+                weak let weakSelf = self
+                let progressUpdate: @Sendable () async -> Void = {
+                    await MainActor.run {
+                        weakSelf?.analyzedCount += 1
+                    }
+                }
+
                 let memoryItems = try await Self.processAssets(
                     assets,
                     cache: cache,
-                    analysisService: analysisService
-                ) { [weak self] in
-                    await MainActor.run {
-                        self?.analyzedCount += 1
-                    }
-                }
+                    analysisService: analysisService,
+                    updateProgress: progressUpdate
+                )
                 
                 let sortedItems = memoryItems.sorted { $0.score > $1.score }
                 
@@ -100,7 +104,7 @@ public final class PeopleMemoriesViewModel: ObservableObject {
         state = .idle
     }
     
-    private nonisolated static func processAssets(
+    private static func processAssets(
         _ assets: [PHAsset],
         cache: PhotoAnalysisCache,
         analysisService: PhotoAnalysisService,
@@ -139,7 +143,7 @@ public final class PeopleMemoriesViewModel: ObservableObject {
         }
     }
     
-    private nonisolated static func analyzeSingleAsset(_ asset: PHAsset, cache: PhotoAnalysisCache, analysisService: PhotoAnalysisService) async -> MemoryItem? {
+    private static func analyzeSingleAsset(_ asset: PHAsset, cache: PhotoAnalysisCache, analysisService: PhotoAnalysisService) async -> MemoryItem? {
         if Task.isCancelled { return nil }
         
         let identifier = asset.localIdentifier

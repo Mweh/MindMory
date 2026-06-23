@@ -4,7 +4,6 @@ import SwiftData
 struct AlbumListView: View {
     @StateObject private var viewModel: AlbumListViewModel
     @State private var isShowingCreateAlbum = false
-    @State private var selectedAlbum: Album?
     @Environment(\.modelContext) private var modelContext
 
     init(viewModel: AlbumListViewModel) {
@@ -33,19 +32,6 @@ struct AlbumListView: View {
                 viewModel.addAlbum(album)
             }
         }
-        .navigationDestination(item: $selectedAlbum) { album in
-            AlbumDetailView(
-                album: album,
-                onEdit: { updatedAlbum in
-                    viewModel.updateAlbum(updatedAlbum)
-                    selectedAlbum = updatedAlbum
-                },
-                onDelete: {
-                    viewModel.removeAlbum(id: album.id)
-                    selectedAlbum = nil
-                }
-            )
-        }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -71,38 +57,26 @@ struct AlbumListView: View {
 
     @ViewBuilder
     private var content: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                headerSection
-                    .padding(.bottom, MindMorySpacing.lg)
+        VStack(alignment: .leading, spacing: 0) {
+            headerSection
+                .padding(.bottom, MindMorySpacing.lg)
 
-                if viewModel.isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, minHeight: 220)
-                } else if !viewModel.albums.isEmpty {
-                    albumList
-                } else {
-                    emptyState
-                }
+            AlbumPromoCardView(totalAlbums: viewModel.albums.count) {
+                navigateToCreateAlbum()
             }
-            .padding(.bottom, 140)
-        }
-    }
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, MindMorySpacing.lg)
 
-    private var floatingActionButton: some View {
-        Button {
-            isShowingCreateAlbum = true
-        } label: {
-            Image(systemName: "plus")
-                .font(MindMoryTypography.labelLarge)
-                .foregroundColor(MindMoryColors.Content.inverse)
-                .frame(width: 56, height: 56)
-                .background(MindMoryColors.Surface.primary)
-                .clipShape(Circle())
-                .shadow(color: MindMoryColors.Content.primary.opacity(0.2), radius: 8, x: 0, y: 4)
+            if viewModel.isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, minHeight: 220)
+            } else if !viewModel.albums.isEmpty {
+                albumList
+            } else {
+                emptyState
+            }
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Create album")
+        .padding(.bottom, 140)
     }
 
     private var emptyState: some View {
@@ -115,7 +89,7 @@ struct AlbumListView: View {
             )
 
             PrimaryButton(title: "Create Album") {
-                isShowingCreateAlbum = true
+                navigateToCreateAlbum()
             }
 
             Spacer()
@@ -124,19 +98,15 @@ struct AlbumListView: View {
     }
 
     private var albumList: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            AlbumPromoCardView(totalAlbums: viewModel.albums.count) {
-                isShowingCreateAlbum = true
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, MindMorySpacing.lg)
-
-            LazyVStack(spacing: MindMorySpacing.lg) {
-                ForEach(viewModel.albums) { album in
-                    albumItem(for: album)
-                }
+        LazyVStack(spacing: MindMorySpacing.lg) {
+            ForEach(viewModel.albums) { album in
+                albumItem(for: album)
             }
         }
+    }
+
+    private func navigateToCreateAlbum() {
+        isShowingCreateAlbum = true
     }
 
     private var headerSection: some View {
@@ -152,9 +122,15 @@ struct AlbumListView: View {
     }
 
     private func albumItem(for album: Album) -> some View {
-        Button {
-            selectedAlbum = album
-        } label: {
+        NavigationLink(destination: AlbumDetailView(
+            album: album,
+            onEdit: { updatedAlbum in
+                viewModel.updateAlbum(updatedAlbum)
+            },
+            onDelete: {
+                viewModel.removeAlbum(id: album.id)
+            }
+        )) {
             ZStack(alignment: .bottomLeading) {
                 albumCoverImage(for: album)
                     .frame(height: 230)
@@ -171,7 +147,7 @@ struct AlbumListView: View {
                 RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
                     .stroke(MindMoryColors.Border.subtle, lineWidth: 1)
             )
-            .shadow(color: MindMoryShadow.cardColor, radius: MindMoryShadow.softRadius, x: 0, y: MindMoryShadow.softY)
+            .contentShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -244,7 +220,6 @@ struct AlbumListView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(MindMoryColors.Content.inverse)
                 .lineLimit(2)
-                .shadow(color: Color.black.opacity(0.35), radius: 6, x: 0, y: 3)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

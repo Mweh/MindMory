@@ -96,13 +96,9 @@ struct HomePhotoSectionView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(MindMoryColors.Surface.primary)
             .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                    .stroke(MindMoryColors.Content.inverse, lineWidth: 1)
-            )
             .shadow(color: MindMoryShadow.cardColor.opacity(0.16), radius: 14, x: 0, y: 6)
             .overlay(
-                Text("Message for you")
+                Text("People & Memories")
                     .font(MindMoryTypography.labelSmall)
                     .foregroundStyle(MindMoryColors.Content.primary)
                     .padding(.vertical, 8)
@@ -110,10 +106,6 @@ struct HomePhotoSectionView: View {
                     .background(
                         RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
                             .fill(Color.white)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                            .stroke(MindMoryColors.Content.primary, lineWidth: 1)
                     )
                     .shadow(color: MindMoryShadow.cardColor.opacity(0.12), radius: 8, x: 0, y: 4)
                     .offset(x: MindMorySpacing.sm, y: -MindMorySpacing.sm),
@@ -284,9 +276,6 @@ struct HomePhotoSectionView: View {
             .padding(MindMorySpacing.xs)
             .background(MindMoryColors.Surface.elevated)
             .clipShape(cardShape)
-            .overlay(
-                cardShape.stroke(MindMoryColors.Border.subtle.opacity(0.75), lineWidth: 1)
-            )
             .shadow(color: MindMoryShadow.cardColor.opacity(0.16), radius: 18, x: 0, y: 12)
             .frame(width: width)
             .offset(y: verticalOffset)

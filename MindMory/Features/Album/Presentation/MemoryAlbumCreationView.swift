@@ -247,10 +247,10 @@ struct MemoryAlbumCreationView: View {
                 selectedSectionID = viewModel.sections.first?.id
             }
         }
-        .onChange(of: selectedSectionID) { _, _ in
+        .onChange(of: selectedSectionID) { _ in
             syncSelectedTextSection()
         }
-        .onChange(of: viewModel.sections) { _, _ in
+        .onChange(of: viewModel.sections) { _ in
             if currentStep == .selectPhotos, selectedSectionID == nil {
                 selectedSectionID = viewModel.sections.first?.id
             }

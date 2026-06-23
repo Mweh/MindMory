@@ -19,7 +19,7 @@ final class DependencyContainer: ObservableObject {
     private let distanceReminderCoordinator: DistanceReminderCoordinator
     private let calendarNotificationCoordinator: CalendarNotificationCoordinator
 
-    convenience init() {
+    @MainActor convenience init() {
         // One shared store so permission state is consistent across all repos.
         let sharedEventStore = EKEventStore()
         let qaDebugRepository = QADebugSettingsRepository()
@@ -45,7 +45,7 @@ final class DependencyContainer: ObservableObject {
         eventRepository: EventRepositoryProtocol,
         photoLibraryRepository: PhotoLibraryRepositoryProtocol,
         qaDebugSettingsRepository: QADebugSettingsRepositoryProtocol,
-        calendarRepository: CalendarRepositoryProtocol = CalendarRepository()
+        calendarRepository: CalendarRepositoryProtocol? = nil
     ) {
         self.appRouter = AppRouter()
         self.memoryRepository = memoryRepository
@@ -61,7 +61,7 @@ final class DependencyContainer: ObservableObject {
             permissionRepository: permissionRepository,
             locationRepository: locationRepository
         )
-        let calendarRepository: CalendarRepositoryProtocol = CalendarRepository()
+        let calendarRepository = calendarRepository ?? CalendarRepository()
         self.calendarNotificationCoordinator = CalendarNotificationCoordinator(
             permissionRepository: permissionRepository,
             fetchUpcomingCalendarEventsUseCase: FetchUpcomingCalendarEventsUseCase(repository: calendarRepository)

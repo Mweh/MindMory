@@ -31,13 +31,10 @@ struct HomeView: View {
             }
         }
         .navigationBarHidden(true)
-        .onTapGesture {
-            UIApplication.shared.dismissKeyboard()
-        }
-        .onAppear { viewModel.load() }
+        .onAppear { viewModel.refreshIfNeeded() }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                viewModel.retryContextualDiscovery()
+                viewModel.refreshIfNeeded()
             }
         }
         .onPreferenceChange(CardFrameKey.self) { frame in
@@ -225,9 +222,6 @@ struct HomeView: View {
                 cardShape.fill(MindMoryColors.Surface.primary)
             )
             .clipShape(cardShape)
-            .overlay(
-                cardShape.stroke(MindMoryColors.Border.subtle.opacity(0.75), lineWidth: 1)
-            )
             .shadow(color: MindMoryShadow.cardColor.opacity(0.16), radius: 18, x: 0, y: 12)
 
             Circle()
@@ -238,10 +232,6 @@ struct HomeView: View {
                         .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(MindMoryColors.Content.primary)
                         .rotationEffect(.degrees(-15))
-                )
-                .overlay(
-                    Circle()
-                        .stroke(MindMoryColors.Content.primary, lineWidth: 1)
                 )
                 .shadow(color: MindMoryShadow.cardColor.opacity(0.12), radius: 6, x: 0, y: 4)
                 .offset(x: MindMorySpacing.xs, y: -MindMorySpacing.sm)
@@ -268,9 +258,6 @@ struct HomeView: View {
             cardShape.fill(MindMoryColors.Surface.primary)
         )
         .clipShape(cardShape)
-        .overlay(
-            cardShape.stroke(MindMoryColors.Border.subtle.opacity(0.75), lineWidth: 1)
-        )
         .shadow(color: MindMoryShadow.cardColor.opacity(0.12), radius: 12, x: 0, y: 6)
         .fixedSize()
     }
@@ -296,10 +283,6 @@ struct HomeView: View {
         .background(MindMoryColors.Surface.primary)
         .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous))
         .shadow(color: MindMoryShadow.cardColor.opacity(0.16), radius: 14, x: 0, y: 6)
-        .overlay(
-            RoundedRectangle(cornerRadius: MindMoryRadius.large, style: .continuous)
-                .stroke(MindMoryColors.Content.inverse, lineWidth: 1)
-        )
         .overlay(alignment: .topTrailing) {
             Circle()
                 .fill(MindMoryColors.Content.inverse)
@@ -309,10 +292,6 @@ struct HomeView: View {
                         .font(.title2)
                         .foregroundColor(MindMoryColors.Content.primary)
                 )
-                .overlay(
-                    Circle()
-                        .stroke(MindMoryColors.Content.primary, lineWidth: 1)
-                )
                 .shadow(color: MindMoryShadow.cardColor.opacity(0.12), radius: 8, x: 0, y: 4)
                 .offset(x: MindMorySpacing.sm, y: -MindMorySpacing.sm)
         }
@@ -320,59 +299,38 @@ struct HomeView: View {
 
     private func locationPhotoSections(for photoState: HomePhotoState) -> some View {
         VStack(alignment: .leading, spacing: MindMorySpacing.lg) {
-            HomePhotoSectionView(
-                title: "Faces Along the Way",
-                subtitle: "",
-                assetIdentifiers: viewModel.peoplePhotos.map(\.localIdentifier),
-                photoState: photoState,
-                debugPlaceholderCount: viewModel.qaDebugPlaceholderCount,
-                bodySpacing: MindMorySpacing.xxs,
-                headerBottomSpacing: 0,
-                contentTopPadding: 0,
-                emptyTitle: "No nearby people captures.",
-                emptySubtitle: "Try moving closer to a place where you took a photo with people.",
-                errorMessage: "Filtered photos could not be loaded.",
-                isCarousel: true,
-                showPictureTakenOverlay: true,
-                descriptionText: "\"How beautiful life becomes through the people we meet along the way, turning ordinary moments into lasting memories\"",
-                retryAction: viewModel.retryContextualDiscovery
-            )
-
-            switch photoState {
-            case .loaded:
-                if viewModel.recentPhotoAssetIdentifiers.isEmpty {
-                    ContextualMemoryEmptyStateView(
-                        title: "No recent nearby photos available.",
-                        subtitle: "Try moving closer to a place where you took a photo."
-                    )
-                } else {
-                    HomePhotoSectionView(
-                        title: "Recent captures",
-                        subtitle: "Latest photos taken within 1 km of your current location.",
-                        assetIdentifiers: viewModel.recentPhotoAssetIdentifiers,
-                        photoState: .loaded,
-                        debugPlaceholderCount: viewModel.qaDebugPlaceholderCount,
-                        emptyTitle: "No recent nearby photos available.",
-                        emptySubtitle: "Try moving closer to a place where you took a photo.",
-                        errorMessage: "Recent photos could not be loaded.",
-                        isCarousel: true,
-                        retryAction: viewModel.retryContextualDiscovery
-                    )
-                }
-            default:
+            if case .loaded = photoState {
                 HomePhotoSectionView(
-                    title: "Recent captures",
-                    subtitle: "Latest photos taken within 1 km of your current location.",
-                    assetIdentifiers: viewModel.recentPhotoAssetIdentifiers,
+                    title: "Faces Along the Way",
+                    subtitle: "",
+                    assetIdentifiers: viewModel.peoplePhotos.map(\.localIdentifier),
                     photoState: photoState,
                     debugPlaceholderCount: viewModel.qaDebugPlaceholderCount,
-                    emptyTitle: "No recent nearby photos available.",
-                    emptySubtitle: "Try moving closer to a place where you took a photo.",
-                    errorMessage: "Recent photos could not be loaded.",
+                    bodySpacing: MindMorySpacing.xxs,
+                    headerBottomSpacing: 0,
+                    contentTopPadding: 0,
+                    emptyTitle: "No nearby people captures.",
+                    emptySubtitle: "Try moving closer to a place where you took a photo with people.",
+                    errorMessage: "Filtered photos could not be loaded.",
                     isCarousel: true,
+                    showPictureTakenOverlay: true,
+                    descriptionText: "Life becomes so beautiful through the people we meet along the way",
                     retryAction: viewModel.retryContextualDiscovery
                 )
             }
+
+            HomePhotoSectionView(
+                title: "Recent captures",
+                subtitle: "Latest photos taken within 1 km of your current location.",
+                assetIdentifiers: viewModel.recentPhotoAssetIdentifiers,
+                photoState: photoState,
+                debugPlaceholderCount: viewModel.qaDebugPlaceholderCount,
+                emptyTitle: "No recent nearby photos available.",
+                emptySubtitle: "Try moving closer to a place where you took a photo.",
+                errorMessage: "Recent photos could not be loaded.",
+                isCarousel: true,
+                retryAction: viewModel.retryContextualDiscovery
+            )
         }
     }
 

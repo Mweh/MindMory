@@ -102,7 +102,7 @@ final class CoreLocationRepository: NSObject, LocationRepositoryProtocol, CLLoca
             manager.stopUpdatingLocation()
         }
 
-        Task { [weak self] in
+        Task { @MainActor [weak self] in
             guard let self else { return }
             let placemarkName = await self.getPlacemarkName(for: location)
             guard !Task.isCancelled else { return }
@@ -125,7 +125,7 @@ final class CoreLocationRepository: NSObject, LocationRepositoryProtocol, CLLoca
 
         if let clError = error as? CLError, clError.code == .locationUnknown,
            let location = locationManager.location, isRecent(location) {
-            Task { [weak self] in
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 let placemarkName = await self.getPlacemarkName(for: location)
                 guard !Task.isCancelled else { return }
@@ -180,15 +180,11 @@ final class CoreLocationRepository: NSObject, LocationRepositoryProtocol, CLLoca
                     locationManager.startUpdatingLocation()
                 }
 
-                Task { [weak self] in
+                Task { @MainActor [weak self] in
                     try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
                     guard let self, let pendingContinuation = self.locationContinuation else { return }
-                    await MainActor.run {
-                        self.locationContinuation = nil
-                    }
-                    Task { @MainActor in
-                        self.locationManager.stopUpdatingLocation()
-                    }
+                    self.locationContinuation = nil
+                    self.locationManager.stopUpdatingLocation()
 
                     if let location = self.locationManager.location, self.isRecent(location) {
                         let context = await self.makeCurrentLocationContext(from: location)
@@ -220,19 +216,14 @@ final class CoreLocationRepository: NSObject, LocationRepositoryProtocol, CLLoca
         let localGeocoder = CLGeocoder()
         return await withCheckedContinuation { continuation in
             localGeocoder.reverseGeocodeLocation(location) { placemarks, _ in
-                continuation.resume(returning: Self.placemarkName(from: placemarks?.first))
+                let placemark = placemarks?.first
+                let nameParts = [placemark?.name, placemark?.locality, placemark?.subLocality]
+                    .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
+
+                continuation.resume(returning: nameParts.isEmpty ? nil : nameParts.joined(separator: ", "))
             }
         }
-    }
-
-    private static func placemarkName(from placemark: CLPlacemark?) -> String? {
-        guard let placemark else { return nil }
-
-        let nameParts = [placemark.name, placemark.locality, placemark.subLocality]
-            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-
-        return nameParts.isEmpty ? nil : nameParts.joined(separator: ", ")
     }
 
     private func isRecent(_ location: CLLocation) -> Bool {

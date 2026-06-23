@@ -150,27 +150,39 @@ final class PhotoLibraryRepository: PhotoLibraryRepositoryProtocol {
     }
 
     private func fetchPeopleAssets() -> [PHAsset]? {
-        let collections = PHCollectionList.fetchCollectionLists(with: .smartFolder, subtype: .smartFolderFaces, options: nil)
-        guard let facesFolder = collections.firstObject else {
+        let collectionLists = PHCollectionList.fetchCollectionLists(with: .smartFolder, subtype: .smartFolderFaces, options: nil)
+        guard let facesFolder = collectionLists.firstObject else {
             return nil
         }
 
-        let assetCollections = PHCollectionList.fetchCollections(in: facesFolder, options: nil)
+        let collections = PHCollectionList.fetchCollections(in: facesFolder, options: nil)
+        return fetchAssets(from: collections)
+    }
+
+    private func fetchAssets(from collections: PHFetchResult<PHCollection>) -> [PHAsset]? {
+        guard collections.count > 0 else {
+            return nil
+        }
+
         var peopleAssets: [PHAsset] = []
+        var seenIdentifiers: Set<String> = []
 
         let options = PHFetchOptions()
         options.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
         options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
         options.includeHiddenAssets = false
 
-        assetCollections.enumerateObjects { collection, _, _ in
+        collections.enumerateObjects { collection, _, _ in
             guard let assetCollection = collection as? PHAssetCollection else {
                 return
             }
 
             let assets = PHAsset.fetchAssets(in: assetCollection, options: options)
             assets.enumerateObjects { asset, _, _ in
-                peopleAssets.append(asset)
+                if !seenIdentifiers.contains(asset.localIdentifier) {
+                    seenIdentifiers.insert(asset.localIdentifier)
+                    peopleAssets.append(asset)
+                }
             }
         }
 
