@@ -82,25 +82,11 @@ struct ShareMemoryPreviewView: View {
                 )
             ) {
                 Text("Share Memory")
-                    .font(MindMoryTypography.labelLarge)
-                    .foregroundStyle(MindMoryColors.Surface.primary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(MindMoryColors.Surface.background)
-                    .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous)
-                            .stroke(MindMoryColors.Surface.primary, lineWidth: 1)
-                    }
             }
+            .buttonStyle(MindMoryPrimaryButtonStyle())
         } else if renderError != nil {
-            Text("Share Memory")
-                .font(MindMoryTypography.labelLarge)
-                .foregroundStyle(MindMoryColors.Content.secondary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(MindMoryColors.Surface.surface)
-                .clipShape(RoundedRectangle(cornerRadius: MindMoryRadius.medium, style: .continuous))
+            PrimaryButton(title: "Share Memory", action: {})
+                .disabled(true)
         } else {
             ProgressView("Preparing image…")
                 .font(MindMoryTypography.bodyMedium)

@@ -79,7 +79,7 @@ struct StackedShareCardView: View {
             }
             .padding(exportMode ? MindMorySpacing.xl : MindMorySpacing.lg)
         }
-        .background(LinearGradient(colors: [MindMoryColors.Surface.surface, MindMoryColors.Surface.background, MindMoryColors.Surface.surface], startPoint: .topLeading, endPoint: .bottomTrailing))
+        .background(MindMoryColors.Surface.elevated)
         .clipShape(cardShape)
         .overlay { cardShape.stroke(MindMoryColors.Border.subtle.opacity(0.7), lineWidth: 1) }
         .shadow(color: MindMoryColors.Content.primary.opacity(0.10), radius: exportMode ? 24 : 16, x: 0, y: exportMode ? 18 : 12)

@@ -35,6 +35,10 @@ enum PointOfInterestCategory: String, CaseIterable, Identifiable {
     case stores
     case transit
     case outdoors
+    case coffeeShops
+    case gyms
+    case libraries
+    case entertainment
 
     var id: String { rawValue }
 
@@ -50,6 +54,14 @@ enum PointOfInterestCategory: String, CaseIterable, Identifiable {
             return "Transit hubs"
         case .outdoors:
             return "Outdoor spaces"
+        case .coffeeShops:
+            return "Coffee shops"
+        case .gyms:
+            return "Gyms"
+        case .libraries:
+            return "Libraries"
+        case .entertainment:
+            return "Entertainment"
         }
     }
 }

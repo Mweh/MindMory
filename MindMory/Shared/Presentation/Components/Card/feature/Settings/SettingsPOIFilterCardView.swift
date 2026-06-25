@@ -12,12 +12,17 @@ struct SettingsPOIFilterCardView: View {
     var body: some View {
         AppCard {
             VStack(alignment: .leading, spacing: MindMorySpacing.md) {
-                HStack {
+                HStack(spacing: MindMorySpacing.sm) {
                     Text(selectedCategoryCountText)
                         .font(MindMoryTypography.bodyMedium)
                         .foregroundStyle(MindMoryColors.Content.primary)
 
                     Spacer()
+
+                    SettingsSecondaryPillButton(
+                        title: "Select all",
+                        action: viewModel.selectAllLocationCategories
+                    )
 
                     if !viewModel.preferences.location.selectedCategories.isEmpty {
                         SettingsSecondaryPillButton(

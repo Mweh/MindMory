@@ -22,7 +22,7 @@ struct PrimaryButton: View {
     .background(MindMoryColors.Surface.background)
 }
 
-private struct MindMoryPrimaryButtonStyle: ButtonStyle {
+struct MindMoryPrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
     
     private enum Metrics {

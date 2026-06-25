@@ -22,7 +22,9 @@ struct SettingsView: View {
                 reminderSettingSection
                 privacySection
                 #if DEBUG
-                qaDebugSection
+                if false {
+                    qaDebugSection
+                }
                 #endif
             }
         }

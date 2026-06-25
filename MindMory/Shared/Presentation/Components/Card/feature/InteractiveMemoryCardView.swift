@@ -57,13 +57,9 @@ struct InteractiveMemoryCardView: View {
         )
 
         Group {
-            if isBackVisible {
-                card
-            } else {
-                card
-                    .simultaneousGesture(dragGesture)
-                    .onTapGesture(perform: flipCard)
-            }
+            card
+                .simultaneousGesture(dragGesture)
+                .onTapGesture(perform: flipCard)
         }
         .onAppear {
             displayedSide = side
@@ -161,9 +157,13 @@ struct InteractiveMemoryCardView: View {
     }
 
     private func flipCard() {
-        guard !isFlipping, !isBackVisible else { return }
+        if isKeyboardVisible {
+            UIApplication.shared.dismissKeyboard()
+            return
+        }
+
+        guard !isFlipping else { return }
         isFlipping = true
-        UIApplication.shared.dismissKeyboard()
 
         withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
             flipRotation = 90

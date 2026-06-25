@@ -53,9 +53,7 @@ final class HomeViewModel: ObservableObject {
         focusedMemory?.locationName
     }
 
-    var latestNearbyPhotoDateText: String? {
-        focusedMemory?.dateText
-    }
+    @Published private(set) var latestNearbyPhotoDateText: String?
 
     var nearbyPhotoCount: Int {
         recentPhotoAssetIdentifiers.count
@@ -322,7 +320,12 @@ final class HomeViewModel: ObservableObject {
 
         switch loadResult {
         case .success(let assetLocalIdentifier):
-            let memory = makeFocusedMemory(for: assetLocalIdentifier, locationName: currentLocation.placemarkName)
+            let memoryDateText = Self.dateText(for: assetLocalIdentifier) ?? "Recent photo"
+            let memory = makeFocusedMemory(
+                for: assetLocalIdentifier,
+                locationName: currentLocation.placemarkName,
+                dateText: memoryDateText
+            )
             if favoriteQAState != .none {
                 await updateStateFromQAFavorite(favoriteQAState, recentQAState)
             } else {
@@ -472,6 +475,7 @@ final class HomeViewModel: ObservableObject {
             if clearingArrays {
                 recentPhotoAssetIdentifiers = []
                 peoplePhotos = []
+                latestNearbyPhotoDateText = nil
             }
             loadTask = nil
         }
@@ -545,9 +549,12 @@ final class HomeViewModel: ObservableObject {
             
             print("People Photos Final Count:", validPeoplePhotos.count)
 
+            let latestNearbyPhotoDateText = Self.dateText(for: recentIdentifiers.first)
+
             await MainActor.run {
                 self.recentPhotoAssetIdentifiers = recentIdentifiers
                 self.peoplePhotos = validPeoplePhotos
+                self.latestNearbyPhotoDateText = latestNearbyPhotoDateText
             }
 
             if let favoriteIdentifier = favoriteIdentifier {
@@ -564,12 +571,12 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    private func makeFocusedMemory(for assetIdentifier: String, locationName: String?) -> Memory {
+    private func makeFocusedMemory(for assetIdentifier: String, locationName: String?, dateText: String?) -> Memory {
         Memory(
             id: UUID(),
             title: "A nearby moment",
             subtitle: "Latest photo taken near your current location.",
-            dateText: "Recent photo",
+            dateText: dateText ?? "Recent photo",
             locationName: locationName,
             imageName: "",
             journalText: nil,
@@ -590,6 +597,20 @@ final class HomeViewModel: ObservableObject {
             isFavorite: isFavorite,
             tags: []
         )
+    }
+
+    private static func dateText(for localIdentifier: String?) -> String? {
+        guard let localIdentifier = localIdentifier else { return nil }
+        let assets = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
+        guard let asset = assets.firstObject, let creationDate = asset.creationDate else { return nil }
+        return formattedDate(creationDate)
+    }
+
+    private static func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter.string(from: date)
     }
 
     private func debugQAStateConfiguration(for state: QADebugHomeState) -> (photoState: HomePhotoState, memory: Memory?, assetIdentifier: String?, debugPlaceholderCount: Int) {

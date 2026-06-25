@@ -90,9 +90,21 @@ final class SettingsViewModel: ObservableObject {
         preferences = updated
     }
 
+    func selectAllLocationCategories() {
+        var updated = preferences
+        updated.location.selectedCategories = Set(PointOfInterestCategory.allCases)
+        preferences = updated
+    }
+
     func clearScheduleCategories() {
         var updated = preferences
         updated.schedule.selectedCategories = []
+        preferences = updated
+    }
+
+    func setLocationCooldown(_ cooldown: LocationVisitCooldown) {
+        var updated = preferences
+        updated.location.cooldown = cooldown
         preferences = updated
     }
 
