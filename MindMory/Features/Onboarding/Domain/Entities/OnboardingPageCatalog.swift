@@ -17,7 +17,7 @@ enum OnboardingPageCatalog {
         OnboardingPage(
             id: UUID(uuidString: "00000000-0000-0000-0000-000000000022")!,
             imageName: "onboarding_3",
-            title: "Your calendar already knows what's happening. We make plans memorable",
+            title: "Your calendar knows what's happening. We make it memorable",
             permission: .calendar
         ),
         OnboardingPage(
